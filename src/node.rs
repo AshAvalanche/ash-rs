@@ -56,63 +56,43 @@ impl AshNode {
 mod test {
     use super::*;
 
+    const CB58_ID: &str = "FhFWdWodxktJYq884nrJjWD8faLTk9jmp";
+    const BYTES_ID: [u8; 20] = [
+        161, 46, 131, 50, 233, 173, 105, 174, 159, 112, 163, 213, 113, 90, 223, 204, 223, 5, 188,
+        101,
+    ];
+
     #[test]
     fn create_from_cb58_id() {
-        let cb58_id = "NodeID-FhFWdWodxktJYq884nrJjWD8faLTk9jmp";
-
         // Creating the node should succeed
-        let node = AshNode::from_cb58_id(&cb58_id).unwrap();
+        let node = AshNode::from_cb58_id(CB58_ID).unwrap();
 
-        assert_eq!(
-            node.id.to_string(),
-            "NodeID-FhFWdWodxktJYq884nrJjWD8faLTk9jmp"
-        );
-
-        assert_eq!(
-            node.id.short_id().to_string(),
-            "FhFWdWodxktJYq884nrJjWD8faLTk9jmp"
-        );
+        assert_eq!(node.id.to_string(), format!("NodeID-{}", CB58_ID));
+        assert_eq!(node.id.short_id().to_string(), CB58_ID);
     }
 
     #[test]
     fn create_from_bytes_id() {
-        let bytes_id = [
-            161, 46, 131, 50, 233, 173, 105, 174, 159, 112, 163, 213, 113, 90, 223, 204, 223, 5,
-            188, 101,
-        ];
-
         // Creating the node should succeed
-        let node = AshNode::from_bytes_id(&bytes_id).unwrap();
+        let node = AshNode::from_bytes_id(&BYTES_ID).unwrap();
 
-        assert_eq!(
-            node.id.to_string(),
-            "NodeID-FhFWdWodxktJYq884nrJjWD8faLTk9jmp"
-        );
-
-        assert_eq!(
-            node.id.short_id().to_string(),
-            "FhFWdWodxktJYq884nrJjWD8faLTk9jmp"
-        );
+        assert_eq!(node.id.to_string(), format!("NodeID-{}", CB58_ID));
+        assert_eq!(node.id.short_id().to_string(), CB58_ID);
     }
 
     #[test]
     fn get_id() {
-        let cb58_id = "NodeID-FhFWdWodxktJYq884nrJjWD8faLTk9jmp";
+        let node = AshNode::from_cb58_id(CB58_ID).unwrap();
 
-        let node = AshNode::from_cb58_id(&cb58_id).unwrap();
-
-        assert_eq!(node.get_id_string(), cb58_id);
-        assert_eq!(node.get_id_cb58(), "FhFWdWodxktJYq884nrJjWD8faLTk9jmp");
-        assert_eq!(
-            node.get_id_bytes(),
-            [
-                161, 46, 131, 50, 233, 173, 105, 174, 159, 112, 163, 213, 113, 90, 223, 204, 223,
-                5, 188, 101
-            ]
-        );
+        assert_eq!(node.get_id_string(), format!("NodeID-{}", CB58_ID));
+        assert_eq!(node.get_id_cb58(), CB58_ID);
+        assert_eq!(node.get_id_bytes(), BYTES_ID);
         assert_eq!(
             node.get_id_hex(),
-            "a12e8332e9ad69ae9f70a3d5715adfccdf05bc65"
+            BYTES_ID
+                .iter()
+                .map(|b| format!("{:02x}", b))
+                .collect::<String>()
         );
     }
 }
