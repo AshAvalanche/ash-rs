@@ -28,7 +28,7 @@ impl AshNode {
     }
 
     // Get the node's ID as a string
-    pub fn get_id_str(&self) -> String {
+    pub fn get_id_string(&self) -> String {
         self.id.to_string()
     }
 
@@ -101,7 +101,7 @@ mod test {
 
         let node = AshNode::from_cb58_id(&cb58_id).unwrap();
 
-        assert_eq!(node.get_id_str(), cb58_id);
+        assert_eq!(node.get_id_string(), cb58_id);
         assert_eq!(node.get_id_cb58(), "FhFWdWodxktJYq884nrJjWD8faLTk9jmp");
         assert_eq!(
             node.get_id_bytes(),
