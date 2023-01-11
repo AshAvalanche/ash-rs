@@ -20,7 +20,7 @@ impl AshNode {
         Ok(AshNode { id })
     }
 
-    // Create a new Ash node from an Avalanche node ID byte array
+    // Create a new Ash node from an Avalanche node ID byte slice
     pub fn from_bytes_id(nodeid: &[u8]) -> Result<Self, Error> {
         let id = Id::from_slice(nodeid);
 
@@ -37,15 +37,15 @@ impl AshNode {
         self.id.short_id().to_string()
     }
 
-    // Get the node's ID as a byte array
-    pub fn get_id_bytes(&self) -> Vec<u8> {
-        self.id.to_vec()
+    // Get the node's ID as a byte slice
+    pub fn get_id_bytes(&self) -> &[u8] {
+        self.id.as_ref()
     }
 
     // Get the node's ID as a hex string
     pub fn get_id_hex(&self) -> String {
         self.id
-            .to_vec()
+            .as_ref()
             .iter()
             .map(|b| format!("{:02x}", b))
             .collect()
