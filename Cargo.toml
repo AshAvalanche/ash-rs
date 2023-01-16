@@ -12,8 +12,6 @@ repository = "https://github.com/AshAvalanche/ash-rs"
 license = "BSD-3-Clause"
 keywords = ["blockchain", "avalanche", "sdk", "rust", "ash"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 avalanche-types = "0.0.203"
 clap = { version = "4.0.32", features = ["derive"] }

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (C) 2023, E36 Knots
 
+// Module that contains the Ash node struct and related functions
+
 use avalanche_types::ids::node::Id;
 use regex::Regex;
 use serde::Serialize;
