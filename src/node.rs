@@ -3,6 +3,7 @@
 
 use avalanche_types::ids::node::Id;
 use regex::Regex;
+use serde::Serialize;
 use std::{io::Error, str::FromStr};
 
 // Struct that represents a node of the Ash protocol
@@ -64,29 +65,43 @@ impl AshNode {
         ))
     }
 
-    // Get the node's ID as a string
-    pub fn get_id_string(&self) -> String {
-        self.id.to_string()
+    // Get the node's ID as an AshNodeId struct
+    pub fn id(&self) -> AshNodeId {
+        AshNodeId {
+            p_chain: self.id.to_string(),
+            cb58: self.id.short_id().to_string(),
+            hex: self
+                .id
+                .as_ref()
+                .iter()
+                .map(|b| format!("{:02x}", b))
+                .collect(),
+            bytes: self.id.to_vec(),
+        }
     }
 
-    // Get the node's ID as a CB58 string
-    pub fn get_id_cb58(&self) -> String {
-        self.id.short_id().to_string()
+    // Get the node's info as an AshNodeInfo struct
+    pub fn info(&self) -> AshNodeInfo {
+        AshNodeInfo { id: self.id() }
     }
+}
 
-    // Get the node's ID as a byte slice
-    pub fn get_id_bytes(&self) -> &[u8] {
-        self.id.as_ref()
-    }
+#[derive(Debug, Serialize)]
+pub struct AshNodeInfo {
+    // The node's ID
+    pub id: AshNodeId,
+}
 
-    // Get the node's ID as a hex string
-    pub fn get_id_hex(&self) -> String {
-        self.id
-            .as_ref()
-            .iter()
-            .map(|b| format!("{:02x}", b))
-            .collect()
-    }
+#[derive(Debug, Serialize)]
+pub struct AshNodeId {
+    // The node's ID as a P-Chain string
+    pub p_chain: String,
+    // The node's ID as a CB58 string
+    pub cb58: String,
+    // The node's ID as a hex string
+    pub hex: String,
+    // The node's ID as a byte slice
+    pub bytes: Vec<u8>,
 }
 
 #[cfg(test)]
@@ -153,14 +168,16 @@ mod test {
     }
 
     #[test]
-    fn get_id() {
+    fn get_info() {
         let node = AshNode::from_cb58_id(CB58_ID).unwrap();
 
-        assert_eq!(node.get_id_string(), format!("NodeID-{}", CB58_ID));
-        assert_eq!(node.get_id_cb58(), CB58_ID);
-        assert_eq!(node.get_id_bytes(), BYTES_ID);
+        let node_info = node.info();
+
+        assert_eq!(node_info.id.p_chain, format!("NodeID-{}", CB58_ID));
+        assert_eq!(node_info.id.cb58, CB58_ID);
+        assert_eq!(node_info.id.bytes, &BYTES_ID);
         assert_eq!(
-            node.get_id_hex(),
+            node_info.id.hex,
             BYTES_ID
                 .iter()
                 .map(|b| format!("{:02x}", b))

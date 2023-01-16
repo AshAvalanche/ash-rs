@@ -40,6 +40,8 @@ dependencies = [
  "clap",
  "hex",
  "regex",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
