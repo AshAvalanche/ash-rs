@@ -86,12 +86,14 @@ impl AshNode {
     }
 }
 
+// Struct that represents an Ash node info
 #[derive(Debug, Serialize)]
 pub struct AshNodeInfo {
     // The node's ID
     pub id: AshNodeId,
 }
 
+// Struct that represents an Ash node ID
 #[derive(Debug, Serialize)]
 pub struct AshNodeId {
     // The node's ID as a P-Chain string
