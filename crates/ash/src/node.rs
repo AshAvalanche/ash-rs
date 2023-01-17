@@ -9,7 +9,7 @@ use regex::Regex;
 use serde::Serialize;
 use std::{io::Error, str::FromStr};
 
-// Struct that represents a node of the Ash protocol
+// Node of the Ash protocol
 #[derive(Debug)]
 pub struct AshNode {
     // The node's ID
@@ -89,14 +89,14 @@ impl AshNode {
     }
 }
 
-// Struct that represents an Ash node info
+// Ash node info
 #[derive(Debug, Serialize)]
 pub struct AshNodeInfo {
     // The node's ID
     pub id: AshNodeId,
 }
 
-// Struct that represents an Ash node ID
+// Ash node ID
 #[derive(Debug, Serialize)]
 pub struct AshNodeId {
     // The node's ID as a P-Chain string

@@ -4,9 +4,9 @@
 // Module that contains the Ash CLI root parser
 
 mod node;
+mod subnet;
 
 use clap::{Parser, Subcommand};
-use node::{parse as node_parse, NodeCommand};
 
 #[derive(Parser)]
 #[command(author, version)]
@@ -20,13 +20,15 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum CliCommands {
-    Node(NodeCommand),
+    Node(node::NodeCommand),
+    Subnet(subnet::SubnetCommand),
 }
 
 fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
-        CliCommands::Node(node) => node_parse(node, cli.json),
+        CliCommands::Node(node) => node::parse(node, cli.json),
+        CliCommands::Subnet(subnet) => subnet::parse(subnet, cli.json),
     }
 }
