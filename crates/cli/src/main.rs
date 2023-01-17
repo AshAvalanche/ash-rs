@@ -14,7 +14,7 @@ use node::{parse as node_parse, NodeCommand};
 struct Cli {
     #[command(subcommand)]
     command: CliCommands,
-    #[arg(long, help = "Output in JSON format")]
+    #[arg(long, help = "Output in JSON format", global = true)]
     json: bool,
 }
 
