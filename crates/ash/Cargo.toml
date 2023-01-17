@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (C) 2023, E36 Knots
+
+[package]
+name = "ash"
+description = "Ash Rust SDK"
+version = "0.1.0"
+authors = ["E36 Knots"]
+edition = "2021"
+readme = "README.md"
+repository = "https://github.com/AshAvalanche/ash-rs"
+license = "BSD-3-Clause"
+keywords = ["blockchain", "avalanche", "sdk", "rust", "ash"]
+
+[dependencies]
+avalanche-types = "0.0.203"
+hex = "0.4.3"
+regex = "1.7.1"
+serde = "1.0.152"

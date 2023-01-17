@@ -3,7 +3,7 @@
 
 // Module that contains the Ash CLI node subcommand parser
 
-use ash::core::node::AshNode;
+use ash::node::AshNode;
 use clap::{Parser, Subcommand};
 use serde_json;
 

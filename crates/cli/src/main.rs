@@ -23,7 +23,7 @@ enum CliCommands {
     Node(NodeCommand),
 }
 
-pub fn parse() {
+fn main() {
     let cli = Cli::parse();
 
     match &cli.command {

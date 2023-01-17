@@ -37,10 +37,17 @@ name = "ash"
 version = "0.1.0"
 dependencies = [
  "avalanche-types",
- "clap",
  "hex",
  "regex",
  "serde",
+]
+
+[[package]]
+name = "ashcli"
+version = "0.1.0"
+dependencies = [
+ "ash",
+ "clap",
  "serde_json",
 ]
 
