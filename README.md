@@ -1,8 +1,27 @@
 # ash-rs
 
-The `ash` create provides a Rust SDK to interact with the Ash protocol.
+This project provides Rust crates to interact with the Ash protocol.
 
-## Usage
+## Crates
+
+- [ash](crates/ash): Rust SDK to interact with the Ash protocol
+- [ashcli](crates/cli): CLI to interact with the Ash protocol
+
+## Ash CLI Installation
+
+```sh
+git clone https://github.com/AshAvalanche/ash-rs.git
+cd ash-rs
+
+cargo install --path crates/cli
+
+# The CLI is then available globally
+ash --help
+```
+
+See [Available commands](crates/cli/README.md#available-commands).
+
+## Development
 
 ```sh
 git clone https://github.com/AshAvalanche/ash-rs.git
@@ -13,15 +32,17 @@ cargo test
 
 # Build a release
 cargo build --release
+
+# Run the CLI
+## Debug mode
+cargo run -- --help
+## Release mode
+cargo run --release -- --help
 ```
-
-## Modules
-
-- [ash::node](src/node.rs): Interact with Ash nodes through the `AshNode` struct.
 
 ## Roadmap
 
-- [ ] CLI
+- [x] CLI
 - [ ] Ash protocol integration (abstract smart contracts interaction from the user)
 - [ ] Ledger integration (to sign transactions)
 - [ ] WASM integration (to allow the library to be used from JavaScript)
