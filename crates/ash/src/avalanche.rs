@@ -68,50 +68,32 @@ impl AvalancheNetwork {
     // Create a new AvalancheNetwork
     pub fn new(network: &str) -> Result<AvalancheNetwork, String> {
         match network {
-            "mainnet" => {
+            "mainnet" | "fuji" => {
                 // Never fails as AVAX_*_ID are valid Avalanche IDs
                 let primary_network_id = Id::from_str(AVAX_PRIMARY_NETWORK_ID).unwrap();
-                let cchain_id = Id::from_str(AVAX_MAINNET_CCHAIN_ID).unwrap();
 
                 Ok(AvalancheNetwork {
-                    name: "mainnet".to_string(),
+                    name: network.to_string(),
                     subnets: HashMap::from([(
                         primary_network_id.to_string(),
                         AvalancheSubnet {
                             id: primary_network_id,
                             blockchains: HashMap::from([(
-                                cchain_id.to_string(),
+                                match network {
+                                    "mainnet" => AVAX_MAINNET_CCHAIN_ID.to_string(),
+                                    "fuji" => AVAX_FUJI_CCHAIN_ID.to_string(),
+                                    _ => unreachable!(),
+                                },
                                 AvalancheBlockchain::Evm {
                                     // TODO: Get the name from the RPC
                                     name: "C-Chain".to_string(),
-                                    id: cchain_id,
+                                    id: match network {
+                                        "mainnet" => Id::from_str(AVAX_MAINNET_CCHAIN_ID).unwrap(),
+                                        "fuji" => Id::from_str(AVAX_FUJI_CCHAIN_ID).unwrap(),
+                                        _ => unreachable!(),
+                                    },
                                     // Never fails as AVAX_MAINNET_CCHAIN_RPC is a valid RPC URL
                                     provider: Provider::try_from(AVAX_MAINNET_CCHAIN_RPC).unwrap(),
-                                },
-                            )]),
-                        },
-                    )]),
-                })
-            }
-            "fuji" => {
-                // Never fails as AVAX_*_ID are valid Avalanche IDs
-                let primary_network_id = Id::from_str(AVAX_PRIMARY_NETWORK_ID).unwrap();
-                let cchain_id = Id::from_str(AVAX_FUJI_CCHAIN_ID).unwrap();
-
-                Ok(AvalancheNetwork {
-                    name: "fuji".to_string(),
-                    subnets: HashMap::from([(
-                        primary_network_id.to_string(),
-                        AvalancheSubnet {
-                            id: primary_network_id,
-                            blockchains: HashMap::from([(
-                                cchain_id.to_string(),
-                                AvalancheBlockchain::Evm {
-                                    // TODO: Get the name from the RPC
-                                    name: "C-Chain".to_string(),
-                                    id: cchain_id,
-                                    // Never fails as AVAX_FUJI_CCHAIN_RPC is a valid RPC URL
-                                    provider: Provider::try_from(AVAX_FUJI_CCHAIN_RPC).unwrap(),
                                 },
                             )]),
                         },
