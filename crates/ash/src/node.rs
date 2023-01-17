@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (C) 2023, E36 Knots
 
+// Module that contains the Ash node struct and related functions
+
 use avalanche_types::ids::node::Id;
+use hex;
 use regex::Regex;
 use serde::Serialize;
 use std::{io::Error, str::FromStr};
@@ -86,12 +89,14 @@ impl AshNode {
     }
 }
 
+// Struct that represents an Ash node info
 #[derive(Debug, Serialize)]
 pub struct AshNodeInfo {
     // The node's ID
     pub id: AshNodeId,
 }
 
+// Struct that represents an Ash node ID
 #[derive(Debug, Serialize)]
 pub struct AshNodeId {
     // The node's ID as a P-Chain string
