@@ -5,7 +5,6 @@
 
 use ash::node::AshNode;
 use clap::{Parser, Subcommand};
-use serde_json;
 
 #[derive(Parser)]
 #[command(about = "Interact with Ash nodes", long_about = None)]

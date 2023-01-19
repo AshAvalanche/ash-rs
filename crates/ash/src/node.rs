@@ -4,7 +4,6 @@
 // Module that contains the Ash node struct and related functions
 
 use avalanche_types::ids::node::Id;
-use hex;
 use regex::Regex;
 use serde::Serialize;
 use std::{io::Error, str::FromStr};

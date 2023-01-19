@@ -93,7 +93,12 @@ impl AvalancheNetwork {
                                         _ => unreachable!(),
                                     },
                                     // Never fails as AVAX_MAINNET_CCHAIN_RPC is a valid RPC URL
-                                    provider: Provider::try_from(AVAX_MAINNET_CCHAIN_RPC).unwrap(),
+                                    provider: Provider::<Http>::try_from(match network {
+                                        "mainnet" => AVAX_MAINNET_CCHAIN_RPC.to_string(),
+                                        "fuji" => AVAX_FUJI_CCHAIN_RPC.to_string(),
+                                        _ => unreachable!(),
+                                    })
+                                    .unwrap(),
                                 },
                             )]),
                         },

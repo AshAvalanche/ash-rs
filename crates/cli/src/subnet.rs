@@ -5,7 +5,6 @@
 
 use ash::avalanche::{AvalancheBlockchain, AvalancheNetwork, AvalancheSubnet};
 use clap::{Parser, Subcommand};
-use serde_json;
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche Subnets", long_about = None)]
@@ -30,7 +29,7 @@ enum SubnetCommands {
             help = "Limit the number of subnets to list",
             default_value = "10"
         )]
-        limit: Option<u32>,
+        limit: u32,
     },
     Info {
         #[arg(long, help = "Subnet ID (CB58)")]
@@ -39,7 +38,7 @@ enum SubnetCommands {
 }
 
 // List the network's subnets
-fn list(network: &str, limit: &u32, json: bool) {
+fn list(network: &str, limit: u32, json: bool) {
     match AvalancheNetwork::new(network) {
         Ok(network) => {
             if json {
@@ -51,7 +50,7 @@ fn list(network: &str, limit: &u32, json: bool) {
                             .subnets
                             .values()
                             .into_iter()
-                            .take(*limit as usize)
+                            .take(limit as usize)
                             .collect::<Vec<&AvalancheSubnet>>()
                     )
                     .unwrap()
@@ -66,7 +65,7 @@ fn list(network: &str, limit: &u32, json: bool) {
             );
 
             // Print the first `limit` subnets
-            for (_, subnet) in network.subnets.iter().take(*limit as usize) {
+            for subnet in network.subnets.values().take(limit as usize) {
                 print_info(subnet, true);
             }
         }
@@ -104,7 +103,7 @@ fn print_info(subnet: &AvalancheSubnet, separator: bool) {
     println!("{}", subnet_id_line);
     println!("  Number of blockchains: {}", subnet.blockchains.len());
     println!("  Blockchains:");
-    for (_, blockchain) in subnet.blockchains.iter() {
+    for blockchain in subnet.blockchains.values() {
         match blockchain {
             AvalancheBlockchain::Evm { name, id, .. } => {
                 println!("  - {} (ID='{}')", name, id)
@@ -116,7 +115,7 @@ fn print_info(subnet: &AvalancheSubnet, separator: bool) {
 // Parse subnet subcommand
 pub fn parse(subnet: &SubnetCommand, json: bool) {
     match &subnet.command {
-        SubnetCommands::List { limit } => list(&subnet.network, &limit.unwrap(), json),
-        SubnetCommands::Info { id } => info(&subnet.network, &id, json),
+        SubnetCommands::List { limit } => list(&subnet.network, *limit, json),
+        SubnetCommands::Info { id } => info(&subnet.network, id, json),
     }
 }
