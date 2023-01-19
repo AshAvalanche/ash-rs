@@ -42,8 +42,8 @@ fn info(id: &str, json: bool) {
 }
 
 // Parse node subcommand
-pub fn parse(node: &NodeCommand, json: bool) {
-    match &node.command {
+pub fn parse(node: NodeCommand, json: bool) {
+    match node.command {
         NodeCommands::Info { id } => info(&id, json),
     }
 }

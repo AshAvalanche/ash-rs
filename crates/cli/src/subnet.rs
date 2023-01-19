@@ -113,9 +113,9 @@ fn print_info(subnet: &AvalancheSubnet, separator: bool) {
 }
 
 // Parse subnet subcommand
-pub fn parse(subnet: &SubnetCommand, json: bool) {
-    match &subnet.command {
-        SubnetCommands::List { limit } => list(&subnet.network, *limit, json),
-        SubnetCommands::Info { id } => info(&subnet.network, id, json),
+pub fn parse(subnet: SubnetCommand, json: bool) {
+    match subnet.command {
+        SubnetCommands::List { limit } => list(&subnet.network, limit, json),
+        SubnetCommands::Info { id } => info(&subnet.network, &id, json),
     }
 }

@@ -27,7 +27,7 @@ enum CliCommands {
 fn main() {
     let cli = Cli::parse();
 
-    match &cli.command {
+    match cli.command {
         CliCommands::Node(node) => node::parse(node, cli.json),
         CliCommands::Subnet(subnet) => subnet::parse(subnet, cli.json),
     }
