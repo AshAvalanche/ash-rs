@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (C) 2023, E36 Knots
 
-// Module that contains the Ash CLI node subcommand parser
+// Module that contains node subcommand parser
 
 use ash::node::AshNode;
 use clap::{Parser, Subcommand};
-use serde_json;
 
 #[derive(Parser)]
 #[command(about = "Interact with Ash nodes", long_about = None)]
@@ -34,7 +33,7 @@ fn info(id: &str, json: bool) {
                 return;
             }
 
-            println!("Node information for {}", id);
+            println!("Node '{}':", id);
             println!("  Node ID (CB58): {}", node_info.id.cb58);
             println!("  Node ID (hex): {}", node_info.id.hex);
         }
@@ -43,8 +42,8 @@ fn info(id: &str, json: bool) {
 }
 
 // Parse node subcommand
-pub fn parse(node: &NodeCommand, json: bool) {
-    match &node.command {
+pub fn parse(node: NodeCommand, json: bool) {
+    match node.command {
         NodeCommands::Info { id } => info(&id, json),
     }
 }
