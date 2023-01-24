@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (C) 2023, E36 Knots
 
-// Module that contains subnet subcommand parser
+// Module that contains the subnet subcommand parser
 
 use ash::avalanche::{subnets::AvalancheSubnet, AvalancheNetwork};
 use clap::{Parser, Subcommand};

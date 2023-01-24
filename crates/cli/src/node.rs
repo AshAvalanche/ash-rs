@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (C) 2023, E36 Knots
 
-// Module that contains node subcommand parser
+// Module that contains the node subcommand parser
 
 use ash::node::AshNode;
 use clap::{Parser, Subcommand};

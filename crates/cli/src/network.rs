@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (C) 2023, E36 Knots
 
-// Module that contains node network parser
+// Module that contains the network subcommand  parser
 
 use ash::conf::AshConfig;
 use clap::{Parser, Subcommand};
@@ -46,7 +46,7 @@ fn list(config: Option<&str>, json: bool) {
     }
 }
 
-// Parse node subcommand
+// Parse network subcommand
 pub fn parse(network: NetworkCommand, config: Option<&str>, json: bool) {
     match network.command {
         NetworkCommands::List {} => list(config, json),

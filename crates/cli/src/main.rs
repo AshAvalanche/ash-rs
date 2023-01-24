@@ -3,6 +3,7 @@
 
 // Module that contains the Ash CLI root parser
 
+mod conf;
 mod network;
 mod node;
 mod subnet;
@@ -26,6 +27,7 @@ enum CliCommands {
     Network(network::NetworkCommand),
     Node(node::NodeCommand),
     Subnet(subnet::SubnetCommand),
+    Conf(conf::ConfCommand),
 }
 
 fn main() {
@@ -35,5 +37,6 @@ fn main() {
         CliCommands::Node(node) => node::parse(node, cli.json),
         CliCommands::Subnet(subnet) => subnet::parse(subnet, cli.config.as_deref(), cli.json),
         CliCommands::Network(network) => network::parse(network, cli.config.as_deref(), cli.json),
+        CliCommands::Conf(conf) => conf::parse(conf),
     }
 }
