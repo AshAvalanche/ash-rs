@@ -3,17 +3,17 @@
 
 // Module that contains code to interact with Avalanche subnets
 
-use crate::avalanche::avalanche_id_from_string;
-use crate::avalanche::blockchains::AvalancheBlockchain;
+use crate::avalanche::{avalanche_id_from_string, blockchains::AvalancheBlockchain};
 use avalanche_types::ids::Id;
 use serde::{Deserialize, Serialize};
 
 /// Avalanche Subnet
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
 pub struct AvalancheSubnet {
     #[serde(deserialize_with = "avalanche_id_from_string")]
     pub id: Id,
-    /// Map of <Blockchain ID, AvalancheBlockchain>
+    /// List of the subnet's blockchains
     pub blockchains: Vec<AvalancheBlockchain>,
 }
 

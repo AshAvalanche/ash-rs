@@ -1,27 +1,22 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (C) 2023, E36 Knots
+
 pub mod blockchains;
 pub mod subnets;
 
 // Module that contains code to interact with Avalanche networks
 
+use crate::{avalanche::subnets::AvalancheSubnet, conf::AshConfig};
 use avalanche_types::ids::Id;
-use config::{Config, ConfigError, Environment, File};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use subnets::AvalancheSubnet;
-
-/// Global Avalanche configuration
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AvalancheConfig {
-    networks: Vec<AvalancheNetwork>,
-}
 
 /// Avalanche network
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
 pub struct AvalancheNetwork {
     pub name: String,
-    /// Map of <Subnet ID, AvalancheSubnet>
+    /// List of the network's Subnets
     pub subnets: Vec<AvalancheSubnet>,
 }
 
@@ -34,28 +29,13 @@ where
     Id::from_str(&s).map_err(serde::de::Error::custom)
 }
 
-/// Load the Avalanche global configuration from the config files
-/// The default config file is located at `conf/avalanche.yml`
-/// A custom config can be provided with the config parameter
-fn load_config(config: Option<&str>) -> Result<AvalancheConfig, ConfigError> {
-    let ash_conf = Config::builder()
-        .add_source(File::with_name("conf/avalanche_networks.yml"))
-        .add_source(Environment::with_prefix("ASH"));
-
-    match config {
-        Some(config) => ash_conf.add_source(File::with_name(config)),
-        None => ash_conf,
-    }
-    .build()?
-    .try_deserialize()
-}
-
 impl AvalancheNetwork {
-    /// Load an AvalancheNetwork from the global configuration
+    /// Load an AvalancheNetwork from the configuration
     pub fn load(network: &str) -> Result<AvalancheNetwork, String> {
-        let config = load_config(None).map_err(|e| e.to_string())?;
-        let avax_network = config
-            .networks
+        // let config = load_config(None).map_err(|e| e.to_string())?;
+        let ash_config = AshConfig::load(None).map_err(|e| e.to_string())?;
+        let avax_network = ash_config
+            .avalanche_networks
             .iter()
             .find(|&avax_network| avax_network.name == network)
             .ok_or(format!("Avalanche network '{}' not found", network))?;
@@ -82,7 +62,7 @@ impl Clone for AvalancheNetwork {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
     use blockchains::AvalancheBlockchain;
 
@@ -127,34 +107,5 @@ mod test {
         assert_eq!(mainnet_subnet.blockchains.len(), 1);
 
         assert!(mainnet.get_subnet("invalid").is_none());
-    }
-
-    #[test]
-    fn test_load_networks() {
-        // Only test the mainnet network as the fuji network is the same structurally
-        let networks = load_config(None).unwrap().networks;
-        assert_eq!(networks.len(), 2);
-
-        let mainnet = networks
-            .iter()
-            .find(|&network| network.name == "mainnet")
-            .unwrap();
-        assert_eq!(mainnet.name, "mainnet");
-        assert_eq!(mainnet.subnets.len(), 1);
-
-        let AvalancheSubnet { id, blockchains } = &mainnet.subnets[0];
-        assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
-        assert_eq!(blockchains.len(), 1);
-
-        let AvalancheBlockchain {
-            name,
-            id,
-            vm_type,
-            rpc_url,
-        } = &blockchains[0];
-        assert_eq!(name, "C-Chain");
-        assert_eq!(id.to_string(), AVAX_MAINNET_CCHAIN_ID);
-        assert_eq!(vm_type, "EVM");
-        assert_eq!(rpc_url, AVAX_MAINNET_CCHAIN_RPC);
     }
 }

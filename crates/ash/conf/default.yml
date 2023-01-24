@@ -2,7 +2,7 @@
 # Copyright (C) 2023, E36 Knots
 
 ---
-networks:
+avalanche_networks:
   - name: mainnet
     subnets:
       - id: 11111111111111111111111111111111LpoYY
