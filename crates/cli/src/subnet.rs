@@ -38,8 +38,8 @@ enum SubnetCommands {
 }
 
 // List the network's subnets
-fn list(network: &str, limit: u32, json: bool) {
-    match AvalancheNetwork::load(network) {
+fn list(network: &str, limit: u32, config: Option<&str>, json: bool) {
+    match AvalancheNetwork::load(network, config) {
         Ok(network) => {
             if json {
                 // Serialize the first `limit` subnets to JSON
@@ -73,8 +73,8 @@ fn list(network: &str, limit: u32, json: bool) {
     }
 }
 
-fn info(network: &str, id: &str, json: bool) {
-    match AvalancheNetwork::load(network) {
+fn info(network: &str, id: &str, config: Option<&str>, json: bool) {
+    match AvalancheNetwork::load(network, config) {
         Ok(network) => match network.get_subnet(id) {
             Some(subnet) => {
                 if json {
@@ -112,9 +112,9 @@ fn print_info(subnet: &AvalancheSubnet, separator: bool) {
 }
 
 // Parse subnet subcommand
-pub fn parse(subnet: SubnetCommand, json: bool) {
+pub fn parse(subnet: SubnetCommand, config: Option<&str>, json: bool) {
     match subnet.command {
-        SubnetCommands::List { limit } => list(&subnet.network, limit, json),
-        SubnetCommands::Info { id } => info(&subnet.network, &id, json),
+        SubnetCommands::List { limit } => list(&subnet.network, limit, config, json),
+        SubnetCommands::Info { id } => info(&subnet.network, &id, config, json),
     }
 }

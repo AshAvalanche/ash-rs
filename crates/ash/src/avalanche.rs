@@ -31,9 +31,8 @@ where
 
 impl AvalancheNetwork {
     /// Load an AvalancheNetwork from the configuration
-    pub fn load(network: &str) -> Result<AvalancheNetwork, String> {
-        // let config = load_config(None).map_err(|e| e.to_string())?;
-        let ash_config = AshConfig::load(None).map_err(|e| e.to_string())?;
+    pub fn load(network: &str, config: Option<&str>) -> Result<AvalancheNetwork, String> {
+        let ash_config = AshConfig::load(config).map_err(|e| e.to_string())?;
         let avax_network = ash_config
             .avalanche_networks
             .iter()
@@ -73,7 +72,7 @@ mod tests {
     #[test]
     fn test_avalanche_network_load() {
         // Only test the mainnet network as the fuji network is the same structurally
-        let mainnet = AvalancheNetwork::load("mainnet").unwrap();
+        let mainnet = AvalancheNetwork::load("mainnet", None).unwrap();
         assert_eq!(mainnet.name, "mainnet");
         assert_eq!(mainnet.subnets.len(), 1);
 
@@ -94,12 +93,12 @@ mod tests {
         assert_eq!(id.to_string(), AVAX_MAINNET_CCHAIN_ID);
         assert_eq!(rpc_url, AVAX_MAINNET_CCHAIN_RPC);
 
-        assert!(AvalancheNetwork::load("invalid").is_err());
+        assert!(AvalancheNetwork::load("invalid", None).is_err());
     }
 
     #[test]
     fn test_avalanche_network_get_subnet() {
-        let mainnet = AvalancheNetwork::load("mainnet").unwrap();
+        let mainnet = AvalancheNetwork::load("mainnet", None).unwrap();
 
         // Should never fail as AVAX_PRIMARY_NETWORK_ID should always be a valid key
         let mainnet_subnet = mainnet.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
