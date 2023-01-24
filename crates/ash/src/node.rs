@@ -90,7 +90,7 @@ impl AshNode {
 
 /// Ash node info
 #[derive(Debug, Serialize)]
-#[serde(rename_all(serialize = "camelCase"))]
+#[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
 pub struct AshNodeInfo {
     /// The node's ID
     pub id: AshNodeId,
@@ -98,7 +98,7 @@ pub struct AshNodeInfo {
 
 /// Ash node ID
 #[derive(Debug, Serialize)]
-#[serde(rename_all(serialize = "camelCase"))]
+#[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
 pub struct AshNodeId {
     /// The node's ID as a P-Chain string
     pub p_chain: String,

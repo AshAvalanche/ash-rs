@@ -19,3 +19,7 @@ ethers = { version = "1.0.2", features = ["rustls"] }
 hex = "0.4.3"
 regex = "1.7.1"
 serde = "1.0.152"
+serde_yaml = "0.9.17"
+
+[dev-dependencies]
+tempfile = "3.3.0"

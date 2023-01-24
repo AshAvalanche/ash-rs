@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 /// Avalanche Subnet
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all(serialize = "camelCase"))]
+#[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
 pub struct AvalancheSubnet {
     #[serde(deserialize_with = "avalanche_id_from_string")]
     pub id: Id,

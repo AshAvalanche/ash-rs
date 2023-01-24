@@ -13,7 +13,7 @@ use std::str::FromStr;
 
 /// Avalanche network
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all(serialize = "camelCase"))]
+#[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
 pub struct AvalancheNetwork {
     pub name: String,
     /// List of the network's Subnets
