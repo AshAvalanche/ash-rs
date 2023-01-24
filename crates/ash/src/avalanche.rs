@@ -1,111 +1,82 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (C) 2023, E36 Knots
+pub mod blockchains;
+pub mod subnets;
 
 // Module that contains code to interact with Avalanche networks
 
 use avalanche_types::ids::Id;
-use ethers::providers::{Http, Provider};
-use serde::{
-    ser::{SerializeStruct, Serializer},
-    Serialize,
-};
-use std::{collections::HashMap, convert::TryFrom, str::FromStr};
+use config::{Config, ConfigError, Environment, File};
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
+use subnets::AvalancheSubnet;
 
-// Avalanche networks constants
-pub const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY";
-pub const AVAX_MAINNET_CCHAIN_ID: &str = "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5";
-pub const AVAX_MAINNET_CCHAIN_RPC: &str = "https://api.avax.network/ext/bc/C/rpc";
-pub const AVAX_FUJI_CCHAIN_ID: &str = "yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp";
-pub const AVAX_FUJI_CCHAIN_RPC: &str = "https://api.avax-test.network/ext/bc/C/rpc";
+/// Global Avalanche configuration
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AvalancheConfig {
+    networks: Vec<AvalancheNetwork>,
+}
 
-// Avalanche network
-#[derive(Debug, Serialize)]
+/// Avalanche network
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AvalancheNetwork {
     pub name: String,
-    // Map of <subnet ID, AvalancheSubnet>
-    pub subnets: HashMap<String, AvalancheSubnet>,
+    /// Map of <Subnet ID, AvalancheSubnet>
+    pub subnets: Vec<AvalancheSubnet>,
 }
 
-// Avalanche Subnet
-#[derive(Debug, Serialize)]
-pub struct AvalancheSubnet {
-    pub id: Id,
-    // Map of <blockchain ID, AvalancheBlockchain>
-    pub blockchains: HashMap<String, AvalancheBlockchain>,
+/// Deserialize an Avalanche ID from a string
+fn avalanche_id_from_string<'de, D>(deserializer: D) -> Result<Id, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Id::from_str(&s).map_err(serde::de::Error::custom)
 }
 
-// Different Avalanche blockchains types
-#[derive(Debug)]
-pub enum AvalancheBlockchain {
-    Evm {
-        name: String,
-        id: Id,
-        provider: Provider<Http>,
-    },
-}
+/// Load the Avalanche global configuration from the config files
+/// The default config file is located at `conf/avalanche.yml`
+/// A custom config can be provided with the config parameter
+fn load_config(config: Option<&str>) -> Result<AvalancheConfig, ConfigError> {
+    let ash_conf = Config::builder()
+        .add_source(File::with_name("conf/avalanche_networks.yml"))
+        .add_source(Environment::with_prefix("ASH"));
 
-// Implement the Serialize trait for AvalancheBlockchain because Provider is not serializable
-impl Serialize for AvalancheBlockchain {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            AvalancheBlockchain::Evm { name, id, provider } => {
-                let mut state = serializer.serialize_struct("AvalancheBlockchain", 5)?;
-                state.serialize_field("name", name)?;
-                state.serialize_field("id", &id.to_string())?;
-                state.serialize_field("type", "EVM")?;
-                state.serialize_field("provider", "HTTP")?;
-                state.serialize_field("url", &provider.url().to_string())?;
-                state.end()
-            }
-        }
+    match config {
+        Some(config) => ash_conf.add_source(File::with_name(config)),
+        None => ash_conf,
     }
+    .build()?
+    .try_deserialize()
 }
 
 impl AvalancheNetwork {
-    // Create a new AvalancheNetwork
-    pub fn new(network: &str) -> Result<AvalancheNetwork, String> {
-        match network {
-            "mainnet" | "fuji" => {
-                // Never fails as AVAX_*_ID are valid Avalanche IDs
-                let primary_network_id = Id::from_str(AVAX_PRIMARY_NETWORK_ID).unwrap();
+    /// Load an AvalancheNetwork from the global configuration
+    pub fn load(network: &str) -> Result<AvalancheNetwork, String> {
+        let config = load_config(None).map_err(|e| e.to_string())?;
+        let avax_network = config
+            .networks
+            .iter()
+            .find(|&avax_network| avax_network.name == network)
+            .ok_or(format!("Avalanche network '{}' not found", network))?;
 
-                Ok(AvalancheNetwork {
-                    name: network.to_string(),
-                    subnets: HashMap::from([(
-                        primary_network_id.to_string(),
-                        AvalancheSubnet {
-                            id: primary_network_id,
-                            blockchains: HashMap::from([(
-                                match network {
-                                    "mainnet" => AVAX_MAINNET_CCHAIN_ID.to_string(),
-                                    "fuji" => AVAX_FUJI_CCHAIN_ID.to_string(),
-                                    _ => unreachable!(),
-                                },
-                                AvalancheBlockchain::Evm {
-                                    // TODO: Get the name from the RPC
-                                    name: "C-Chain".to_string(),
-                                    id: match network {
-                                        "mainnet" => Id::from_str(AVAX_MAINNET_CCHAIN_ID).unwrap(),
-                                        "fuji" => Id::from_str(AVAX_FUJI_CCHAIN_ID).unwrap(),
-                                        _ => unreachable!(),
-                                    },
-                                    // Never fails as AVAX_MAINNET_CCHAIN_RPC is a valid RPC URL
-                                    provider: Provider::<Http>::try_from(match network {
-                                        "mainnet" => AVAX_MAINNET_CCHAIN_RPC.to_string(),
-                                        "fuji" => AVAX_FUJI_CCHAIN_RPC.to_string(),
-                                        _ => unreachable!(),
-                                    })
-                                    .unwrap(),
-                                },
-                            )]),
-                        },
-                    )]),
-                })
-            }
-            _ => Err(format!("'{}' is not a valid Avalanche network", network)),
+        Ok(avax_network.clone())
+    }
+
+    /// Get a Subnet from the network by its ID
+    pub fn get_subnet(&self, id: &str) -> Option<&AvalancheSubnet> {
+        self.subnets
+            .iter()
+            .find(|&subnet| subnet.id.to_string() == id)
+    }
+}
+
+/// Implement the Clone trait for AvalancheNetwork
+impl Clone for AvalancheNetwork {
+    fn clone(&self) -> AvalancheNetwork {
+        AvalancheNetwork {
+            name: self.name.clone(),
+            subnets: self.subnets.clone(),
         }
     }
 }
@@ -113,30 +84,77 @@ impl AvalancheNetwork {
 #[cfg(test)]
 mod test {
     use super::*;
+    use blockchains::AvalancheBlockchain;
+
+    const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY";
+    const AVAX_MAINNET_CCHAIN_ID: &str = "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5";
+    const AVAX_MAINNET_CCHAIN_RPC: &str = "https://api.avax.network/ext/bc/C/rpc";
 
     #[test]
-    fn test_avalanche_network_new() {
+    fn test_avalanche_network_load() {
         // Only test the mainnet network as the fuji network is the same structurally
-        let mainnet = AvalancheNetwork::new("mainnet").unwrap();
+        let mainnet = AvalancheNetwork::load("mainnet").unwrap();
         assert_eq!(mainnet.name, "mainnet");
         assert_eq!(mainnet.subnets.len(), 1);
 
         // Should never fail as AVAX_PRIMARY_NETWORK_ID should always be a valid key
-        let AvalancheSubnet { id, blockchains } =
-            mainnet.subnets.get(AVAX_PRIMARY_NETWORK_ID).unwrap();
+        let AvalancheSubnet { id, blockchains } = &mainnet.subnets[0];
         assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
         assert_eq!(blockchains.len(), 1);
 
         // Should never fail as AVAX_MAINNET_CCHAIN_ID should always be a valid key
-        let AvalancheBlockchain::Evm { name, id, provider } =
-            &blockchains.get(AVAX_MAINNET_CCHAIN_ID).unwrap();
+        let AvalancheBlockchain {
+            name,
+            id,
+            vm_type,
+            rpc_url,
+        } = &blockchains[0];
+        assert_eq!(name, "C-Chain");
+        assert_eq!(vm_type, "EVM");
+        assert_eq!(id.to_string(), AVAX_MAINNET_CCHAIN_ID);
+        assert_eq!(rpc_url, AVAX_MAINNET_CCHAIN_RPC);
+
+        assert!(AvalancheNetwork::load("invalid").is_err());
+    }
+
+    #[test]
+    fn test_avalanche_network_get_subnet() {
+        let mainnet = AvalancheNetwork::load("mainnet").unwrap();
+
+        // Should never fail as AVAX_PRIMARY_NETWORK_ID should always be a valid key
+        let mainnet_subnet = mainnet.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+        assert_eq!(mainnet_subnet.id.to_string(), AVAX_PRIMARY_NETWORK_ID);
+        assert_eq!(mainnet_subnet.blockchains.len(), 1);
+
+        assert!(mainnet.get_subnet("invalid").is_none());
+    }
+
+    #[test]
+    fn test_load_networks() {
+        // Only test the mainnet network as the fuji network is the same structurally
+        let networks = load_config(None).unwrap().networks;
+        assert_eq!(networks.len(), 2);
+
+        let mainnet = networks
+            .iter()
+            .find(|&network| network.name == "mainnet")
+            .unwrap();
+        assert_eq!(mainnet.name, "mainnet");
+        assert_eq!(mainnet.subnets.len(), 1);
+
+        let AvalancheSubnet { id, blockchains } = &mainnet.subnets[0];
+        assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
+        assert_eq!(blockchains.len(), 1);
+
+        let AvalancheBlockchain {
+            name,
+            id,
+            vm_type,
+            rpc_url,
+        } = &blockchains[0];
         assert_eq!(name, "C-Chain");
         assert_eq!(id.to_string(), AVAX_MAINNET_CCHAIN_ID);
-        assert_eq!(
-            provider.url().to_string(),
-            "https://api.avax.network/ext/bc/C/rpc"
-        );
-
-        assert!(AvalancheNetwork::new("invalid").is_err());
+        assert_eq!(vm_type, "EVM");
+        assert_eq!(rpc_url, AVAX_MAINNET_CCHAIN_RPC);
     }
 }

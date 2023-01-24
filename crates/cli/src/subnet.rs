@@ -3,7 +3,7 @@
 
 // Module that contains subnet subcommand parser
 
-use ash::avalanche::{AvalancheBlockchain, AvalancheNetwork, AvalancheSubnet};
+use ash::avalanche::{subnets::AvalancheSubnet, AvalancheNetwork};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -39,7 +39,7 @@ enum SubnetCommands {
 
 // List the network's subnets
 fn list(network: &str, limit: u32, json: bool) {
-    match AvalancheNetwork::new(network) {
+    match AvalancheNetwork::load(network) {
         Ok(network) => {
             if json {
                 // Serialize the first `limit` subnets to JSON
@@ -48,8 +48,7 @@ fn list(network: &str, limit: u32, json: bool) {
                     serde_json::to_string(
                         &network
                             .subnets
-                            .values()
-                            .into_iter()
+                            .iter()
                             .take(limit as usize)
                             .collect::<Vec<&AvalancheSubnet>>()
                     )
@@ -59,13 +58,14 @@ fn list(network: &str, limit: u32, json: bool) {
             }
 
             println!(
-                "Found {} subnets on '{}':",
+                "Found {} subnet{} on '{}':",
                 network.subnets.len(),
+                if network.subnets.len() == 1 { "" } else { "s" },
                 network.name
             );
 
             // Print the first `limit` subnets
-            for subnet in network.subnets.values().take(limit as usize) {
+            for subnet in network.subnets.iter().take(limit as usize) {
                 print_info(subnet, true);
             }
         }
@@ -74,8 +74,8 @@ fn list(network: &str, limit: u32, json: bool) {
 }
 
 fn info(network: &str, id: &str, json: bool) {
-    match AvalancheNetwork::new(network) {
-        Ok(network) => match network.subnets.get(id) {
+    match AvalancheNetwork::load(network) {
+        Ok(network) => match network.get_subnet(id) {
             Some(subnet) => {
                 if json {
                     println!("{}", serde_json::to_string(&subnet).unwrap());
@@ -103,12 +103,11 @@ fn print_info(subnet: &AvalancheSubnet, separator: bool) {
     println!("{}", subnet_id_line);
     println!("  Number of blockchains: {}", subnet.blockchains.len());
     println!("  Blockchains:");
-    for blockchain in subnet.blockchains.values() {
-        match blockchain {
-            AvalancheBlockchain::Evm { name, id, .. } => {
-                println!("  - {} (ID='{}')", name, id)
-            }
-        }
+    for blockchain in subnet.blockchains.iter() {
+        println!("  - {}:", blockchain.name);
+        println!("      ID:      {}", blockchain.id);
+        println!("      VM type: {}", blockchain.vm_type);
+        println!("      RPC URL: {}", blockchain.rpc_url);
     }
 }
 
