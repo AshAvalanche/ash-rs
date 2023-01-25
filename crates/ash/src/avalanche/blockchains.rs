@@ -8,7 +8,7 @@ use avalanche_types::ids::Id;
 use serde::{Deserialize, Serialize};
 
 /// Avalanche blockchain
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
 pub struct AvalancheBlockchain {
     #[serde(deserialize_with = "avalanche_id_from_string")]
@@ -16,15 +16,4 @@ pub struct AvalancheBlockchain {
     pub name: String,
     pub vm_type: String,
     pub rpc_url: String,
-}
-
-impl Clone for AvalancheBlockchain {
-    fn clone(&self) -> AvalancheBlockchain {
-        AvalancheBlockchain {
-            id: self.id.clone(),
-            name: self.name.clone(),
-            vm_type: self.vm_type.clone(),
-            rpc_url: self.rpc_url.clone(),
-        }
-    }
 }

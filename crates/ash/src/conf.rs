@@ -44,16 +44,7 @@ impl AshConfig {
                 "Configuration file '{}' already exists",
                 config_file
             )),
-            (true, true) => {
-                fs::write(config_file, serde_yaml::to_string(&ash_conf).unwrap()).or_else(|e| {
-                    Err(format!(
-                        "Failed to write default configuration to {}: {}",
-                        config_file, e
-                    ))
-                })?;
-                Ok(())
-            }
-            (false, _) => {
+            _ => {
                 fs::write(config_file, serde_yaml::to_string(&ash_conf).unwrap()).or_else(|e| {
                     Err(format!(
                         "Failed to write default configuration to {}: {}",

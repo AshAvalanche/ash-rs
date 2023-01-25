@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 /// Avalanche network
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
 pub struct AvalancheNetwork {
     pub name: String,
@@ -50,16 +50,6 @@ impl AvalancheNetwork {
     }
 }
 
-/// Implement the Clone trait for AvalancheNetwork
-impl Clone for AvalancheNetwork {
-    fn clone(&self) -> AvalancheNetwork {
-        AvalancheNetwork {
-            name: self.name.clone(),
-            subnets: self.subnets.clone(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -76,12 +66,10 @@ mod tests {
         assert_eq!(mainnet.name, "mainnet");
         assert_eq!(mainnet.subnets.len(), 1);
 
-        // Should never fail as AVAX_PRIMARY_NETWORK_ID should always be a valid key
         let AvalancheSubnet { id, blockchains } = &mainnet.subnets[0];
         assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
         assert_eq!(blockchains.len(), 1);
 
-        // Should never fail as AVAX_MAINNET_CCHAIN_ID should always be a valid key
         let AvalancheBlockchain {
             name,
             id,

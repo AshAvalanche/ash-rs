@@ -8,7 +8,7 @@ use avalanche_types::ids::Id;
 use serde::{Deserialize, Serialize};
 
 /// Avalanche Subnet
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
 pub struct AvalancheSubnet {
     #[serde(deserialize_with = "avalanche_id_from_string")]
@@ -23,14 +23,5 @@ impl AvalancheSubnet {
         self.blockchains
             .iter()
             .find(|&blockchain| blockchain.id.to_string() == id)
-    }
-}
-
-impl Clone for AvalancheSubnet {
-    fn clone(&self) -> AvalancheSubnet {
-        AvalancheSubnet {
-            id: self.id.clone(),
-            blockchains: self.blockchains.clone(),
-        }
     }
 }
