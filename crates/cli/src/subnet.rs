@@ -5,6 +5,7 @@
 
 use ash::avalanche::{subnets::AvalancheSubnet, AvalancheNetwork};
 use clap::{Parser, Subcommand};
+use std::process::exit;
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche Subnets", long_about = None)]
@@ -69,7 +70,10 @@ fn list(network: &str, limit: u32, config: Option<&str>, json: bool) {
                 print_info(subnet, true);
             }
         }
-        Err(e) => println!("Error listing subnets: {}", e),
+        Err(e) => {
+            eprintln!("Error listing subnets: {}", e);
+            exit(exitcode::DATAERR);
+        }
     }
 }
 
@@ -84,9 +88,12 @@ fn info(network: &str, id: &str, config: Option<&str>, json: bool) {
 
                 print_info(subnet, false);
             }
-            None => println!("Subnet '{}' not found", id),
+            None => eprintln!("Subnet '{}' not found", id),
         },
-        Err(e) => println!("Error loading info: {}", e),
+        Err(e) => {
+            eprintln!("Error loading info: {}", e);
+            exit(exitcode::DATAERR);
+        }
     }
 }
 

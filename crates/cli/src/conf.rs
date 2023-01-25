@@ -5,6 +5,7 @@
 
 use ash::conf::AshConfig;
 use clap::{Parser, Subcommand};
+use std::process::exit;
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche networks", long_about = None)]
@@ -28,7 +29,10 @@ enum ConfCommands {
 fn init(config: String, force: bool) {
     match AshConfig::dump_default(&config, force) {
         Ok(_) => println!("Config file initialized at '{}'", config),
-        Err(err) => eprintln!("Error initializing config file: {}", err),
+        Err(err) => {
+            eprintln!("Error initializing config file: {}", err);
+            exit(exitcode::CANTCREAT)
+        }
     }
 }
 

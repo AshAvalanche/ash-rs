@@ -5,6 +5,7 @@
 
 use ash::node::AshNode;
 use clap::{Parser, Subcommand};
+use std::process::exit;
 
 #[derive(Parser)]
 #[command(about = "Interact with Ash nodes", long_about = None)]
@@ -37,7 +38,10 @@ fn info(id: &str, json: bool) {
             println!("  Node ID (CB58): {}", node_info.id.cb58);
             println!("  Node ID (hex): {}", node_info.id.hex);
         }
-        Err(e) => println!("Error loading info: {}", e),
+        Err(e) => {
+            eprintln!("Error loading info: {}", e);
+            exit(exitcode::DATAERR);
+        }
     }
 }
 

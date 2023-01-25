@@ -5,6 +5,7 @@
 
 use ash::conf::AshConfig;
 use clap::{Parser, Subcommand};
+use std::process::exit;
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche networks", long_about = None)]
@@ -16,7 +17,7 @@ pub struct NetworkCommand {
 #[derive(Subcommand)]
 enum NetworkCommands {
     #[command(about = "List Avalanche networks", long_about = None)]
-    List {},
+    List,
 }
 
 // List available Avalanche networks
@@ -25,7 +26,7 @@ fn list(config: Option<&str>, json: bool) {
         Ok(ash_config) => ash_config.avalanche_networks,
         Err(err) => {
             eprintln!("Error listing networks: {}", err);
-            return;
+            exit(exitcode::CONFIG);
         }
     };
 
@@ -49,6 +50,6 @@ fn list(config: Option<&str>, json: bool) {
 // Parse network subcommand
 pub fn parse(network: NetworkCommand, config: Option<&str>, json: bool) {
     match network.command {
-        NetworkCommands::List {} => list(config, json),
+        NetworkCommands::List => list(config, json),
     }
 }
