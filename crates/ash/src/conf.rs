@@ -45,11 +45,11 @@ impl AshConfig {
                 config_file
             )),
             _ => {
-                fs::write(config_file, serde_yaml::to_string(&ash_conf).unwrap()).or_else(|e| {
-                    Err(format!(
+                fs::write(config_file, serde_yaml::to_string(&ash_conf).unwrap()).map_err(|e| {
+                    format!(
                         "Failed to write default configuration to {}: {}",
                         config_file, e
-                    ))
+                    )
                 })?;
                 Ok(())
             }
