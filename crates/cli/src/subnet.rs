@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (C) 2023, E36 Knots
 
-// Module that contains subnet subcommand parser
+// Module that contains the subnet subcommand parser
 
-use ash::avalanche::{AvalancheBlockchain, AvalancheNetwork, AvalancheSubnet};
+use ash::avalanche::{subnets::AvalancheSubnet, AvalancheNetwork};
 use clap::{Parser, Subcommand};
+use std::process::exit;
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche Subnets", long_about = None)]
@@ -38,8 +39,8 @@ enum SubnetCommands {
 }
 
 // List the network's subnets
-fn list(network: &str, limit: u32, json: bool) {
-    match AvalancheNetwork::new(network) {
+fn list(network: &str, limit: u32, config: Option<&str>, json: bool) {
+    match AvalancheNetwork::load(network, config) {
         Ok(network) => {
             if json {
                 // Serialize the first `limit` subnets to JSON
@@ -48,8 +49,7 @@ fn list(network: &str, limit: u32, json: bool) {
                     serde_json::to_string(
                         &network
                             .subnets
-                            .values()
-                            .into_iter()
+                            .iter()
                             .take(limit as usize)
                             .collect::<Vec<&AvalancheSubnet>>()
                     )
@@ -59,23 +59,27 @@ fn list(network: &str, limit: u32, json: bool) {
             }
 
             println!(
-                "Found {} subnets on '{}':",
+                "Found {} subnet{} on '{}':",
                 network.subnets.len(),
+                if network.subnets.len() == 1 { "" } else { "s" },
                 network.name
             );
 
             // Print the first `limit` subnets
-            for subnet in network.subnets.values().take(limit as usize) {
+            for subnet in network.subnets.iter().take(limit as usize) {
                 print_info(subnet, true);
             }
         }
-        Err(e) => println!("Error listing subnets: {}", e),
+        Err(e) => {
+            eprintln!("Error listing subnets: {}", e);
+            exit(exitcode::DATAERR);
+        }
     }
 }
 
-fn info(network: &str, id: &str, json: bool) {
-    match AvalancheNetwork::new(network) {
-        Ok(network) => match network.subnets.get(id) {
+fn info(network: &str, id: &str, config: Option<&str>, json: bool) {
+    match AvalancheNetwork::load(network, config) {
+        Ok(network) => match network.get_subnet(id) {
             Some(subnet) => {
                 if json {
                     println!("{}", serde_json::to_string(&subnet).unwrap());
@@ -84,9 +88,12 @@ fn info(network: &str, id: &str, json: bool) {
 
                 print_info(subnet, false);
             }
-            None => println!("Subnet '{}' not found", id),
+            None => eprintln!("Subnet '{}' not found", id),
         },
-        Err(e) => println!("Error loading info: {}", e),
+        Err(e) => {
+            eprintln!("Error loading info: {}", e);
+            exit(exitcode::DATAERR);
+        }
     }
 }
 
@@ -103,19 +110,18 @@ fn print_info(subnet: &AvalancheSubnet, separator: bool) {
     println!("{}", subnet_id_line);
     println!("  Number of blockchains: {}", subnet.blockchains.len());
     println!("  Blockchains:");
-    for blockchain in subnet.blockchains.values() {
-        match blockchain {
-            AvalancheBlockchain::Evm { name, id, .. } => {
-                println!("  - {} (ID='{}')", name, id)
-            }
-        }
+    for blockchain in subnet.blockchains.iter() {
+        println!("  - {}:", blockchain.name);
+        println!("      ID:      {}", blockchain.id);
+        println!("      VM type: {}", blockchain.vm_type);
+        println!("      RPC URL: {}", blockchain.rpc_url);
     }
 }
 
 // Parse subnet subcommand
-pub fn parse(subnet: SubnetCommand, json: bool) {
+pub fn parse(subnet: SubnetCommand, config: Option<&str>, json: bool) {
     match subnet.command {
-        SubnetCommands::List { limit } => list(&subnet.network, limit, json),
-        SubnetCommands::Info { id } => info(&subnet.network, &id, json),
+        SubnetCommands::List { limit } => list(&subnet.network, limit, config, json),
+        SubnetCommands::Info { id } => info(&subnet.network, &id, config, json),
     }
 }

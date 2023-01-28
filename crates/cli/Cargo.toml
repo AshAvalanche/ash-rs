@@ -15,6 +15,7 @@ keywords = ["blockchain", "avalanche", "sdk", "rust", "ash"]
 [dependencies]
 ash = { path = "../ash" }
 clap = { version = "4.0.32", features = ["derive"] }
+exitcode = "1.1.2"
 serde_json = "1.0.91"
 
 [[bin]]

@@ -8,29 +8,29 @@ use regex::Regex;
 use serde::Serialize;
 use std::{io::Error, str::FromStr};
 
-// Node of the Ash protocol
+/// Node of the Ash protocol
 #[derive(Debug)]
 pub struct AshNode {
-    // The node's ID
+    /// The node's ID
     pub id: Id,
 }
 
 impl AshNode {
-    // Create a new Ash node from an Avalanche node ID string
+    /// Create a new Ash node from an Avalanche node ID string
     pub fn from_cb58_id(nodeid: &str) -> Result<Self, Error> {
         let id = Id::from_str(nodeid)?;
 
         Ok(AshNode { id })
     }
 
-    // Create a new Ash node from an Avalanche node ID byte slice
+    /// Create a new Ash node from an Avalanche node ID byte slice
     pub fn from_bytes_id(nodeid: &[u8]) -> Result<Self, Error> {
         let id = Id::from_slice(nodeid);
 
         Ok(AshNode { id })
     }
 
-    // Create a new Ash node from an Avalanche node ID hex string
+    /// Create a new Ash node from an Avalanche node ID hex string
     pub fn from_hex_id(nodeid: &str) -> Result<Self, Error> {
         // Convert the hex string to a byte slice
         let nodeid = hex::decode(nodeid);
@@ -44,8 +44,8 @@ impl AshNode {
         }
     }
 
-    // Create a new Ash node from a string
-    // Try to find out the node ID format using a regex
+    /// Create a new Ash node from a string
+    /// Try to find out the node ID format using a regex
     pub fn from_string(nodeid: &str) -> Result<Self, Error> {
         // Check if the node ID is a valid CB58 string
         let re = Regex::new(r"^(NodeID-)?[A-Za-z0-9]{32,33}$").unwrap();
@@ -67,7 +67,7 @@ impl AshNode {
         ))
     }
 
-    // Get the node's ID as an AshNodeId struct
+    /// Get the node's ID as an AshNodeId struct
     pub fn id(&self) -> AshNodeId {
         AshNodeId {
             p_chain: self.id.to_string(),
@@ -82,34 +82,36 @@ impl AshNode {
         }
     }
 
-    // Get the node's info as an AshNodeInfo struct
+    /// Get the node's info as an AshNodeInfo struct
     pub fn info(&self) -> AshNodeInfo {
         AshNodeInfo { id: self.id() }
     }
 }
 
-// Ash node info
+/// Ash node info
 #[derive(Debug, Serialize)]
+#[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
 pub struct AshNodeInfo {
-    // The node's ID
+    /// The node's ID
     pub id: AshNodeId,
 }
 
-// Ash node ID
+/// Ash node ID
 #[derive(Debug, Serialize)]
+#[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
 pub struct AshNodeId {
-    // The node's ID as a P-Chain string
+    /// The node's ID as a P-Chain string
     pub p_chain: String,
-    // The node's ID as a CB58 string
+    /// The node's ID as a CB58 string
     pub cb58: String,
-    // The node's ID as a hex string
+    /// The node's ID as a hex string
     pub hex: String,
-    // The node's ID as a byte slice
+    /// The node's ID as a byte slice
     pub bytes: Vec<u8>,
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     const CB58_ID: &str = "FhFWdWodxktJYq884nrJjWD8faLTk9jmp";
