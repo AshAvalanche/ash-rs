@@ -2,6 +2,7 @@
 // Copyright (C) 2023, E36 Knots
 
 pub mod blockchains;
+pub mod jsonrpc;
 pub mod subnets;
 
 // Module that contains code to interact with Avalanche networks
@@ -13,7 +14,7 @@ use std::str::FromStr;
 
 /// Avalanche network
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
+#[serde(rename_all = "camelCase")]
 pub struct AvalancheNetwork {
     pub name: String,
     /// List of the network's Subnets
@@ -66,8 +67,15 @@ mod tests {
         assert_eq!(mainnet.name, "mainnet");
         assert_eq!(mainnet.subnets.len(), 1);
 
-        let AvalancheSubnet { id, blockchains } = &mainnet.subnets[0];
+        let AvalancheSubnet {
+            id,
+            control_keys,
+            threshold,
+            blockchains,
+        } = &mainnet.subnets[0];
         assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
+        assert_eq!(control_keys.len(), 0);
+        assert_eq!(threshold, &0);
         assert_eq!(blockchains.len(), 1);
 
         let AvalancheBlockchain {

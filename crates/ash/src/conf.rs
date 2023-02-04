@@ -12,7 +12,7 @@ const DEFAULT_CONF: &str = include_str!("../conf/default.yml");
 
 /// Ash lib configuration
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
+#[serde(rename_all = "camelCase")]
 pub struct AshConfig {
     /// List of known Avalanche networks
     pub avalanche_networks: Vec<AvalancheNetwork>,
@@ -82,8 +82,15 @@ mod tests {
         assert_eq!(mainnet.name, "mainnet");
         assert_eq!(mainnet.subnets.len(), 1);
 
-        let AvalancheSubnet { id, blockchains } = &mainnet.subnets[0];
+        let AvalancheSubnet {
+            id,
+            control_keys,
+            threshold,
+            blockchains,
+        } = &mainnet.subnets[0];
         assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
+        assert_eq!(control_keys.len(), 0);
+        assert_eq!(threshold, &0);
         assert_eq!(blockchains.len(), 1);
 
         let AvalancheBlockchain {
@@ -115,11 +122,18 @@ mod tests {
         assert_eq!(custom.name, "custom");
         assert_eq!(custom.subnets.len(), 1);
 
-        let AvalancheSubnet { id, blockchains } = &custom.subnets[0];
+        let AvalancheSubnet {
+            id,
+            control_keys,
+            threshold,
+            blockchains,
+        } = &custom.subnets[0];
         assert_eq!(
             id.to_string(),
             "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5"
         );
+        assert_eq!(control_keys.len(), 0);
+        assert_eq!(threshold, &0);
         assert_eq!(blockchains.len(), 1);
 
         let AvalancheBlockchain {

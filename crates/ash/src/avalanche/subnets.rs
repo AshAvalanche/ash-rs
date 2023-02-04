@@ -9,10 +9,12 @@ use serde::{Deserialize, Serialize};
 
 /// Avalanche Subnet
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
+#[serde(rename_all = "camelCase")]
 pub struct AvalancheSubnet {
     #[serde(deserialize_with = "avalanche_id_from_string")]
     pub id: Id,
+    pub control_keys: Vec<String>,
+    pub threshold: u8,
     /// List of the subnet's blockchains
     pub blockchains: Vec<AvalancheBlockchain>,
 }

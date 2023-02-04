@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 /// Avalanche blockchain
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
+#[serde(rename_all = "camelCase")]
 pub struct AvalancheBlockchain {
     #[serde(deserialize_with = "avalanche_id_from_string")]
     pub id: Id,
