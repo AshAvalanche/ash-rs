@@ -31,62 +31,16 @@ enum SubnetCommands {
     },
 }
 
-// List the network's subnets
-fn list(network_name: &str, config: Option<&str>, json: bool) {
+// Load the network configuation and recursively update the subnets (and their blockchains)
+fn load_network_and_update_subnets(network_name: &str, config: Option<&str>) -> AvalancheNetwork {
     match AvalancheNetwork::load(network_name, config) {
-        Ok(mut network) => {
-            match network.update_subnets() {
-                Ok(_) => {
-                    if json {
-                        // Serialize the first `limit` subnets to JSON
-                        println!(
-                            "{}",
-                            serde_json::to_string(
-                                &network.subnets.iter().collect::<Vec<&AvalancheSubnet>>()
-                            )
-                            .unwrap()
-                        );
-                        return;
-                    }
-
-                    println!(
-                        "Found {} subnet{} on '{}':",
-                        network.subnets.len(),
-                        if network.subnets.len() == 1 { "" } else { "s" },
-                        network.name
-                    );
-
-                    // Print the first `limit` subnets
-                    for subnet in network.subnets.iter() {
-                        print_info(subnet, true);
-                    }
-                }
+        Ok(mut network) => match network.update_subnets() {
+            Ok(_) => match network.update_blockchains() {
+                Ok(_) => network,
                 Err(e) => {
-                    eprintln!("Error updating subnets: {e}");
+                    eprintln!("Error updating blockchains: {e}");
                     exit(exitcode::DATAERR);
                 }
-            }
-        }
-        Err(e) => {
-            eprintln!("Error listing subnets: {e}");
-            exit(exitcode::DATAERR);
-        }
-    }
-}
-
-fn info(network: &str, id: &str, config: Option<&str>, json: bool) {
-    match AvalancheNetwork::load(network, config) {
-        Ok(mut network) => match network.update_subnets() {
-            Ok(_) => match network.get_subnet(id) {
-                Some(subnet) => {
-                    if json {
-                        println!("{}", serde_json::to_string(&subnet).unwrap());
-                        return;
-                    }
-
-                    print_info(subnet, false);
-                }
-                None => eprintln!("Subnet '{id}' not found"),
             },
             Err(e) => {
                 eprintln!("Error updating subnets: {e}");
@@ -94,9 +48,50 @@ fn info(network: &str, id: &str, config: Option<&str>, json: bool) {
             }
         },
         Err(e) => {
-            eprintln!("Error loading info: {e}");
+            eprintln!("Error loading network: {e}");
             exit(exitcode::DATAERR);
         }
+    }
+}
+
+// List the network's subnets
+fn list(network_name: &str, config: Option<&str>, json: bool) {
+    let network = load_network_and_update_subnets(network_name, config);
+    if json {
+        // Serialize the first `limit` subnets to JSON
+        println!(
+            "{}",
+            serde_json::to_string(&network.subnets.iter().collect::<Vec<&AvalancheSubnet>>())
+                .unwrap()
+        );
+        return;
+    }
+
+    println!(
+        "Found {} subnet{} on '{}':",
+        network.subnets.len(),
+        if network.subnets.len() == 1 { "" } else { "s" },
+        network.name
+    );
+
+    // Print the first `limit` subnets
+    for subnet in network.subnets.iter() {
+        print_info(subnet, true);
+    }
+}
+
+fn info(network: &str, id: &str, config: Option<&str>, json: bool) {
+    let network = load_network_and_update_subnets(network, config);
+    match network.get_subnet(id) {
+        Some(subnet) => {
+            if json {
+                println!("{}", serde_json::to_string(&subnet).unwrap());
+                return;
+            }
+
+            print_info(subnet, false);
+        }
+        None => eprintln!("Subnet '{id}' not found"),
     }
 }
 
