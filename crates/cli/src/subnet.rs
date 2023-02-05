@@ -24,14 +24,7 @@ pub struct SubnetCommand {
 #[derive(Subcommand)]
 enum SubnetCommands {
     #[command(about = "List the network's subnets", long_about = None)]
-    List {
-        #[arg(
-            long,
-            help = "Limit the number of subnets to list",
-            default_value = "10"
-        )]
-        limit: u32,
-    },
+    List,
     Info {
         #[arg(long, help = "Subnet ID (CB58)")]
         id: String,
@@ -39,35 +32,39 @@ enum SubnetCommands {
 }
 
 // List the network's subnets
-fn list(network: &str, limit: u32, config: Option<&str>, json: bool) {
-    match AvalancheNetwork::load(network, config) {
-        Ok(network) => {
-            if json {
-                // Serialize the first `limit` subnets to JSON
-                println!(
-                    "{}",
-                    serde_json::to_string(
-                        &network
-                            .subnets
-                            .iter()
-                            .take(limit as usize)
-                            .collect::<Vec<&AvalancheSubnet>>()
-                    )
-                    .unwrap()
-                );
-                return;
-            }
+fn list(network_name: &str, config: Option<&str>, json: bool) {
+    match AvalancheNetwork::load(network_name, config) {
+        Ok(mut network) => {
+            match network.update_subnets() {
+                Ok(_) => {
+                    if json {
+                        // Serialize the first `limit` subnets to JSON
+                        println!(
+                            "{}",
+                            serde_json::to_string(
+                                &network.subnets.iter().collect::<Vec<&AvalancheSubnet>>()
+                            )
+                            .unwrap()
+                        );
+                        return;
+                    }
 
-            println!(
-                "Found {} subnet{} on '{}':",
-                network.subnets.len(),
-                if network.subnets.len() == 1 { "" } else { "s" },
-                network.name
-            );
+                    println!(
+                        "Found {} subnet{} on '{}':",
+                        network.subnets.len(),
+                        if network.subnets.len() == 1 { "" } else { "s" },
+                        network.name
+                    );
 
-            // Print the first `limit` subnets
-            for subnet in network.subnets.iter().take(limit as usize) {
-                print_info(subnet, true);
+                    // Print the first `limit` subnets
+                    for subnet in network.subnets.iter() {
+                        print_info(subnet, true);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Error updating subnets: {e}");
+                    exit(exitcode::DATAERR);
+                }
             }
         }
         Err(e) => {
@@ -79,16 +76,22 @@ fn list(network: &str, limit: u32, config: Option<&str>, json: bool) {
 
 fn info(network: &str, id: &str, config: Option<&str>, json: bool) {
     match AvalancheNetwork::load(network, config) {
-        Ok(network) => match network.get_subnet(id) {
-            Some(subnet) => {
-                if json {
-                    println!("{}", serde_json::to_string(&subnet).unwrap());
-                    return;
-                }
+        Ok(mut network) => match network.update_subnets() {
+            Ok(_) => match network.get_subnet(id) {
+                Some(subnet) => {
+                    if json {
+                        println!("{}", serde_json::to_string(&subnet).unwrap());
+                        return;
+                    }
 
-                print_info(subnet, false);
+                    print_info(subnet, false);
+                }
+                None => eprintln!("Subnet '{id}' not found"),
+            },
+            Err(e) => {
+                eprintln!("Error updating subnets: {e}");
+                exit(exitcode::DATAERR);
             }
-            None => eprintln!("Subnet '{id}' not found"),
         },
         Err(e) => {
             eprintln!("Error loading info: {e}");
@@ -121,7 +124,7 @@ fn print_info(subnet: &AvalancheSubnet, separator: bool) {
 // Parse subnet subcommand
 pub fn parse(subnet: SubnetCommand, config: Option<&str>, json: bool) {
     match subnet.command {
-        SubnetCommands::List { limit } => list(&subnet.network, limit, config, json),
+        SubnetCommands::List => list(&subnet.network, config, json),
         SubnetCommands::Info { id } => info(&subnet.network, &id, config, json),
     }
 }
