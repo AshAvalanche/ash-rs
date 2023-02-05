@@ -67,8 +67,31 @@ impl AvalancheNetwork {
     }
 
     /// Update the AvalancheNetwork subnets by querying an API endpoint
-    pub fn update_subnets(&mut self, rpc_url: &str) -> Result<(), String> {
+    pub fn update_subnets(&mut self) -> Result<(), String> {
+        // Get the P-Chain RPC URL
+        let rpc_url = &self
+            .get_subnet(AVAX_PRIMARY_NETWORK_ID)
+            .ok_or(format!(
+                "Primary network (ID: '{AVAX_PRIMARY_NETWORK_ID}') not found in configuration"
+            ))?
+            .get_blockchain(AVAX_PRIMARY_NETWORK_ID)
+            .ok_or(format!(
+                "P-Chain (ID: '{AVAX_PRIMARY_NETWORK_ID}') not found in configuration",
+            ))?
+            .rpc_url;
+
         let subnets = platformvm::get_network_subnets(rpc_url).map_err(|e| e.to_string())?;
+
+        // Replace the primary network with the pre-configured one
+        // This is done to ensure that the P-Chain is kept in the blockchains list
+        // (it is not returned by the API)
+        let primary_subnet = self.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap().clone();
+        let mut subnets = subnets
+            .into_iter()
+            .filter(|subnet| subnet.id.to_string() != AVAX_PRIMARY_NETWORK_ID)
+            .collect::<Vec<_>>();
+        subnets.push(primary_subnet);
+
         self.subnets = subnets;
         Ok(())
     }
@@ -88,7 +111,6 @@ mod tests {
 
     const AVAX_MAINNET_CCHAIN_ID: &str = "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5";
     const AVAX_MAINNET_CCHAIN_RPC: &str = "https://api.avax.network/ext/bc/C/rpc";
-    const AVAX_MAINNET_PCHAIN_RPC: &str = "https://api.avax.network/ext/bc/P";
 
     #[test]
     fn test_avalanche_network_load() {
@@ -153,9 +175,19 @@ mod tests {
     #[test]
     fn test_avalanche_network_update_subnets() {
         let mut mainnet = AvalancheNetwork::load("mainnet", None).unwrap();
-        mainnet.update_subnets(AVAX_MAINNET_PCHAIN_RPC).unwrap();
+        mainnet.update_subnets().unwrap();
 
         // Test that the number of subnets is greater than 1
         assert!(mainnet.subnets.len() > 1);
+
+        // Test that the primary network is still present
+        // and that the P-Chain is still present
+        let primary_subnet = mainnet.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+        assert_eq!(primary_subnet.id.to_string(), AVAX_PRIMARY_NETWORK_ID);
+        assert_eq!(primary_subnet.blockchains.len(), 3);
+        assert!(primary_subnet
+            .blockchains
+            .iter()
+            .any(|blockchain| blockchain.id.to_string() == AVAX_PRIMARY_NETWORK_ID));
     }
 }
