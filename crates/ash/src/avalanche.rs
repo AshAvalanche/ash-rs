@@ -12,6 +12,11 @@ use avalanche_types::ids::Id;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
+/// Avalanche primary network ID
+/// This subnet contains the P-Chain that is used for all subnet operations
+/// (the P-Chain ID is the same as the primary network ID)
+pub const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY";
+
 /// Avalanche network
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -38,7 +43,25 @@ impl AvalancheNetwork {
             .avalanche_networks
             .iter()
             .find(|&avax_network| avax_network.name == network)
-            .ok_or(format!("Avalanche network '{}' not found", network))?;
+            .ok_or(format!(
+                "Avalanche network '{network}' not found in configuration"
+            ))?;
+
+        // Error if the primary network is not found
+        let primary_subnet = avax_network
+            .subnets
+            .iter()
+            .find(|&subnet| subnet.id.to_string() == AVAX_PRIMARY_NETWORK_ID)
+            .ok_or(format!(
+                "Primary network (ID: '{AVAX_PRIMARY_NETWORK_ID}') not found in configuration"
+            ))?;
+
+        // Error if the P-Chain is not found
+        let _ = primary_subnet
+            .get_blockchain(AVAX_PRIMARY_NETWORK_ID)
+            .ok_or(format!(
+                "P-Chain (ID: '{AVAX_PRIMARY_NETWORK_ID}') not found in configuration",
+            ))?;
 
         Ok(avax_network.clone())
     }
@@ -63,7 +86,6 @@ mod tests {
     use super::*;
     use blockchains::AvalancheBlockchain;
 
-    const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY";
     const AVAX_MAINNET_CCHAIN_ID: &str = "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5";
     const AVAX_MAINNET_CCHAIN_RPC: &str = "https://api.avax.network/ext/bc/C/rpc";
     const AVAX_MAINNET_PCHAIN_RPC: &str = "https://api.avax.network/ext/bc/P";
@@ -98,6 +120,22 @@ mod tests {
         assert_eq!(rpc_url, AVAX_MAINNET_CCHAIN_RPC);
 
         assert!(AvalancheNetwork::load("invalid", None).is_err());
+    }
+
+    #[test]
+    fn test_avalanche_network_load_no_primary() {
+        // Load the wrong.yml file which doesn't have the primary network
+        // This should fail as the primary network is required
+        assert!(
+            AvalancheNetwork::load("no-primary-network", Some("tests/conf/wrong.yml")).is_err()
+        );
+    }
+
+    #[test]
+    fn test_avalanche_network_load_no_pchain() {
+        // Load the wrong.yml file which doesn't have the P-Chain
+        // This should fail as the P-Chain is required
+        assert!(AvalancheNetwork::load("no-pchain", Some("tests/conf/wrong.yml")).is_err());
     }
 
     #[test]

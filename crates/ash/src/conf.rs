@@ -60,9 +60,10 @@ impl AshConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::avalanche::{blockchains::AvalancheBlockchain, subnets::AvalancheSubnet};
+    use crate::avalanche::{
+        blockchains::AvalancheBlockchain, subnets::AvalancheSubnet, AVAX_PRIMARY_NETWORK_ID,
+    };
 
-    const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY";
     const AVAX_PCHAIN_ID: &str = AVAX_PRIMARY_NETWORK_ID;
     const AVAX_MAINNET_CCHAIN_ID: &str = "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5";
     const AVAX_MAINNET_CCHAIN_RPC: &str = "https://api.avax.network/ext/bc/C/rpc";
