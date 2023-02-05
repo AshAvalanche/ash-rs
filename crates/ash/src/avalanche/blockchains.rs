@@ -14,6 +14,10 @@ pub struct AvalancheBlockchain {
     #[serde(deserialize_with = "avalanche_id_from_string")]
     pub id: Id,
     pub name: String,
+    #[serde(default, deserialize_with = "avalanche_id_from_string")]
+    pub vm_id: Id,
+    #[serde(default)]
     pub vm_type: String,
+    #[serde(default)]
     pub rpc_url: String,
 }

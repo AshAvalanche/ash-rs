@@ -40,14 +40,10 @@ impl AshConfig {
 
         // If the config file already exists, return an error unless force is set to true
         match (Path::new(config_file).exists(), force) {
-            (true, false) => Err(format!(
-                "Configuration file '{config_file}' already exists"
-            )),
+            (true, false) => Err(format!("Configuration file '{config_file}' already exists")),
             _ => {
                 fs::write(config_file, serde_yaml::to_string(&ash_conf).unwrap()).map_err(|e| {
-                    format!(
-                        "Failed to write default configuration to {config_file}: {e}"
-                    )
+                    format!("Failed to write default configuration to {config_file}: {e}")
                 })?;
                 Ok(())
             }
@@ -64,6 +60,7 @@ mod tests {
 
     const AVAX_PCHAIN_ID: &str = AVAX_PRIMARY_NETWORK_ID;
     const AVAX_MAINNET_CCHAIN_ID: &str = "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5";
+    const AVAX_MAINNET_EVM_ID: &str = "mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6";
     const AVAX_MAINNET_CCHAIN_RPC: &str = "https://api.avax.network/ext/bc/C/rpc";
 
     #[test]
@@ -94,13 +91,15 @@ mod tests {
         assert_eq!(blockchains.len(), 3);
 
         let AvalancheBlockchain {
-            name,
             id,
+            name,
+            vm_id,
             vm_type,
             rpc_url,
         } = &blockchains[1];
-        assert_eq!(name, "C-Chain");
         assert_eq!(id.to_string(), AVAX_MAINNET_CCHAIN_ID);
+        assert_eq!(name, "C-Chain");
+        assert_eq!(vm_id.to_string(), AVAX_MAINNET_EVM_ID);
         assert_eq!(vm_type, "EVM");
         assert_eq!(rpc_url, AVAX_MAINNET_CCHAIN_RPC);
     }
@@ -134,13 +133,14 @@ mod tests {
         assert_eq!(blockchains.len(), 3);
 
         let AvalancheBlockchain {
-            name,
             id,
+            name,
             vm_type,
             rpc_url,
+            ..
         } = &blockchains[0];
-        assert_eq!(name, "P-Chain");
         assert_eq!(id.to_string(), AVAX_PCHAIN_ID);
+        assert_eq!(name, "P-Chain");
         assert_eq!(vm_type, "PVM");
         assert_eq!(rpc_url, "https://api.ash.center/ext/bc/P");
     }

@@ -4,10 +4,10 @@
 // Module that contains code to interact with Avalanche PlatformVM blockchains
 
 use crate::avalanche::avalanche_id_from_string;
-use crate::avalanche::subnets::AvalancheSubnet;
+use crate::avalanche::{blockchains::AvalancheBlockchain, subnets::AvalancheSubnet};
 use avalanche_types::ids::Id;
 use serde::Deserialize;
-use serde_aux::field_attributes::deserialize_number_from_string;
+use serde_aux::prelude::*;
 use ureq;
 
 #[derive(Deserialize)]
@@ -32,6 +32,33 @@ struct PlatformApiSubnet {
     control_keys: Vec<String>,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     threshold: u8,
+}
+
+#[derive(Deserialize)]
+#[allow(dead_code)]
+struct PlatformApiGetBlockchainsResponse {
+    jsonrpc: String,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    id: u8,
+    result: PlatformApiGetBlockchainsResponseResult,
+}
+
+#[derive(Deserialize)]
+struct PlatformApiGetBlockchainsResponseResult {
+    blockchains: Vec<PlatformApiBlockchain>,
+}
+
+#[derive(Deserialize)]
+#[allow(dead_code)]
+#[serde(rename_all = "camelCase")]
+struct PlatformApiBlockchain {
+    #[serde(deserialize_with = "avalanche_id_from_string")]
+    id: Id,
+    name: String,
+    #[serde(alias = "subnetID", deserialize_with = "avalanche_id_from_string")]
+    subnet_id: Id,
+    #[serde(alias = "vmID", deserialize_with = "avalanche_id_from_string")]
+    vm_id: Id,
 }
 
 // Get the Subnets of the network by querying the P-Chain API
@@ -60,6 +87,33 @@ pub fn get_network_subnets(rpc_url: &str) -> Result<Vec<AvalancheSubnet>, ureq::
     Ok(network_subnets)
 }
 
+// Get the blockchains of the network by querying the P-Chain API
+pub fn get_network_blockchains(rpc_url: &str) -> Result<Vec<AvalancheBlockchain>, ureq::Error> {
+    let resp: PlatformApiGetBlockchainsResponse = ureq::post(rpc_url)
+        .send_json(ureq::json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "platform.getBlockchains",
+            "params": {}
+        }))?
+        .into_json()?;
+
+    let network_blockchains = resp
+        .result
+        .blockchains
+        .iter()
+        .map(|blockchain| AvalancheBlockchain {
+            id: blockchain.id,
+            name: blockchain.name.clone(),
+            vm_id: blockchain.vm_id,
+            vm_type: "".to_string(),
+            rpc_url: "".to_string(),
+        })
+        .collect();
+
+    Ok(network_blockchains)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -67,6 +121,8 @@ mod tests {
     use std::str::FromStr;
 
     const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY";
+    const AVAX_FUJI_CCHAIN_ID: &str = "yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp";
+    const AVAX_FUJI_XCHAIN_ID: &str = "2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm";
 
     #[test]
     fn test_get_network_subnets() {
@@ -77,5 +133,24 @@ mod tests {
         assert!(subnets
             .iter()
             .any(|subnet| subnet.id == Id::from_str(AVAX_PRIMARY_NETWORK_ID).unwrap()));
+    }
+
+    #[test]
+    fn test_get_network_blockchains() {
+        let rpc_url = "https://api.avax-test.network/ext/bc/P";
+        let blockchains = get_network_blockchains(rpc_url).unwrap();
+
+        // Test that the C-Chain and X-Chain are present
+        let c_chain = blockchains
+            .iter()
+            .find(|blockchain| blockchain.id == Id::from_str(AVAX_FUJI_CCHAIN_ID).unwrap())
+            .unwrap();
+        let x_chain = blockchains
+            .iter()
+            .find(|blockchain| blockchain.id == Id::from_str(AVAX_FUJI_XCHAIN_ID).unwrap())
+            .unwrap();
+
+        assert_eq!(c_chain.name, "C-Chain");
+        assert_eq!(x_chain.name, "X-Chain");
     }
 }

@@ -110,6 +110,7 @@ mod tests {
     use blockchains::AvalancheBlockchain;
 
     const AVAX_MAINNET_CCHAIN_ID: &str = "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5";
+    const AVAX_MAINNET_EVM_ID: &str = "mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6";
     const AVAX_MAINNET_CCHAIN_RPC: &str = "https://api.avax.network/ext/bc/C/rpc";
 
     #[test]
@@ -131,14 +132,16 @@ mod tests {
         assert_eq!(blockchains.len(), 3);
 
         let AvalancheBlockchain {
-            name,
             id,
+            name,
+            vm_id,
             vm_type,
             rpc_url,
         } = &blockchains[1];
-        assert_eq!(name, "C-Chain");
-        assert_eq!(vm_type, "EVM");
         assert_eq!(id.to_string(), AVAX_MAINNET_CCHAIN_ID);
+        assert_eq!(name, "C-Chain");
+        assert_eq!(vm_id.to_string(), AVAX_MAINNET_EVM_ID);
+        assert_eq!(vm_type, "EVM");
         assert_eq!(rpc_url, AVAX_MAINNET_CCHAIN_RPC);
 
         assert!(AvalancheNetwork::load("invalid", None).is_err());
