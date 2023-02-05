@@ -28,9 +28,9 @@ enum ConfCommands {
 // Initialize an Ash config file
 fn init(config: String, force: bool) {
     match AshConfig::dump_default(&config, force) {
-        Ok(_) => println!("Config file initialized at '{}'", config),
+        Ok(_) => println!("Config file initialized at '{config}'"),
         Err(err) => {
-            eprintln!("Error initializing config file: {}", err);
+            eprintln!("Error initializing config file: {err}");
             exit(exitcode::CANTCREAT)
         }
     }

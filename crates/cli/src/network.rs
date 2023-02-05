@@ -25,7 +25,7 @@ fn list(config: Option<&str>, json: bool) {
     let networks = match AshConfig::load(config) {
         Ok(ash_config) => ash_config.avalanche_networks,
         Err(err) => {
-            eprintln!("Error listing networks: {}", err);
+            eprintln!("Error listing networks: {err}");
             exit(exitcode::CONFIG);
         }
     };

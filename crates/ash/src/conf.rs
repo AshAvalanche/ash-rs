@@ -41,14 +41,12 @@ impl AshConfig {
         // If the config file already exists, return an error unless force is set to true
         match (Path::new(config_file).exists(), force) {
             (true, false) => Err(format!(
-                "Configuration file '{}' already exists",
-                config_file
+                "Configuration file '{config_file}' already exists"
             )),
             _ => {
                 fs::write(config_file, serde_yaml::to_string(&ash_conf).unwrap()).map_err(|e| {
                     format!(
-                        "Failed to write default configuration to {}: {}",
-                        config_file, e
+                        "Failed to write default configuration to {config_file}: {e}"
                     )
                 })?;
                 Ok(())

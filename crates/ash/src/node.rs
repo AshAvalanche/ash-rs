@@ -76,7 +76,7 @@ impl AshNode {
                 .id
                 .as_ref()
                 .iter()
-                .map(|b| format!("{:02x}", b))
+                .map(|b| format!("{b:02x}"))
                 .collect(),
             bytes: self.id.to_vec(),
         }
@@ -158,12 +158,12 @@ mod tests {
         assert_eq!(node.id.short_id().to_string(), CB58_ID);
 
         // Creating the node should succeed
-        let node = AshNode::from_string(&format!("0x{}", HEX_ID)).unwrap();
+        let node = AshNode::from_string(&format!("0x{HEX_ID}")).unwrap();
 
         assert_eq!(node.id.short_id().to_string(), CB58_ID);
 
         // Creating the node should succeed
-        let node = AshNode::from_string(&format!("NodeID-{}", CB58_ID)).unwrap();
+        let node = AshNode::from_string(&format!("NodeID-{CB58_ID}")).unwrap();
 
         assert_eq!(node.id.short_id().to_string(), CB58_ID);
 
@@ -179,14 +179,14 @@ mod tests {
 
         let node_info = node.info();
 
-        assert_eq!(node_info.id.p_chain, format!("NodeID-{}", CB58_ID));
+        assert_eq!(node_info.id.p_chain, format!("NodeID-{CB58_ID}"));
         assert_eq!(node_info.id.cb58, CB58_ID);
         assert_eq!(node_info.id.bytes, &BYTES_ID);
         assert_eq!(
             node_info.id.hex,
             BYTES_ID
                 .iter()
-                .map(|b| format!("{:02x}", b))
+                .map(|b| format!("{b:02x}"))
                 .collect::<String>()
         );
     }

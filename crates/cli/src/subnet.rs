@@ -71,7 +71,7 @@ fn list(network: &str, limit: u32, config: Option<&str>, json: bool) {
             }
         }
         Err(e) => {
-            eprintln!("Error listing subnets: {}", e);
+            eprintln!("Error listing subnets: {e}");
             exit(exitcode::DATAERR);
         }
     }
@@ -88,10 +88,10 @@ fn info(network: &str, id: &str, config: Option<&str>, json: bool) {
 
                 print_info(subnet, false);
             }
-            None => eprintln!("Subnet '{}' not found", id),
+            None => eprintln!("Subnet '{id}' not found"),
         },
         Err(e) => {
-            eprintln!("Error loading info: {}", e);
+            eprintln!("Error loading info: {e}");
             exit(exitcode::DATAERR);
         }
     }
@@ -107,7 +107,7 @@ fn print_info(subnet: &AvalancheSubnet, separator: bool) {
     }
 
     // Print ID, number of blockchains, blockchains IDs and names
-    println!("{}", subnet_id_line);
+    println!("{subnet_id_line}");
     println!("  Number of blockchains: {}", subnet.blockchains.len());
     println!("  Blockchains:");
     for blockchain in subnet.blockchains.iter() {

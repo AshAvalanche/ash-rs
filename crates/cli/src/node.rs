@@ -34,12 +34,12 @@ fn info(id: &str, json: bool) {
                 return;
             }
 
-            println!("Node '{}':", id);
+            println!("Node '{id}':");
             println!("  Node ID (CB58): {}", node_info.id.cb58);
             println!("  Node ID (hex): {}", node_info.id.hex);
         }
         Err(e) => {
-            eprintln!("Error loading info: {}", e);
+            eprintln!("Error loading info: {e}");
             exit(exitcode::DATAERR);
         }
     }
