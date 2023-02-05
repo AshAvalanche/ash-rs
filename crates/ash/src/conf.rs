@@ -63,6 +63,7 @@ mod tests {
     use crate::avalanche::{blockchains::AvalancheBlockchain, subnets::AvalancheSubnet};
 
     const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY";
+    const AVAX_PCHAIN_ID: &str = AVAX_PRIMARY_NETWORK_ID;
     const AVAX_MAINNET_CCHAIN_ID: &str = "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5";
     const AVAX_MAINNET_CCHAIN_RPC: &str = "https://api.avax.network/ext/bc/C/rpc";
 
@@ -91,14 +92,14 @@ mod tests {
         assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
         assert_eq!(control_keys.len(), 0);
         assert_eq!(threshold, &0);
-        assert_eq!(blockchains.len(), 1);
+        assert_eq!(blockchains.len(), 3);
 
         let AvalancheBlockchain {
             name,
             id,
             vm_type,
             rpc_url,
-        } = &blockchains[0];
+        } = &blockchains[1];
         assert_eq!(name, "C-Chain");
         assert_eq!(id.to_string(), AVAX_MAINNET_CCHAIN_ID);
         assert_eq!(vm_type, "EVM");
@@ -128,13 +129,10 @@ mod tests {
             threshold,
             blockchains,
         } = &custom.subnets[0];
-        assert_eq!(
-            id.to_string(),
-            "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5"
-        );
+        assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
         assert_eq!(control_keys.len(), 0);
         assert_eq!(threshold, &0);
-        assert_eq!(blockchains.len(), 1);
+        assert_eq!(blockchains.len(), 3);
 
         let AvalancheBlockchain {
             name,
@@ -142,10 +140,10 @@ mod tests {
             vm_type,
             rpc_url,
         } = &blockchains[0];
-        assert_eq!(name, "C-Chain");
-        assert_eq!(id.to_string(), "11111111111111111111111111111111LpoYY");
-        assert_eq!(vm_type, "EVM");
-        assert_eq!(rpc_url, "https://api.ash.center/ext/bc/C/rpc");
+        assert_eq!(name, "P-Chain");
+        assert_eq!(id.to_string(), AVAX_PCHAIN_ID);
+        assert_eq!(vm_type, "PVM");
+        assert_eq!(rpc_url, "https://api.ash.center/ext/bc/P");
     }
 
     #[test]

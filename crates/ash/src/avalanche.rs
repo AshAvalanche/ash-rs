@@ -7,7 +7,7 @@ pub mod subnets;
 
 // Module that contains code to interact with Avalanche networks
 
-use crate::{avalanche::subnets::AvalancheSubnet, conf::AshConfig};
+use crate::{avalanche::jsonrpc::platformvm, avalanche::subnets::AvalancheSubnet, conf::AshConfig};
 use avalanche_types::ids::Id;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -43,6 +43,13 @@ impl AvalancheNetwork {
         Ok(avax_network.clone())
     }
 
+    /// Update the AvalancheNetwork subnets by querying an API endpoint
+    pub fn update_subnets(&mut self, rpc_url: &str) -> Result<(), String> {
+        let subnets = platformvm::get_network_subnets(rpc_url).map_err(|e| e.to_string())?;
+        self.subnets = subnets;
+        Ok(())
+    }
+
     /// Get a Subnet from the network by its ID
     pub fn get_subnet(&self, id: &str) -> Option<&AvalancheSubnet> {
         self.subnets
@@ -59,6 +66,7 @@ mod tests {
     const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY";
     const AVAX_MAINNET_CCHAIN_ID: &str = "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5";
     const AVAX_MAINNET_CCHAIN_RPC: &str = "https://api.avax.network/ext/bc/C/rpc";
+    const AVAX_MAINNET_PCHAIN_RPC: &str = "https://api.avax.network/ext/bc/P";
 
     #[test]
     fn test_avalanche_network_load() {
@@ -76,14 +84,14 @@ mod tests {
         assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
         assert_eq!(control_keys.len(), 0);
         assert_eq!(threshold, &0);
-        assert_eq!(blockchains.len(), 1);
+        assert_eq!(blockchains.len(), 3);
 
         let AvalancheBlockchain {
             name,
             id,
             vm_type,
             rpc_url,
-        } = &blockchains[0];
+        } = &blockchains[1];
         assert_eq!(name, "C-Chain");
         assert_eq!(vm_type, "EVM");
         assert_eq!(id.to_string(), AVAX_MAINNET_CCHAIN_ID);
@@ -99,8 +107,17 @@ mod tests {
         // Should never fail as AVAX_PRIMARY_NETWORK_ID should always be a valid key
         let mainnet_subnet = mainnet.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
         assert_eq!(mainnet_subnet.id.to_string(), AVAX_PRIMARY_NETWORK_ID);
-        assert_eq!(mainnet_subnet.blockchains.len(), 1);
+        assert_eq!(mainnet_subnet.blockchains.len(), 3);
 
         assert!(mainnet.get_subnet("invalid").is_none());
+    }
+
+    #[test]
+    fn test_avalanche_network_update_subnets() {
+        let mut mainnet = AvalancheNetwork::load("mainnet", None).unwrap();
+        mainnet.update_subnets(AVAX_MAINNET_PCHAIN_RPC).unwrap();
+
+        // Test that the number of subnets is greater than 1
+        assert!(mainnet.subnets.len() > 1);
     }
 }
