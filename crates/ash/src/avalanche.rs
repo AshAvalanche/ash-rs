@@ -66,8 +66,7 @@ impl AvalancheNetwork {
         Ok(avax_network.clone())
     }
 
-    /// Update the AvalancheNetwork subnets by querying an API endpoint
-    pub fn update_subnets(&mut self) -> Result<(), String> {
+    fn get_pchain_rpc_url(&self) -> Result<String, String> {
         // Get the P-Chain RPC URL
         let rpc_url = &self
             .get_subnet(AVAX_PRIMARY_NETWORK_ID)
@@ -79,8 +78,14 @@ impl AvalancheNetwork {
                 "P-Chain (ID: '{AVAX_PRIMARY_NETWORK_ID}') not found in configuration",
             ))?
             .rpc_url;
+        Ok(rpc_url.to_string())
+    }
 
-        let subnets = platformvm::get_network_subnets(rpc_url).map_err(|e| e.to_string())?;
+    /// Update the AvalancheNetwork subnets by querying an API endpoint
+    pub fn update_subnets(&mut self) -> Result<(), String> {
+        let rpc_url = self.get_pchain_rpc_url()?;
+
+        let subnets = platformvm::get_network_subnets(&rpc_url).map_err(|e| e.to_string())?;
 
         // Replace the primary network with the pre-configured one
         // This is done to ensure that the P-Chain is kept in the blockchains list
@@ -102,6 +107,37 @@ impl AvalancheNetwork {
             .iter()
             .find(|&subnet| subnet.id.to_string() == id)
     }
+
+    /// Update the AvalancheNetwork blockchains by querying an API endpoint
+    /// This function will update the blockchains of all subnets
+    pub fn update_blockchains(&mut self) -> Result<(), String> {
+        let rpc_url = self.get_pchain_rpc_url()?;
+
+        let blockchains =
+            platformvm::get_network_blockchains(&rpc_url).map_err(|e| e.to_string())?;
+
+        // For each subnet, replace the blockchains with the ones returned by the API
+        // Skip the primary network, as the P-Chain is not returned by the API
+        let primary_subnet = self.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap().clone();
+        let mut subnets = self
+            .subnets
+            .iter()
+            .filter(|subnet| subnet.id.to_string() != AVAX_PRIMARY_NETWORK_ID)
+            .map(|subnet| {
+                let mut subnet = subnet.clone();
+                subnet.blockchains = blockchains
+                    .iter()
+                    .filter(|blockchain| blockchain.subnet_id == subnet.id)
+                    .cloned()
+                    .collect();
+                subnet
+            })
+            .collect::<Vec<_>>();
+        subnets.push(primary_subnet);
+
+        self.subnets = subnets;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -112,6 +148,8 @@ mod tests {
     const AVAX_MAINNET_CCHAIN_ID: &str = "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5";
     const AVAX_MAINNET_EVM_ID: &str = "mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6";
     const AVAX_MAINNET_CCHAIN_RPC: &str = "https://api.avax.network/ext/bc/C/rpc";
+    const AVAX_MAINNET_DFK_SUBNET_ID: &str = "Vn3aX6hNRstj5VHHm63TCgPNaeGnRSqCYXQqemSqDd2TQH4qJ";
+    const AVAX_MAINNET_DFK_CHAIN_ID: &str = "q2aTwKuyzgs8pynF7UXBZCU7DejbZbZ6EUyHr3JQzYgwNPUPi";
 
     #[test]
     fn test_avalanche_network_load() {
@@ -137,6 +175,7 @@ mod tests {
             vm_id,
             vm_type,
             rpc_url,
+            ..
         } = &blockchains[1];
         assert_eq!(id.to_string(), AVAX_MAINNET_CCHAIN_ID);
         assert_eq!(name, "C-Chain");
@@ -192,5 +231,29 @@ mod tests {
             .blockchains
             .iter()
             .any(|blockchain| blockchain.id.to_string() == AVAX_PRIMARY_NETWORK_ID));
+
+        // Test that the DFK subnet is present
+        let dfk_subnet = mainnet.get_subnet(AVAX_MAINNET_DFK_SUBNET_ID).unwrap();
+        assert_eq!(dfk_subnet.id.to_string(), AVAX_MAINNET_DFK_SUBNET_ID);
+    }
+
+    #[test]
+    fn test_avalanche_network_update_blockchains() {
+        let mut mainnet = AvalancheNetwork::load("mainnet", None).unwrap();
+        mainnet.update_subnets().unwrap();
+        mainnet.update_blockchains().unwrap();
+
+        // Test that the primary network is still present
+        assert!(mainnet
+            .subnets
+            .iter()
+            .any(|subnet| subnet.id.to_string() == AVAX_PRIMARY_NETWORK_ID));
+
+        // Test that the DFK subnet contains the DFK chain
+        let dfk_subnet = mainnet.get_subnet(AVAX_MAINNET_DFK_SUBNET_ID).unwrap();
+        assert!(dfk_subnet
+            .blockchains
+            .iter()
+            .any(|blockchain| blockchain.id.to_string() == AVAX_MAINNET_DFK_CHAIN_ID));
     }
 }

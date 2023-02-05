@@ -96,6 +96,7 @@ mod tests {
             vm_id,
             vm_type,
             rpc_url,
+            ..
         } = &blockchains[1];
         assert_eq!(id.to_string(), AVAX_MAINNET_CCHAIN_ID);
         assert_eq!(name, "C-Chain");
