@@ -3,9 +3,9 @@
 
 // Module that contains the node subcommand parser
 
+use crate::error::CliError;
 use ash::node::AshNode;
 use clap::{Parser, Subcommand};
-use std::process::exit;
 
 #[derive(Parser)]
 #[command(about = "Interact with Ash nodes", long_about = None)]
@@ -24,29 +24,24 @@ enum NodeCommands {
 }
 
 // Display node information
-fn info(id: &str, json: bool) {
-    match AshNode::from_string(id) {
-        Ok(node) => {
-            let node_info = node.info();
+fn info(id: &str, json: bool) -> Result<(), CliError> {
+    let node_info = AshNode::from_string(id)
+        .map_err(|e| CliError::dataerr(format!("Error loading info: {e}")))?
+        .info();
 
-            if json {
-                println!("{}", serde_json::to_string(&node_info).unwrap());
-                return;
-            }
-
-            println!("Node '{id}':");
-            println!("  Node ID (CB58): {}", node_info.id.cb58);
-            println!("  Node ID (hex): {}", node_info.id.hex);
-        }
-        Err(e) => {
-            eprintln!("Error loading info: {e}");
-            exit(exitcode::DATAERR);
-        }
+    if json {
+        println!("{}", serde_json::to_string(&node_info).unwrap());
+        return Ok(());
     }
+
+    println!("Node '{id}':");
+    println!("  Node ID (CB58): {}", node_info.id.cb58);
+    println!("  Node ID (hex): {}", node_info.id.hex);
+    Ok(())
 }
 
 // Parse node subcommand
-pub fn parse(node: NodeCommand, json: bool) {
+pub fn parse(node: NodeCommand, json: bool) -> Result<(), CliError> {
     match node.command {
         NodeCommands::Info { id } => info(&id, json),
     }
