@@ -3,9 +3,9 @@
 
 // Module that contains the subnet subcommand parser
 
+use crate::error::CliError;
 use ash::avalanche::{subnets::AvalancheSubnet, AvalancheNetwork};
 use clap::{Parser, Subcommand};
-use std::process::exit;
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche Subnets", long_about = None)]
@@ -24,77 +24,63 @@ pub struct SubnetCommand {
 #[derive(Subcommand)]
 enum SubnetCommands {
     #[command(about = "List the network's subnets", long_about = None)]
-    List {
-        #[arg(
-            long,
-            help = "Limit the number of subnets to list",
-            default_value = "10"
-        )]
-        limit: u32,
-    },
+    List,
     Info {
         #[arg(long, help = "Subnet ID (CB58)")]
         id: String,
     },
 }
 
-// List the network's subnets
-fn list(network: &str, limit: u32, config: Option<&str>, json: bool) {
-    match AvalancheNetwork::load(network, config) {
-        Ok(network) => {
-            if json {
-                // Serialize the first `limit` subnets to JSON
-                println!(
-                    "{}",
-                    serde_json::to_string(
-                        &network
-                            .subnets
-                            .iter()
-                            .take(limit as usize)
-                            .collect::<Vec<&AvalancheSubnet>>()
-                    )
-                    .unwrap()
-                );
-                return;
-            }
+// Load the network configuation and recursively update the subnets (and their blockchains)
+fn load_network_and_update_subnets(
+    network_name: &str,
+    config: Option<&str>,
+) -> Result<AvalancheNetwork, CliError> {
+    let mut network = AvalancheNetwork::load(network_name, config)
+        .map_err(|e| CliError::dataerr(format!("Error loading network: {e}")))?;
+    network
+        .update_subnets()
+        .map_err(|e| CliError::dataerr(format!("Error updating subnets: {e}")))?;
+    network
+        .update_blockchains()
+        .map_err(|e| CliError::dataerr(format!("Error updating blockchains: {e}")))?;
 
-            println!(
-                "Found {} subnet{} on '{}':",
-                network.subnets.len(),
-                if network.subnets.len() == 1 { "" } else { "s" },
-                network.name
-            );
-
-            // Print the first `limit` subnets
-            for subnet in network.subnets.iter().take(limit as usize) {
-                print_info(subnet, true);
-            }
-        }
-        Err(e) => {
-            eprintln!("Error listing subnets: {}", e);
-            exit(exitcode::DATAERR);
-        }
-    }
+    Ok(network)
 }
 
-fn info(network: &str, id: &str, config: Option<&str>, json: bool) {
-    match AvalancheNetwork::load(network, config) {
-        Ok(network) => match network.get_subnet(id) {
-            Some(subnet) => {
-                if json {
-                    println!("{}", serde_json::to_string(&subnet).unwrap());
-                    return;
-                }
+// List the network's subnets
+fn list(network_name: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
+    let network = load_network_and_update_subnets(network_name, config)?;
 
-                print_info(subnet, false);
-            }
-            None => eprintln!("Subnet '{}' not found", id),
-        },
-        Err(e) => {
-            eprintln!("Error loading info: {}", e);
-            exit(exitcode::DATAERR);
-        }
+    if json {
+        println!("{}", serde_json::to_string(&network.subnets).unwrap());
+        return Ok(());
     }
+
+    println!(
+        "Found {} subnet(s) on '{}':",
+        network.subnets.len(),
+        network.name
+    );
+    for subnet in network.subnets.iter() {
+        print_info(subnet, true);
+    }
+    Ok(())
+}
+
+fn info(network: &str, id: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
+    let network = load_network_and_update_subnets(network, config)?;
+    let subnet = network
+        .get_subnet(id)
+        .ok_or_else(|| CliError::dataerr(format!("Subnet '{id}' not found")))?;
+
+    if json {
+        println!("{}", serde_json::to_string(&subnet).unwrap());
+        return Ok(());
+    }
+
+    print_info(subnet, false);
+    Ok(())
 }
 
 // Print subnet information (when not in JSON mode)
@@ -107,7 +93,7 @@ fn print_info(subnet: &AvalancheSubnet, separator: bool) {
     }
 
     // Print ID, number of blockchains, blockchains IDs and names
-    println!("{}", subnet_id_line);
+    println!("{subnet_id_line}");
     println!("  Number of blockchains: {}", subnet.blockchains.len());
     println!("  Blockchains:");
     for blockchain in subnet.blockchains.iter() {
@@ -119,9 +105,9 @@ fn print_info(subnet: &AvalancheSubnet, separator: bool) {
 }
 
 // Parse subnet subcommand
-pub fn parse(subnet: SubnetCommand, config: Option<&str>, json: bool) {
+pub fn parse(subnet: SubnetCommand, config: Option<&str>, json: bool) -> Result<(), CliError> {
     match subnet.command {
-        SubnetCommands::List { limit } => list(&subnet.network, limit, config, json),
+        SubnetCommands::List => list(&subnet.network, config, json),
         SubnetCommands::Info { id } => info(&subnet.network, &id, config, json),
     }
 }

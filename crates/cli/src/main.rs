@@ -4,11 +4,13 @@
 // Module that contains the Ash CLI root parser
 
 mod conf;
+mod error;
 mod network;
 mod node;
 mod subnet;
 
 use clap::{Parser, Subcommand};
+use std::process::exit;
 
 #[derive(Parser)]
 #[command(author, version)]
@@ -39,4 +41,8 @@ fn main() {
         CliCommands::Network(network) => network::parse(network, cli.config.as_deref(), cli.json),
         CliCommands::Conf(conf) => conf::parse(conf),
     }
+    .unwrap_or_else(|e| {
+        eprintln!("{}", e.message);
+        exit(e.exit_code)
+    });
 }

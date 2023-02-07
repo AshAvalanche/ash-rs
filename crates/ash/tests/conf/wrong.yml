@@ -2,21 +2,23 @@
 # Copyright (C) 2023, E36 Knots
 
 avalancheNetworks:
-  - name: custom
+  - name: no-primary-network
+    subnets:
+      - id: yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp
+        controlKeys: []
+        threshold: 0
+        blockchains:
+          - id: 2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm
+            name: MyChain
+            vmType: EVM
+            rpcUrl: https://api.ash.center/ext/bc/mychain/rpc
+  - name: no-pchain
     subnets:
       - id: 11111111111111111111111111111111LpoYY
         controlKeys: []
         threshold: 0
         blockchains:
-          - id: 11111111111111111111111111111111LpoYY
-            name: P-Chain
-            vmType: PVM
-            rpcUrl: https://api.ash.center/ext/bc/P
           - id: yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp
             name: C-Chain
             vmType: EVM
             rpcUrl: https://api.ash.center/ext/bc/C/rpc
-          - id: 2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm
-            name: X-Chain
-            vmType: AVM
-            rpcUrl: https://api.ash.center/ext/bc/X

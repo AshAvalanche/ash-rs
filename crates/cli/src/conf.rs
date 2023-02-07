@@ -3,9 +3,9 @@
 
 // Module that contains the conf subcommand parser
 
+use crate::error::CliError;
 use ash::conf::AshConfig;
 use clap::{Parser, Subcommand};
-use std::process::exit;
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche networks", long_about = None)]
@@ -26,18 +26,16 @@ enum ConfCommands {
 }
 
 // Initialize an Ash config file
-fn init(config: String, force: bool) {
-    match AshConfig::dump_default(&config, force) {
-        Ok(_) => println!("Config file initialized at '{}'", config),
-        Err(err) => {
-            eprintln!("Error initializing config file: {}", err);
-            exit(exitcode::CANTCREAT)
-        }
-    }
+fn init(config: String, force: bool) -> Result<(), CliError> {
+    AshConfig::dump_default(&config, force)
+        .map_err(|e| CliError::cantcreat(format!("Error initializing config file: {e}")))?;
+
+    println!("Config file initialized at '{config}'");
+    Ok(())
 }
 
 // Parse conf subcommand
-pub fn parse(conf: ConfCommand) {
+pub fn parse(conf: ConfCommand) -> Result<(), CliError> {
     match conf.command {
         ConfCommands::Init { config, force } => init(config, force),
     }

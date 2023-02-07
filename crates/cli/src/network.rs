@@ -3,9 +3,9 @@
 
 // Module that contains the network subcommand  parser
 
+use crate::error::CliError;
 use ash::conf::AshConfig;
 use clap::{Parser, Subcommand};
-use std::process::exit;
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche networks", long_about = None)]
@@ -21,14 +21,10 @@ enum NetworkCommands {
 }
 
 // List available Avalanche networks
-fn list(config: Option<&str>, json: bool) {
-    let networks = match AshConfig::load(config) {
-        Ok(ash_config) => ash_config.avalanche_networks,
-        Err(err) => {
-            eprintln!("Error listing networks: {}", err);
-            exit(exitcode::CONFIG);
-        }
-    };
+fn list(config: Option<&str>, json: bool) -> Result<(), CliError> {
+    let networks = AshConfig::load(config)
+        .map_err(|e| CliError::configerr(format!("Error listing networks: {e}")))?
+        .avalanche_networks;
 
     if json {
         // Print the list of networks in JSON format
@@ -38,17 +34,18 @@ fn list(config: Option<&str>, json: bool) {
             .map(|network| network.name.clone())
             .collect::<Vec<String>>();
         println!("{}", serde_json::to_string(&networks).unwrap());
-        return;
+        return Ok(());
     }
 
     println!("Available Avalanche networks:");
     for network in networks {
         println!("  - '{}'", network.name);
     }
+    Ok(())
 }
 
 // Parse network subcommand
-pub fn parse(network: NetworkCommand, config: Option<&str>, json: bool) {
+pub fn parse(network: NetworkCommand, config: Option<&str>, json: bool) -> Result<(), CliError> {
     match network.command {
         NetworkCommands::List => list(config, json),
     }

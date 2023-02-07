@@ -12,7 +12,7 @@ const DEFAULT_CONF: &str = include_str!("../conf/default.yml");
 
 /// Ash lib configuration
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
+#[serde(rename_all = "camelCase")]
 pub struct AshConfig {
     /// List of known Avalanche networks
     pub avalanche_networks: Vec<AvalancheNetwork>,
@@ -40,16 +40,10 @@ impl AshConfig {
 
         // If the config file already exists, return an error unless force is set to true
         match (Path::new(config_file).exists(), force) {
-            (true, false) => Err(format!(
-                "Configuration file '{}' already exists",
-                config_file
-            )),
+            (true, false) => Err(format!("Configuration file '{config_file}' already exists")),
             _ => {
                 fs::write(config_file, serde_yaml::to_string(&ash_conf).unwrap()).map_err(|e| {
-                    format!(
-                        "Failed to write default configuration to {}: {}",
-                        config_file, e
-                    )
+                    format!("Failed to write default configuration to {config_file}: {e}")
                 })?;
                 Ok(())
             }
@@ -60,10 +54,13 @@ impl AshConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::avalanche::{blockchains::AvalancheBlockchain, subnets::AvalancheSubnet};
+    use crate::avalanche::{
+        blockchains::AvalancheBlockchain, subnets::AvalancheSubnet, AVAX_PRIMARY_NETWORK_ID,
+    };
 
-    const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY";
+    const AVAX_PCHAIN_ID: &str = AVAX_PRIMARY_NETWORK_ID;
     const AVAX_MAINNET_CCHAIN_ID: &str = "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5";
+    const AVAX_MAINNET_EVM_ID: &str = "mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6";
     const AVAX_MAINNET_CCHAIN_RPC: &str = "https://api.avax.network/ext/bc/C/rpc";
 
     #[test]
@@ -82,18 +79,28 @@ mod tests {
         assert_eq!(mainnet.name, "mainnet");
         assert_eq!(mainnet.subnets.len(), 1);
 
-        let AvalancheSubnet { id, blockchains } = &mainnet.subnets[0];
+        let AvalancheSubnet {
+            id,
+            control_keys,
+            threshold,
+            blockchains,
+        } = &mainnet.subnets[0];
         assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
-        assert_eq!(blockchains.len(), 1);
+        assert_eq!(control_keys.len(), 0);
+        assert_eq!(threshold, &0);
+        assert_eq!(blockchains.len(), 3);
 
         let AvalancheBlockchain {
-            name,
             id,
+            name,
+            vm_id,
             vm_type,
             rpc_url,
-        } = &blockchains[0];
-        assert_eq!(name, "C-Chain");
+            ..
+        } = &blockchains[1];
         assert_eq!(id.to_string(), AVAX_MAINNET_CCHAIN_ID);
+        assert_eq!(name, "C-Chain");
+        assert_eq!(vm_id.to_string(), AVAX_MAINNET_EVM_ID);
         assert_eq!(vm_type, "EVM");
         assert_eq!(rpc_url, AVAX_MAINNET_CCHAIN_RPC);
     }
@@ -115,23 +122,28 @@ mod tests {
         assert_eq!(custom.name, "custom");
         assert_eq!(custom.subnets.len(), 1);
 
-        let AvalancheSubnet { id, blockchains } = &custom.subnets[0];
-        assert_eq!(
-            id.to_string(),
-            "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5"
-        );
-        assert_eq!(blockchains.len(), 1);
+        let AvalancheSubnet {
+            id,
+            control_keys,
+            threshold,
+            blockchains,
+        } = &custom.subnets[0];
+        assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
+        assert_eq!(control_keys.len(), 0);
+        assert_eq!(threshold, &0);
+        assert_eq!(blockchains.len(), 3);
 
         let AvalancheBlockchain {
-            name,
             id,
+            name,
             vm_type,
             rpc_url,
+            ..
         } = &blockchains[0];
-        assert_eq!(name, "C-Chain");
-        assert_eq!(id.to_string(), "11111111111111111111111111111111LpoYY");
-        assert_eq!(vm_type, "EVM");
-        assert_eq!(rpc_url, "https://api.ash.center/ext/bc/C/rpc");
+        assert_eq!(id.to_string(), AVAX_PCHAIN_ID);
+        assert_eq!(name, "P-Chain");
+        assert_eq!(vm_type, "PVM");
+        assert_eq!(rpc_url, "https://api.ash.center/ext/bc/P");
     }
 
     #[test]
