@@ -144,26 +144,33 @@ impl AvalancheNetwork {
 mod tests {
     use super::*;
     use blockchains::AvalancheBlockchain;
+    use std::env;
 
-    const AVAX_MAINNET_CCHAIN_ID: &str = "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5";
-    const AVAX_MAINNET_EVM_ID: &str = "mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6";
-    const AVAX_MAINNET_CCHAIN_RPC: &str = "https://api.avax.network/ext/bc/C/rpc";
-    const AVAX_MAINNET_DFK_SUBNET_ID: &str = "Vn3aX6hNRstj5VHHm63TCgPNaeGnRSqCYXQqemSqDd2TQH4qJ";
-    const AVAX_MAINNET_DFK_CHAIN_ID: &str = "q2aTwKuyzgs8pynF7UXBZCU7DejbZbZ6EUyHr3JQzYgwNPUPi";
+    const AVAX_FUJI_CCHAIN_ID: &str = "yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp";
+    const AVAX_FUJI_EVM_ID: &str = "mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6";
+    const AVAX_FUJI_DFK_SUBNET_ID: &str = "XHLRR9cvMtCR8KZsjU8nLxg1JbV7aS23AcLVeBMVHLKkSBriS";
+    const AVAX_FUJI_DFK_CHAIN_ID: &str = "32sexHqc3tBQsik8h7WP5F2ruL5svqhX5opeTgXCRVX8HpbKF";
+
+    // Load the test network from the ASH_TEST_CONFIG file
+    fn load_test_network() -> AvalancheNetwork {
+        let config_path =
+            env::var("ASH_TEST_AVAX_CONFIG").unwrap_or("tests/conf/default.yml".to_string());
+        AvalancheNetwork::load("fuji", Some(&config_path)).unwrap()
+    }
 
     #[test]
     fn test_avalanche_network_load() {
-        // Only test the mainnet network as the fuji network is the same structurally
-        let mainnet = AvalancheNetwork::load("mainnet", None).unwrap();
-        assert_eq!(mainnet.name, "mainnet");
-        assert_eq!(mainnet.subnets.len(), 1);
+        // Only test the fuji network as the mainnet network is structurally the same
+        let fuji = load_test_network();
+        assert_eq!(fuji.name, "fuji");
+        assert_eq!(fuji.subnets.len(), 1);
 
         let AvalancheSubnet {
             id,
             control_keys,
             threshold,
             blockchains,
-        } = &mainnet.subnets[0];
+        } = &fuji.subnets[0];
         assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
         assert_eq!(control_keys.len(), 0);
         assert_eq!(threshold, &0);
@@ -174,14 +181,12 @@ mod tests {
             name,
             vm_id,
             vm_type,
-            rpc_url,
             ..
         } = &blockchains[1];
-        assert_eq!(id.to_string(), AVAX_MAINNET_CCHAIN_ID);
+        assert_eq!(id.to_string(), AVAX_FUJI_CCHAIN_ID);
         assert_eq!(name, "C-Chain");
-        assert_eq!(vm_id.to_string(), AVAX_MAINNET_EVM_ID);
+        assert_eq!(vm_id.to_string(), AVAX_FUJI_EVM_ID);
         assert_eq!(vm_type, "EVM");
-        assert_eq!(rpc_url, AVAX_MAINNET_CCHAIN_RPC);
 
         assert!(AvalancheNetwork::load("invalid", None).is_err());
     }
@@ -204,27 +209,27 @@ mod tests {
 
     #[test]
     fn test_avalanche_network_get_subnet() {
-        let mainnet = AvalancheNetwork::load("mainnet", None).unwrap();
+        let fuji = load_test_network();
 
         // Should never fail as AVAX_PRIMARY_NETWORK_ID should always be a valid key
-        let mainnet_subnet = mainnet.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
-        assert_eq!(mainnet_subnet.id.to_string(), AVAX_PRIMARY_NETWORK_ID);
-        assert_eq!(mainnet_subnet.blockchains.len(), 3);
+        let primary_subnet = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+        assert_eq!(primary_subnet.id.to_string(), AVAX_PRIMARY_NETWORK_ID);
+        assert_eq!(primary_subnet.blockchains.len(), 3);
 
-        assert!(mainnet.get_subnet("invalid").is_none());
+        assert!(fuji.get_subnet("invalid").is_none());
     }
 
     #[test]
     fn test_avalanche_network_update_subnets() {
-        let mut mainnet = AvalancheNetwork::load("mainnet", None).unwrap();
-        mainnet.update_subnets().unwrap();
+        let mut fuji = load_test_network();
+        fuji.update_subnets().unwrap();
 
         // Test that the number of subnets is greater than 1
-        assert!(mainnet.subnets.len() > 1);
+        assert!(fuji.subnets.len() > 1);
 
         // Test that the primary network is still present
         // and that the P-Chain is still present
-        let primary_subnet = mainnet.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+        let primary_subnet = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
         assert_eq!(primary_subnet.id.to_string(), AVAX_PRIMARY_NETWORK_ID);
         assert_eq!(primary_subnet.blockchains.len(), 3);
         assert!(primary_subnet
@@ -233,27 +238,27 @@ mod tests {
             .any(|blockchain| blockchain.id.to_string() == AVAX_PRIMARY_NETWORK_ID));
 
         // Test that the DFK subnet is present
-        let dfk_subnet = mainnet.get_subnet(AVAX_MAINNET_DFK_SUBNET_ID).unwrap();
-        assert_eq!(dfk_subnet.id.to_string(), AVAX_MAINNET_DFK_SUBNET_ID);
+        let dfk_subnet = fuji.get_subnet(AVAX_FUJI_DFK_SUBNET_ID).unwrap();
+        assert_eq!(dfk_subnet.id.to_string(), AVAX_FUJI_DFK_SUBNET_ID);
     }
 
     #[test]
     fn test_avalanche_network_update_blockchains() {
-        let mut mainnet = AvalancheNetwork::load("mainnet", None).unwrap();
-        mainnet.update_subnets().unwrap();
-        mainnet.update_blockchains().unwrap();
+        let mut fuji = load_test_network();
+        fuji.update_subnets().unwrap();
+        fuji.update_blockchains().unwrap();
 
         // Test that the primary network is still present
-        assert!(mainnet
+        assert!(fuji
             .subnets
             .iter()
             .any(|subnet| subnet.id.to_string() == AVAX_PRIMARY_NETWORK_ID));
 
         // Test that the DFK subnet contains the DFK chain
-        let dfk_subnet = mainnet.get_subnet(AVAX_MAINNET_DFK_SUBNET_ID).unwrap();
+        let dfk_subnet = fuji.get_subnet(AVAX_FUJI_DFK_SUBNET_ID).unwrap();
         assert!(dfk_subnet
             .blockchains
             .iter()
-            .any(|blockchain| blockchain.id.to_string() == AVAX_MAINNET_DFK_CHAIN_ID));
+            .any(|blockchain| blockchain.id.to_string() == AVAX_FUJI_DFK_CHAIN_ID));
     }
 }
