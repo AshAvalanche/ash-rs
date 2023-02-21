@@ -23,6 +23,13 @@ jobs:
         with:
           toolchain: stable
 
+      - name: Template tests config file
+        run: |
+          envsubst < crates/ash/tests/conf/quicknode.yml > ${{ runner.temp }}/ash-test-avax-conf.yml
+        env:
+          ASH_QUICKNODE_FUJI_ENDPOINT: ${{ secrets.ASH_QUICKNODE_FUJI_ENDPOINT }}
+          ASH_QUICKNODE_FUJI_TOKEN: ${{ secrets.ASH_QUICKNODE_FUJI_TOKEN }}
+
       - name: Run cargo check
         uses: actions-rs/cargo@v1
         with:
@@ -32,3 +39,10 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
+
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+        env:
+          AVAX_TEST_AVAX_CONFIG: ${{ runner.temp }}/ash-test-avax-conf.yml
