@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2023, E36 Knots
+// Copyright (c) 2023, E36 Knots
 
 // Module that contains the subnet subcommand parser
 
@@ -8,7 +8,7 @@ use ash::avalanche::{subnets::AvalancheSubnet, AvalancheNetwork};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(about = "Interact with Avalanche Subnets", long_about = None)]
+#[command(about = "Interact with Avalanche Subnets")]
 pub struct SubnetCommand {
     #[command(subcommand)]
     command: SubnetCommands,
@@ -23,8 +23,9 @@ pub struct SubnetCommand {
 
 #[derive(Subcommand)]
 enum SubnetCommands {
-    #[command(about = "List the network's subnets", long_about = None)]
+    #[command(about = "List the network's subnets")]
     List,
+    #[command(about = "Show subnet information")]
     Info {
         #[arg(long, help = "Subnet ID (CB58)")]
         id: String,
