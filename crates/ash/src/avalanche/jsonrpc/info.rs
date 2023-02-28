@@ -120,6 +120,7 @@ mod tests {
     const ASH_TEST_NODE_ID: &str = "NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg";
 
     #[test]
+    #[ignore]
     fn test_get_node_id() {
         let rpc_url = format!(
             "http://{}:{}/{}",
@@ -130,6 +131,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_get_node_ip() {
         let rpc_url = format!(
             "http://{}:{}/{}",
@@ -143,6 +145,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_get_node_version() {
         let rpc_url = format!(
             "http://{}:{}/{}",

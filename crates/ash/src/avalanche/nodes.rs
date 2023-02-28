@@ -74,6 +74,7 @@ mod tests {
     const ASH_TEST_NODE_ID: &str = "NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg";
 
     #[test]
+    #[ignore]
     fn test_update_info() {
         let mut node = AvalancheNode {
             http_host: ASH_TEST_HTTP_HOST.to_string(),
