@@ -117,16 +117,31 @@ pub fn get_network_blockchains(rpc_url: &str) -> Result<Vec<AvalancheBlockchain>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::avalanche::AvalancheNetwork;
     use avalanche_types::ids::Id;
-    use std::str::FromStr;
+    use std::{env, str::FromStr};
 
     const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY";
-    const AVAX_MAINNET_CCHAIN_ID: &str = "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5";
-    const AVAX_MAINNET_XCHAIN_ID: &str = "2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM";
+    const AVAX_FUJI_CCHAIN_ID: &str = "yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp";
+    const AVAX_FUJI_XCHAIN_ID: &str = "2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm";
+
+    // Load the test network from the ASH_TEST_CONFIG file
+    fn load_test_network() -> AvalancheNetwork {
+        let config_path =
+            env::var("ASH_TEST_AVAX_CONFIG").unwrap_or("tests/conf/default.yml".to_string());
+        AvalancheNetwork::load("fuji", Some(&config_path)).unwrap()
+    }
 
     #[test]
     fn test_get_network_subnets() {
-        let rpc_url = "https://api.avax.network/ext/bc/P";
+        let fuji = load_test_network();
+        let rpc_url = &fuji
+            .get_subnet(AVAX_PRIMARY_NETWORK_ID)
+            .unwrap()
+            .get_blockchain(AVAX_PRIMARY_NETWORK_ID)
+            .unwrap()
+            .rpc_url;
+
         let subnets = get_network_subnets(rpc_url).unwrap();
 
         // Test that the primary network subnet is present
@@ -137,17 +152,24 @@ mod tests {
 
     #[test]
     fn test_get_network_blockchains() {
-        let rpc_url = "https://api.avax.network/ext/bc/P";
+        let fuji = load_test_network();
+        let rpc_url = &fuji
+            .get_subnet(AVAX_PRIMARY_NETWORK_ID)
+            .unwrap()
+            .get_blockchain(AVAX_PRIMARY_NETWORK_ID)
+            .unwrap()
+            .rpc_url;
+
         let blockchains = get_network_blockchains(rpc_url).unwrap();
 
         // Test that the C-Chain and X-Chain are present
         let c_chain = blockchains
             .iter()
-            .find(|blockchain| blockchain.id == Id::from_str(AVAX_MAINNET_CCHAIN_ID).unwrap())
+            .find(|blockchain| blockchain.id == Id::from_str(AVAX_FUJI_CCHAIN_ID).unwrap())
             .unwrap();
         let x_chain = blockchains
             .iter()
-            .find(|blockchain| blockchain.id == Id::from_str(AVAX_MAINNET_XCHAIN_ID).unwrap())
+            .find(|blockchain| blockchain.id == Id::from_str(AVAX_FUJI_XCHAIN_ID).unwrap())
             .unwrap();
 
         assert_eq!(c_chain.name, "C-Chain");

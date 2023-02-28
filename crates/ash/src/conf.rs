@@ -69,7 +69,7 @@ mod tests {
         let ash_config = AshConfig::load(None).unwrap();
 
         // Test the default configuration for avalanche_networks
-        assert_eq!(ash_config.avalanche_networks.len(), 2);
+        assert_eq!(ash_config.avalanche_networks.len(), 6);
 
         let mainnet = ash_config
             .avalanche_networks
@@ -160,8 +160,8 @@ mod tests {
         let dumped_config = AshConfig::load(Some(config_file)).unwrap();
 
         // Compare the dumped configuration with the default configuration
-        assert_eq!(ash_config.avalanche_networks.len(), 2);
-        assert_eq!(dumped_config.avalanche_networks.len(), 2);
+        assert_eq!(ash_config.avalanche_networks.len(), 6);
+        assert_eq!(dumped_config.avalanche_networks.len(), 6);
 
         let mainnet = ash_config
             .avalanche_networks
