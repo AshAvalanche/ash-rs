@@ -4,7 +4,7 @@
 // Module that contains code to interact with Avalanche Info API
 
 use crate::avalanche::{
-    avalanche_node_id_from_string, nodes::AvalancheNodeUptime, nodes::AvalancheNodeVersion,
+    avalanche_node_id_from_string, nodes::AvalancheNodeUptime, nodes::AvalancheNodeVersions,
 };
 use avalanche_types::{ids::node::Id, jsonrpc::info::*};
 use serde::Deserialize;
@@ -71,7 +71,7 @@ pub fn get_node_ip(rpc_url: &str) -> Result<String, ureq::Error> {
 }
 
 // Get the version of a node by querying the Info API
-pub fn get_node_version(rpc_url: &str) -> Result<AvalancheNodeVersion, ureq::Error> {
+pub fn get_node_version(rpc_url: &str) -> Result<AvalancheNodeVersions, ureq::Error> {
     let resp: GetNodeVersionResponse = ureq::post(rpc_url)
         .send_json(ureq::json!({
             "jsonrpc": "2.0",
@@ -82,7 +82,7 @@ pub fn get_node_version(rpc_url: &str) -> Result<AvalancheNodeVersion, ureq::Err
         .into_json()?;
 
     let node_version = resp.result.unwrap();
-    Ok(AvalancheNodeVersion {
+    Ok(AvalancheNodeVersions {
         avalanchego_version: node_version.version,
         database_version: node_version.database_version,
         git_commit: node_version.git_commit,

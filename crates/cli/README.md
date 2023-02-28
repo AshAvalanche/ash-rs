@@ -4,5 +4,6 @@
 
 - `ash conf`: Manipulate the Ash lib configuration
 - `ash node`: Interact with Ash nodes
-- `ash subnet`: Interact with Avalanche subnets
-- `ash network`: Interact with Avalanche networks
+- `ash avalanche network`: Interact with Avalanche networks
+- `ash avalanche node`: Interact with Avalanche nodes
+- `ash avalanche subnet`: Interact with Avalanche Subnets

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023, E36 Knots
 
-// Module that contains the network subcommand  parser
+// Module that contains the network subcommand parser
 
 use crate::error::CliError;
 use ash::conf::AshConfig;

@@ -15,7 +15,7 @@ pub struct AvalancheSubnet {
     pub id: Id,
     pub control_keys: Vec<String>,
     pub threshold: u8,
-    /// List of the subnet's blockchains
+    /// List of the Subnet's blockchains
     pub blockchains: Vec<AvalancheBlockchain>,
 }
 

@@ -4,6 +4,7 @@
 // Module that contains the avalanche subcommand parser
 
 mod network;
+mod node;
 mod subnet;
 
 use crate::error::CliError;
@@ -18,8 +19,9 @@ pub struct AvalancheCommand {
 
 #[derive(Subcommand)]
 enum AvalancheCommands {
-    Subnet(subnet::SubnetCommand),
     Network(network::NetworkCommand),
+    Node(node::NodeCommand),
+    Subnet(subnet::SubnetCommand),
 }
 
 // Parse subnet subcommand
@@ -29,7 +31,8 @@ pub fn parse(
     json: bool,
 ) -> Result<(), CliError> {
     match avalanche.command {
-        AvalancheCommands::Subnet(subnet) => subnet::parse(subnet, config, json),
         AvalancheCommands::Network(network) => network::parse(network, config, json),
+        AvalancheCommands::Node(node) => node::parse(node, json),
+        AvalancheCommands::Subnet(subnet) => subnet::parse(subnet, config, json),
     }
 }

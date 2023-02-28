@@ -17,14 +17,14 @@ pub struct AvalancheNode {
     pub http_port: u16,
     pub public_ip: String,
     pub stacking_port: u16,
-    pub version: AvalancheNodeVersion,
+    pub versions: AvalancheNodeVersions,
     pub uptime: AvalancheNodeUptime,
 }
 
 /// Avalanche node version
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AvalancheNodeVersion {
+pub struct AvalancheNodeVersions {
     pub avalanchego_version: String,
     pub database_version: String,
     pub git_commit: String,
@@ -57,7 +57,8 @@ impl AvalancheNode {
         self.public_ip = node_ip_split[0].to_string();
         self.stacking_port = node_ip_split[1].parse().unwrap();
 
-        self.version = get_node_version(&api_path).map_err(|e| e.to_string())?;
+        self.versions = get_node_version(&api_path).map_err(|e| e.to_string())?;
+        self.uptime = get_node_uptime(&api_path).map_err(|e| e.to_string())?;
 
         Ok(())
     }
@@ -94,9 +95,13 @@ mod tests {
         assert_eq!(node.stacking_port, ASH_TEST_STACKING_PORT);
 
         // Only test that the node version is not empty
-        assert!(!node.version.avalanchego_version.is_empty());
-        assert!(!node.version.database_version.is_empty());
-        assert!(!node.version.git_commit.is_empty());
-        assert!(node.version.vm_versions != VmVersions::default());
+        assert!(!node.versions.avalanchego_version.is_empty());
+        assert!(!node.versions.database_version.is_empty());
+        assert!(!node.versions.git_commit.is_empty());
+        assert!(node.versions.vm_versions != VmVersions::default());
+
+        // Test that the node uptime is not equal to 0
+        assert_ne!(node.uptime.rewarding_stake_percentage, 0.0);
+        assert_ne!(node.uptime.weighted_average_percentage, 0.0);
     }
 }
