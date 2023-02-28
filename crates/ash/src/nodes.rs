@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2023, E36 Knots
+// Copyright (c) 2023, E36 Knots
 
-// Module that contains the Ash node struct and related functions
+// Module that contains code to interact with Ash nodes
 
+use crate::avalanche::nodes::AvalancheNode;
 use avalanche_types::ids::node::Id;
 use regex::Regex;
 use serde::Serialize;
@@ -11,8 +12,8 @@ use std::{io::Error, str::FromStr};
 /// Node of the Ash protocol
 #[derive(Debug)]
 pub struct AshNode {
-    /// The node's ID
-    pub id: Id,
+    /// The Avalanche node
+    pub avalanche_node: AvalancheNode,
 }
 
 impl AshNode {
@@ -20,14 +21,24 @@ impl AshNode {
     pub fn from_cb58_id(nodeid: &str) -> Result<Self, Error> {
         let id = Id::from_str(nodeid)?;
 
-        Ok(AshNode { id })
+        Ok(AshNode {
+            avalanche_node: AvalancheNode {
+                id,
+                ..Default::default()
+            },
+        })
     }
 
     /// Create a new Ash node from an Avalanche node ID byte slice
     pub fn from_bytes_id(nodeid: &[u8]) -> Result<Self, Error> {
         let id = Id::from_slice(nodeid);
 
-        Ok(AshNode { id })
+        Ok(AshNode {
+            avalanche_node: AvalancheNode {
+                id,
+                ..Default::default()
+            },
+        })
     }
 
     /// Create a new Ash node from an Avalanche node ID hex string
@@ -70,15 +81,16 @@ impl AshNode {
     /// Get the node's ID as an AshNodeId struct
     pub fn id(&self) -> AshNodeId {
         AshNodeId {
-            p_chain: self.id.to_string(),
-            cb58: self.id.short_id().to_string(),
+            p_chain: self.avalanche_node.id.to_string(),
+            cb58: self.avalanche_node.id.short_id().to_string(),
             hex: self
+                .avalanche_node
                 .id
                 .as_ref()
                 .iter()
                 .map(|b| format!("{b:02x}"))
                 .collect(),
-            bytes: self.id.to_vec(),
+            bytes: self.avalanche_node.id.to_vec(),
         }
     }
 
@@ -126,7 +138,7 @@ mod tests {
         // Creating the node should succeed
         let node = AshNode::from_cb58_id(CB58_ID).unwrap();
 
-        assert_eq!(node.id.short_id().to_string(), CB58_ID);
+        assert_eq!(node.avalanche_node.id.short_id().to_string(), CB58_ID);
     }
 
     #[test]
@@ -134,7 +146,7 @@ mod tests {
         // Creating the node should succeed
         let node = AshNode::from_bytes_id(&BYTES_ID).unwrap();
 
-        assert_eq!(node.id.short_id().to_string(), CB58_ID);
+        assert_eq!(node.avalanche_node.id.short_id().to_string(), CB58_ID);
     }
 
     #[test]
@@ -142,7 +154,7 @@ mod tests {
         // Creating the node should succeed
         let node = AshNode::from_hex_id(HEX_ID).unwrap();
 
-        assert_eq!(node.id.short_id().to_string(), CB58_ID);
+        assert_eq!(node.avalanche_node.id.short_id().to_string(), CB58_ID);
     }
 
     #[test]
@@ -150,22 +162,22 @@ mod tests {
         // Creating the node should succeed
         let node = AshNode::from_string(CB58_ID).unwrap();
 
-        assert_eq!(node.id.short_id().to_string(), CB58_ID);
+        assert_eq!(node.avalanche_node.id.short_id().to_string(), CB58_ID);
 
         // Creating the node should succeed
         let node = AshNode::from_string(HEX_ID).unwrap();
 
-        assert_eq!(node.id.short_id().to_string(), CB58_ID);
+        assert_eq!(node.avalanche_node.id.short_id().to_string(), CB58_ID);
 
         // Creating the node should succeed
         let node = AshNode::from_string(&format!("0x{HEX_ID}")).unwrap();
 
-        assert_eq!(node.id.short_id().to_string(), CB58_ID);
+        assert_eq!(node.avalanche_node.id.short_id().to_string(), CB58_ID);
 
         // Creating the node should succeed
         let node = AshNode::from_string(&format!("NodeID-{CB58_ID}")).unwrap();
 
-        assert_eq!(node.id.short_id().to_string(), CB58_ID);
+        assert_eq!(node.avalanche_node.id.short_id().to_string(), CB58_ID);
 
         // Creating the node should fail
         let node = AshNode::from_string("invalid");

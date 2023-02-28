@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2023, E36 Knots
+// Copyright (c) 2023, E36 Knots
 
 pub mod blockchains;
 pub mod jsonrpc;
+pub mod nodes;
 pub mod subnets;
 
 // Module that contains code to interact with Avalanche networks
 
 use crate::{avalanche::jsonrpc::platformvm, avalanche::subnets::AvalancheSubnet, conf::AshConfig};
-use avalanche_types::ids::Id;
+use avalanche_types::ids::{node::Id as NodeId, Id};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -33,6 +34,15 @@ where
 {
     let s = String::deserialize(deserializer)?;
     Id::from_str(&s).map_err(serde::de::Error::custom)
+}
+
+/// Deserialize an Avalanche NodeID from a string
+fn avalanche_node_id_from_string<'de, D>(deserializer: D) -> Result<NodeId, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    NodeId::from_str(&s).map_err(serde::de::Error::custom)
 }
 
 impl AvalancheNetwork {
