@@ -30,6 +30,13 @@ jobs:
           ASH_QUICKNODE_FUJI_ENDPOINT: ${{ secrets.ASH_QUICKNODE_FUJI_ENDPOINT }}
           ASH_QUICKNODE_FUJI_TOKEN: ${{ secrets.ASH_QUICKNODE_FUJI_TOKEN }}
 
+      - name: Install avalanche-cli
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/ava-labs/avalanche-cli/main/scripts/install.sh | sh -s
+
+      - name: Start a local Avalanche network
+        run: ~/bin/avalanche network start
+
       - name: Run cargo check
         uses: actions-rs/cargo@v1
         with:
@@ -44,5 +51,6 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
+          args: -- --include-ignored
         env:
           AVAX_TEST_AVAX_CONFIG: ${{ runner.temp }}/ash-test-avax-conf.yml

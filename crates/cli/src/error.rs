@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2023, E36 Knots
+// Copyright (c) 2023, E36 Knots
 
 // Module that contains error types
 

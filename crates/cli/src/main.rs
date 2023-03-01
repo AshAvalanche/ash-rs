@@ -1,20 +1,19 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2023, E36 Knots
+// Copyright (c) 2023, E36 Knots
 
 // Module that contains the Ash CLI root parser
 
+mod avalanche;
 mod conf;
 mod error;
-mod network;
 mod node;
-mod subnet;
 
 use clap::{Parser, Subcommand};
 use std::process::exit;
 
 #[derive(Parser)]
 #[command(author, version)]
-#[command(about = "Ash CLI", long_about = None)]
+#[command(about = "Ash CLI")]
 struct Cli {
     #[command(subcommand)]
     command: CliCommands,
@@ -26,20 +25,21 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum CliCommands {
-    Network(network::NetworkCommand),
-    Node(node::NodeCommand),
-    Subnet(subnet::SubnetCommand),
+    #[command(visible_alias = "avax")]
+    Avalanche(avalanche::AvalancheCommand),
     Conf(conf::ConfCommand),
+    Node(node::NodeCommand),
 }
 
 fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        CliCommands::Node(node) => node::parse(node, cli.json),
-        CliCommands::Subnet(subnet) => subnet::parse(subnet, cli.config.as_deref(), cli.json),
-        CliCommands::Network(network) => network::parse(network, cli.config.as_deref(), cli.json),
+        CliCommands::Avalanche(avalanche) => {
+            avalanche::parse(avalanche, cli.config.as_deref(), cli.json)
+        }
         CliCommands::Conf(conf) => conf::parse(conf),
+        CliCommands::Node(node) => node::parse(node, cli.json),
     }
     .unwrap_or_else(|e| {
         eprintln!("{}", e.message);

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2023, E36 Knots
+// Copyright (c) 2023, E36 Knots
 
-// Module that contains the network subcommand  parser
+// Module that contains the network subcommand parser
 
 use crate::error::CliError;
 use ash::conf::AshConfig;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(about = "Interact with Avalanche networks", long_about = None)]
+#[command(about = "Interact with Avalanche networks")]
 pub struct NetworkCommand {
     #[command(subcommand)]
     command: NetworkCommands,
@@ -16,7 +16,7 @@ pub struct NetworkCommand {
 
 #[derive(Subcommand)]
 enum NetworkCommands {
-    #[command(about = "List Avalanche networks", long_about = None)]
+    #[command(about = "List Avalanche networks")]
     List,
 }
 

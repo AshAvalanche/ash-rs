@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2023, E36 Knots
+// Copyright (c) 2023, E36 Knots
 
-// Module that contains code to interact with Avalanche PlatformVM blockchains
+// Module that contains code to interact with Avalanche PlatformVM API
 
 use crate::avalanche::avalanche_id_from_string;
 use crate::avalanche::{blockchains::AvalancheBlockchain, subnets::AvalancheSubnet};
@@ -16,11 +16,11 @@ struct PlatformApiGetSubnetsResponse {
     jsonrpc: String,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     id: u8,
-    result: PlatformApiGetSubnetsResponseResult,
+    result: PlatformApiGetSubnetsResult,
 }
 
 #[derive(Deserialize)]
-struct PlatformApiGetSubnetsResponseResult {
+struct PlatformApiGetSubnetsResult {
     subnets: Vec<PlatformApiSubnet>,
 }
 
@@ -40,11 +40,11 @@ struct PlatformApiGetBlockchainsResponse {
     jsonrpc: String,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     id: u8,
-    result: PlatformApiGetBlockchainsResponseResult,
+    result: PlatformApiGetBlockchainsResult,
 }
 
 #[derive(Deserialize)]
-struct PlatformApiGetBlockchainsResponseResult {
+struct PlatformApiGetBlockchainsResult {
     blockchains: Vec<PlatformApiBlockchain>,
 }
 

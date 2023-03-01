@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2023, E36 Knots
+// Copyright (c) 2023, E36 Knots
 
 // Module that contains the conf subcommand parser
 
@@ -8,7 +8,7 @@ use ash::conf::AshConfig;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(about = "Interact with Avalanche networks", long_about = None)]
+#[command(about = "Interact with Ash configuration files")]
 pub struct ConfCommand {
     #[command(subcommand)]
     command: ConfCommands,
@@ -16,7 +16,7 @@ pub struct ConfCommand {
 
 #[derive(Subcommand)]
 enum ConfCommands {
-    #[command(about = "Initialize an Ash config file", long_about = None)]
+    #[command(about = "Initialize an Ash config file")]
     Init {
         #[arg(from_global)]
         config: String,

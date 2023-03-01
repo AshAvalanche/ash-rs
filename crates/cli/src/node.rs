@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2023, E36 Knots
+// Copyright (c) 2023, E36 Knots
 
 // Module that contains the node subcommand parser
 
 use crate::error::CliError;
-use ash::node::AshNode;
+use ash::nodes::AshNode;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(about = "Interact with Ash nodes", long_about = None)]
+#[command(about = "Interact with Ash nodes")]
 pub struct NodeCommand {
     #[command(subcommand)]
     command: NodeCommands,
@@ -16,7 +16,7 @@ pub struct NodeCommand {
 
 #[derive(Subcommand)]
 enum NodeCommands {
-    #[command(about = "Show node information", long_about = None)]
+    #[command(about = "Show node information")]
     Info {
         #[arg(long, help = "Node ID (CB58 or hex string)")]
         id: String,

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2023, E36 Knots
+// Copyright (c) 2023, E36 Knots
 
 // Module that contains the subnet subcommand parser
 
@@ -8,7 +8,7 @@ use ash::avalanche::{subnets::AvalancheSubnet, AvalancheNetwork};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(about = "Interact with Avalanche Subnets", long_about = None)]
+#[command(about = "Interact with Avalanche Subnets")]
 pub struct SubnetCommand {
     #[command(subcommand)]
     command: SubnetCommands,
@@ -23,15 +23,16 @@ pub struct SubnetCommand {
 
 #[derive(Subcommand)]
 enum SubnetCommands {
-    #[command(about = "List the network's subnets", long_about = None)]
+    #[command(about = "List the network's Subnets")]
     List,
+    #[command(about = "Show Subnet information")]
     Info {
         #[arg(long, help = "Subnet ID (CB58)")]
         id: String,
     },
 }
 
-// Load the network configuation and recursively update the subnets (and their blockchains)
+// Load the network configuation and recursively update the Subnets (and their blockchains)
 fn load_network_and_update_subnets(
     network_name: &str,
     config: Option<&str>,
@@ -48,7 +49,7 @@ fn load_network_and_update_subnets(
     Ok(network)
 }
 
-// List the network's subnets
+// List the network's Subnets
 fn list(network_name: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
     let network = load_network_and_update_subnets(network_name, config)?;
 
@@ -58,7 +59,7 @@ fn list(network_name: &str, config: Option<&str>, json: bool) -> Result<(), CliE
     }
 
     println!(
-        "Found {} subnet(s) on '{}':",
+        "Found {} Subnet(s) on '{}':",
         network.subnets.len(),
         network.name
     );
@@ -83,7 +84,7 @@ fn info(network: &str, id: &str, config: Option<&str>, json: bool) -> Result<(),
     Ok(())
 }
 
-// Print subnet information (when not in JSON mode)
+// Print Subnet information (when not in JSON mode)
 fn print_info(subnet: &AvalancheSubnet, separator: bool) {
     let subnet_id_line = format!("Subnet '{}':", subnet.id);
 
@@ -107,7 +108,7 @@ fn print_info(subnet: &AvalancheSubnet, separator: bool) {
 // Parse subnet subcommand
 pub fn parse(subnet: SubnetCommand, config: Option<&str>, json: bool) -> Result<(), CliError> {
     match subnet.command {
-        SubnetCommands::List => list(&subnet.network, config, json),
         SubnetCommands::Info { id } => info(&subnet.network, &id, config, json),
+        SubnetCommands::List => list(&subnet.network, config, json),
     }
 }

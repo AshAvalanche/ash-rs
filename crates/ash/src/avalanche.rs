@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2023, E36 Knots
+// Copyright (c) 2023, E36 Knots
 
 pub mod blockchains;
 pub mod jsonrpc;
+pub mod nodes;
 pub mod subnets;
 
 // Module that contains code to interact with Avalanche networks
 
 use crate::{avalanche::jsonrpc::platformvm, avalanche::subnets::AvalancheSubnet, conf::AshConfig};
-use avalanche_types::ids::Id;
+use avalanche_types::ids::{node::Id as NodeId, Id};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 /// Avalanche primary network ID
-/// This subnet contains the P-Chain that is used for all subnet operations
+/// This Subnet contains the P-Chain that is used for all Subnet operations
 /// (the P-Chain ID is the same as the primary network ID)
 pub const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY";
 
@@ -33,6 +34,15 @@ where
 {
     let s = String::deserialize(deserializer)?;
     Id::from_str(&s).map_err(serde::de::Error::custom)
+}
+
+/// Deserialize an Avalanche NodeID from a string
+fn avalanche_node_id_from_string<'de, D>(deserializer: D) -> Result<NodeId, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    NodeId::from_str(&s).map_err(serde::de::Error::custom)
 }
 
 impl AvalancheNetwork {
@@ -81,7 +91,7 @@ impl AvalancheNetwork {
         Ok(rpc_url.to_string())
     }
 
-    /// Update the AvalancheNetwork subnets by querying an API endpoint
+    /// Update the AvalancheNetwork Subnets by querying an API endpoint
     pub fn update_subnets(&mut self) -> Result<(), String> {
         let rpc_url = self.get_pchain_rpc_url()?;
 
@@ -116,7 +126,7 @@ impl AvalancheNetwork {
         let blockchains =
             platformvm::get_network_blockchains(&rpc_url).map_err(|e| e.to_string())?;
 
-        // For each subnet, replace the blockchains with the ones returned by the API
+        // For each Subnet, replace the blockchains with the ones returned by the API
         // Skip the primary network, as the P-Chain is not returned by the API
         let primary_subnet = self.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap().clone();
         let mut subnets = self
@@ -224,7 +234,7 @@ mod tests {
         let mut fuji = load_test_network();
         fuji.update_subnets().unwrap();
 
-        // Test that the number of subnets is greater than 1
+        // Test that the number of Subnets is greater than 1
         assert!(fuji.subnets.len() > 1);
 
         // Test that the primary network is still present
@@ -237,7 +247,7 @@ mod tests {
             .iter()
             .any(|blockchain| blockchain.id.to_string() == AVAX_PRIMARY_NETWORK_ID));
 
-        // Test that the DFK subnet is present
+        // Test that the DFK Subnet is present
         let dfk_subnet = fuji.get_subnet(AVAX_FUJI_DFK_SUBNET_ID).unwrap();
         assert_eq!(dfk_subnet.id.to_string(), AVAX_FUJI_DFK_SUBNET_ID);
     }
@@ -254,7 +264,7 @@ mod tests {
             .iter()
             .any(|subnet| subnet.id.to_string() == AVAX_PRIMARY_NETWORK_ID));
 
-        // Test that the DFK subnet contains the DFK chain
+        // Test that the DFK Subnet contains the DFK chain
         let dfk_subnet = fuji.get_subnet(AVAX_FUJI_DFK_SUBNET_ID).unwrap();
         assert!(dfk_subnet
             .blockchains

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2023, E36 Knots
+// Copyright (c) 2023, E36 Knots
 
 // Module that contains code to interact with Avalanche subnets
 
@@ -15,7 +15,7 @@ pub struct AvalancheSubnet {
     pub id: Id,
     pub control_keys: Vec<String>,
     pub threshold: u8,
-    /// List of the subnet's blockchains
+    /// List of the Subnet's blockchains
     pub blockchains: Vec<AvalancheBlockchain>,
 }
 

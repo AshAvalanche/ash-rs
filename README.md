@@ -58,13 +58,31 @@ cargo run -- --help
 cargo run --release -- --help
 ```
 
-### Tests RPC endpoint configuration
+### Advanced testing
+
+#### Local Avalanche network
+
+Some tests (e.g. [avalanche::nodes::tests](./crates/ash/src/avalanche/nodes.rs)) require a local Avalanche network and are `ignored` by default. They are configured to work with [avalanche-network-runner](https://github.com/ava-labs/avalanche-network-runner). The easiest way to bootstrap a network is using [avalanche-cli](https://github.com/ava-labs/avalanche-cli):
+
+```sh
+# Install avalanche-cli
+curl -sSfL https://raw.githubusercontent.com/ava-labs/avalanche-cli/main/scripts/install.sh | sh -s
+export PATH=~/bin:$PATH
+
+# Start the local network
+avalanche network start
+
+# Run all tests
+cargo test -- --include-ignored
+```
+
+#### RPC endpoint configuration for tests
 
 The Avalanche public APIs (provided by Ava Labs, Ankr, Blast, etc.) have rate limits that can impact testing. It is necessary to use a private RPC endpoint to have a reproducible testing behaviour.
 
 A custom configuration file can be provided through the `ASH_TEST_AVAX_CONFIG` environment variable (defaults to [crates/ash/tests/conf/default.yml](./crates/ash/tests/conf/default.yml)). Tests are performed on the `fuji` network in this configuration file. See [Configuration](#configuration) to see how to generate a sample file.
 
-#### Ash QuickNode endpoint
+###### Ash QuickNode endpoint
 
 The PR GitHub Actions workflow run tests on the Ash team's [QuickNode](https://www.quicknode.com/) RCP endpoint.
 
@@ -85,8 +103,8 @@ ASH_TEST_AVAX_CONFIG="$PWD/target/ash-test-avax-conf.yml" cargo test
 
 - [x] CLI
 - [x] Get Subnets and blockchains information from the Avalanche P-Chain
+- [x] Get nodes information from the Avalanche P-Chain
 - [ ] Get Subnet validators information from the Avalanche P-Chain
-- [ ] Get nodes information from the Avalanche P-Chain
 - [ ] Ash protocol integration (abstract smart contracts interaction from the user)
 - [ ] Ledger integration (to sign transactions)
 - [ ] WASM integration (to allow the library to be used from JavaScript)
