@@ -84,6 +84,7 @@ mod tests {
             control_keys,
             threshold,
             blockchains,
+            ..
         } = &mainnet.subnets[0];
         assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
         assert_eq!(control_keys.len(), 0);
@@ -127,6 +128,7 @@ mod tests {
             control_keys,
             threshold,
             blockchains,
+            ..
         } = &custom.subnets[0];
         assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
         assert_eq!(control_keys.len(), 0);
