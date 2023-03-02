@@ -3,11 +3,17 @@
 
 // Module that contains code to interact with Avalanche PlatformVM API
 
-use crate::avalanche::{avalanche_id_from_string, avalanche_node_id_from_string};
-use crate::avalanche::{blockchains, subnets, AvalancheOutputOwners};
+use crate::avalanche::blockchains::AvalancheBlockchain;
+use crate::avalanche::subnets::{
+    AvalancheSubnet, AvalancheSubnetDelegator, AvalancheSubnetValidator,
+};
+use crate::avalanche::{
+    avalanche_id_from_string, avalanche_node_id_from_string, AvalancheOutputOwners,
+};
 use avalanche_types::{ids::node::Id as NodeId, ids::Id};
 use serde::Deserialize;
 use serde_aux::prelude::*;
+use std::str::FromStr;
 use ureq;
 
 #[derive(Deserialize)]
@@ -135,7 +141,7 @@ struct PlatformApiRewardOwner {
 }
 
 // Get the Subnets of the network by querying the P-Chain API
-pub fn get_network_subnets(rpc_url: &str) -> Result<Vec<subnets::AvalancheSubnet>, ureq::Error> {
+pub fn get_network_subnets(rpc_url: &str) -> Result<Vec<AvalancheSubnet>, ureq::Error> {
     let resp: PlatformApiGetSubnetsResponse = ureq::post(rpc_url)
         .send_json(ureq::json!({
             "jsonrpc": "2.0",
@@ -149,7 +155,7 @@ pub fn get_network_subnets(rpc_url: &str) -> Result<Vec<subnets::AvalancheSubnet
         .result
         .subnets
         .iter()
-        .map(|subnet| subnets::AvalancheSubnet {
+        .map(|subnet| AvalancheSubnet {
             id: subnet.id,
             control_keys: subnet.control_keys.clone(),
             threshold: subnet.threshold,
@@ -161,9 +167,7 @@ pub fn get_network_subnets(rpc_url: &str) -> Result<Vec<subnets::AvalancheSubnet
 }
 
 // Get the blockchains of the network by querying the P-Chain API
-pub fn get_network_blockchains(
-    rpc_url: &str,
-) -> Result<Vec<blockchains::AvalancheBlockchain>, ureq::Error> {
+pub fn get_network_blockchains(rpc_url: &str) -> Result<Vec<AvalancheBlockchain>, ureq::Error> {
     let resp: PlatformApiGetBlockchainsResponse = ureq::post(rpc_url)
         .send_json(ureq::json!({
             "jsonrpc": "2.0",
@@ -177,7 +181,7 @@ pub fn get_network_blockchains(
         .result
         .blockchains
         .iter()
-        .map(|blockchain| blockchains::AvalancheBlockchain {
+        .map(|blockchain| AvalancheBlockchain {
             id: blockchain.id,
             name: blockchain.name.clone(),
             subnet_id: blockchain.subnet_id,
@@ -194,7 +198,7 @@ pub fn get_network_blockchains(
 pub fn get_current_validators(
     rpc_url: &str,
     subnet_id: &str,
-) -> Result<Vec<subnets::AvalancheSubnetValidator>, ureq::Error> {
+) -> Result<Vec<AvalancheSubnetValidator>, ureq::Error> {
     let resp: PlatformApiGetCurrentValidatorsResponse = ureq::post(rpc_url)
         .send_json(ureq::json!({
             "jsonrpc": "2.0",
@@ -210,9 +214,10 @@ pub fn get_current_validators(
         .result
         .validators
         .iter()
-        .map(|validator| subnets::AvalancheSubnetValidator {
+        .map(|validator| AvalancheSubnetValidator {
             tx_id: validator.tx_id,
             node_id: validator.node_id,
+            subnet_id: Id::from_str(subnet_id).unwrap(),
             start_time: validator.start_time,
             end_time: validator.end_time,
             stake_amount: validator.stake_amount,
@@ -229,7 +234,7 @@ pub fn get_current_validators(
             delegators: validator
                 .delegators
                 .iter()
-                .map(|delegator| subnets::AvalancheSubnetDelegator {
+                .map(|delegator| AvalancheSubnetDelegator {
                     tx_id: delegator.tx_id,
                     node_id: delegator.node_id,
                     start_time: delegator.start_time,
@@ -257,8 +262,7 @@ pub fn get_current_validators(
 mod tests {
     use super::*;
     use crate::avalanche::AvalancheNetwork;
-    use avalanche_types::ids::{node::Id as NodeId, Id};
-    use std::{env, str::FromStr};
+    use std::env;
 
     const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY";
     const AVAX_FUJI_CCHAIN_ID: &str = "yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp";
