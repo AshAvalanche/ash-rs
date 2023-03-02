@@ -1,11 +1,35 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023, E36 Knots
 
-use ash::avalanche::{blockchains::AvalancheBlockchain, nodes::AvalancheNode, subnets};
+use ash::avalanche::subnets::{AvalancheSubnet, AvalancheSubnetValidator};
+use ash::avalanche::{blockchains::AvalancheBlockchain, nodes::AvalancheNode};
 use ash::nodes::AshNodeInfo;
+use colored::{ColoredString, Colorize};
 use indoc::formatdoc;
 
 // Module that contains templating functions for info strings
+
+// Get the type of a variable
+fn type_of<T>(_: T) -> &'static str {
+    std::any::type_name::<T>()
+}
+
+// Generate a colored string from the given variable
+// The color is determined by the variable's type
+pub(crate) fn type_colorize<T>(var: &T) -> ColoredString
+where
+    T: std::fmt::Display,
+{
+    match type_of(var).split(':').last().unwrap() {
+        "String" => var.to_string().yellow(),
+        "&u64" | "&u32" | "&u16" | "&u8" | "&usize" => var.to_string().cyan(),
+        "&i64" | "&i32" | "&i16" | "&i8" | "&isize" => var.to_string().cyan(),
+        "&f64" | "&f32" => var.to_string().magenta(),
+        "&bool" => var.to_string().blue(),
+        "Id" => var.to_string().green(),
+        _ => var.to_string().bright_white(),
+    }
+}
 
 pub(crate) fn template_horizontal_rule(character: char, length: usize) -> String {
     format!("{character}").repeat(length)
@@ -25,10 +49,10 @@ pub(crate) fn template_blockchain_info(
                ID:      {}
                VM type: {}
                RPC URL: {}",
-            blockchain.name,
-            blockchain.id,
-            blockchain.vm_type,
-            blockchain.rpc_url,
+            type_colorize(&blockchain.name),
+            type_colorize(&blockchain.id),
+            type_colorize(&blockchain.vm_type),
+            type_colorize(&blockchain.rpc_url),
         ));
     } else {
         info.push_str(&formatdoc!(
@@ -37,10 +61,10 @@ pub(crate) fn template_blockchain_info(
               ID:      {}
               VM type: {}
               RPC URL: {}",
-            blockchain.name,
-            blockchain.id,
-            blockchain.vm_type,
-            blockchain.rpc_url,
+            type_colorize(&blockchain.name),
+            type_colorize(&blockchain.id),
+            type_colorize(&blockchain.vm_type),
+            type_colorize(&blockchain.rpc_url),
         ));
     }
 
@@ -48,7 +72,7 @@ pub(crate) fn template_blockchain_info(
 }
 
 pub(crate) fn template_validator_info(
-    validator: &subnets::AvalancheSubnetValidator,
+    validator: &AvalancheSubnetValidator,
     list: bool,
     indent: u8,
     extended: bool,
@@ -73,31 +97,37 @@ pub(crate) fn template_validator_info(
                   Validation reward owner:
                     Locktime: {}
                     Threshold: {}
-                    Addresses: {:?}
+                    Addresses: {}
                   Delegator count:  {}
                   Delegator weight: {}
                   Delegation reward owner:
                     Locktime: {}
                     Threshold: {}
-                    Addresses: {:?}",
-                validator.node_id,
-                validator.tx_id,
-                validator.start_time,
-                validator.end_time,
-                validator.stake_amount,
-                validator.weight,
-                validator.potential_reward,
-                validator.delegation_fee,
-                validator.connected,
-                validator.uptime,
-                validator.validation_reward_owner.locktime,
-                validator.validation_reward_owner.threshold,
-                validator.validation_reward_owner.addresses,
-                validator.delegator_count,
-                validator.delegator_weight,
-                validator.delegation_reward_owner.locktime,
-                validator.delegation_reward_owner.threshold,
-                validator.delegation_reward_owner.addresses,
+                    Addresses: {}",
+                type_colorize(&validator.node_id),
+                type_colorize(&validator.tx_id),
+                type_colorize(&validator.start_time),
+                type_colorize(&validator.end_time),
+                type_colorize(&validator.stake_amount),
+                type_colorize(&validator.weight),
+                type_colorize(&validator.potential_reward),
+                type_colorize(&validator.delegation_fee),
+                type_colorize(&validator.connected),
+                type_colorize(&validator.uptime),
+                type_colorize(&validator.validation_reward_owner.locktime),
+                type_colorize(&validator.validation_reward_owner.threshold),
+                type_colorize(&format!(
+                    "{:?}",
+                    validator.validation_reward_owner.addresses
+                )),
+                type_colorize(&validator.delegator_count),
+                type_colorize(&validator.delegator_weight),
+                type_colorize(&validator.delegation_reward_owner.locktime),
+                type_colorize(&validator.delegation_reward_owner.threshold),
+                type_colorize(&format!(
+                    "{:?}",
+                    validator.delegation_reward_owner.addresses
+                )),
             ));
         } else {
             info.push_str(&formatdoc!(
@@ -122,43 +152,45 @@ pub(crate) fn template_validator_info(
               Validation reward owner:
                 Locktime: {}
                 Threshold: {}
-                Addresses: {:?}
+                Addresses: {}
               Delegator count:  {}
               Delegator weight: {}
               Delegation reward owner:
                 Locktime: {}
                 Threshold: {}
-                Addresses: {:?}",
-            validator.node_id,
-            validator.subnet_id,
-            validator.tx_id,
-            validator.start_time,
-            validator.end_time,
-            validator.stake_amount,
-            validator.weight,
-            validator.potential_reward,
-            validator.delegation_fee,
-            validator.connected,
-            validator.uptime,
-            validator.validation_reward_owner.locktime,
-            validator.validation_reward_owner.threshold,
-            validator.validation_reward_owner.addresses,
-            validator.delegator_count,
-            validator.delegator_weight,
-            validator.delegation_reward_owner.locktime,
-            validator.delegation_reward_owner.threshold,
-            validator.delegation_reward_owner.addresses,
+                Addresses: {}",
+            type_colorize(&validator.node_id),
+            type_colorize(&validator.subnet_id),
+            type_colorize(&validator.tx_id),
+            type_colorize(&validator.start_time),
+            type_colorize(&validator.end_time),
+            type_colorize(&validator.stake_amount),
+            type_colorize(&validator.weight),
+            type_colorize(&validator.potential_reward),
+            type_colorize(&validator.delegation_fee),
+            type_colorize(&validator.connected),
+            type_colorize(&validator.uptime),
+            type_colorize(&validator.validation_reward_owner.locktime),
+            type_colorize(&validator.validation_reward_owner.threshold),
+            type_colorize(&format!(
+                "{:?}",
+                validator.validation_reward_owner.addresses
+            )),
+            type_colorize(&validator.delegator_count),
+            type_colorize(&validator.delegator_weight),
+            type_colorize(&validator.delegation_reward_owner.locktime),
+            type_colorize(&validator.delegation_reward_owner.threshold),
+            type_colorize(&format!(
+                "{:?}",
+                validator.delegation_reward_owner.addresses
+            )),
         ));
     }
 
     indent::indent_all_by(indent.into(), info)
 }
 
-pub(crate) fn template_subnet_info(
-    subnet: &subnets::AvalancheSubnet,
-    list: bool,
-    indent: u8,
-) -> String {
+pub(crate) fn template_subnet_info(subnet: &AvalancheSubnet, list: bool, indent: u8) -> String {
     let mut info = String::new();
 
     let subindent = match list {
@@ -188,31 +220,40 @@ pub(crate) fn template_subnet_info(
             {}
             - {}:
                Number of blockchains: {}
-               Control keys: {:?}
-               Threshold: {}
+               Control keys:          {}
+               Threshold:             {}
                Blockchains: {}",
             template_horizontal_rule('-', format!("- '{}':", subnet.id).len()),
-            subnet.id,
-            subnet.blockchains.len(),
-            subnet.control_keys,
-            subnet.threshold,
-            blockchains_info,
+            type_colorize(&subnet.id),
+            type_colorize(&subnet.blockchains.len()),
+            type_colorize(&format!("{:?}", subnet.control_keys)),
+            type_colorize(&subnet.threshold),
+            match blockchains_info.is_empty() {
+                true => String::from("None"),
+                false => blockchains_info,
+            }
         ));
     } else {
         info.push_str(&formatdoc!(
             "
             Subnet '{}':
               Number of blockchains: {}
-              Control keys: {:?}
-              Threshold: {}
+              Control keys:          {}
+              Threshold:             {}
               Blockchains: {}
               Validators: {}",
-            subnet.id,
-            subnet.blockchains.len(),
-            subnet.control_keys,
-            subnet.threshold,
-            blockchains_info,
-            validators_info,
+            type_colorize(&subnet.id),
+            type_colorize(&subnet.blockchains.len()),
+            type_colorize(&format!("{:?}", subnet.control_keys)),
+            type_colorize(&subnet.threshold),
+            match blockchains_info.is_empty() {
+                true => String::from("None"),
+                false => blockchains_info,
+            },
+            match validators_info.is_empty() {
+                true => String::from("None"),
+                false => validators_info,
+            }
         ));
     }
 
@@ -239,19 +280,19 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> 
             Uptime:
               Rewarding stake:  {}%
               Weighted average: {}%",
-        node.http_host,
-        node.http_port,
-        node.id,
-        node.public_ip,
-        node.staking_port,
-        node.versions.avalanchego_version,
-        node.versions.database_version,
-        node.versions.git_commit,
-        node.versions.vm_versions.avm,
-        node.versions.vm_versions.evm,
-        node.versions.vm_versions.platform,
-        node.uptime.rewarding_stake_percentage,
-        node.uptime.weighted_average_percentage,
+        type_colorize(&node.http_host),
+        type_colorize(&node.http_port),
+        type_colorize(&node.id),
+        type_colorize(&node.public_ip),
+        type_colorize(&node.staking_port),
+        type_colorize(&node.versions.avalanchego_version),
+        type_colorize(&node.versions.database_version),
+        type_colorize(&node.versions.git_commit),
+        type_colorize(&node.versions.vm_versions.avm),
+        type_colorize(&node.versions.vm_versions.evm),
+        type_colorize(&node.versions.vm_versions.platform),
+        type_colorize(&node.uptime.rewarding_stake_percentage),
+        type_colorize(&node.uptime.weighted_average_percentage),
     ));
 
     indent::indent_all_by(indent.into(), info)
@@ -267,12 +308,12 @@ pub(crate) fn template_ash_node_info(node_info: &AshNodeInfo, list: bool, indent
             - {}:
                Node ID (CB58): {}
                RPC URL (hex):  {}
-               Bytes:          {:?}",
+               Bytes:          {}",
             template_horizontal_rule('-', format!("- '{}':", node_info.id.p_chain).len()),
-            node_info.id.p_chain,
-            node_info.id.cb58,
-            node_info.id.hex,
-            node_info.id.bytes,
+            type_colorize(&node_info.id.p_chain),
+            type_colorize(&node_info.id.cb58),
+            type_colorize(&node_info.id.hex),
+            type_colorize(&format!("{:?}", node_info.id.bytes)),
         ));
     } else {
         info.push_str(&formatdoc!(
@@ -280,11 +321,11 @@ pub(crate) fn template_ash_node_info(node_info: &AshNodeInfo, list: bool, indent
             Node '{}':
               Node ID (CB58): {}
               RPC URL (hex):  {}
-              Bytes:          {:?}",
-            node_info.id.p_chain,
-            node_info.id.cb58,
-            node_info.id.hex,
-            node_info.id.bytes,
+              Bytes:          {}",
+            type_colorize(&node_info.id.p_chain),
+            type_colorize(&node_info.id.cb58),
+            type_colorize(&node_info.id.hex),
+            type_colorize(&format!("{:?}", node_info.id.bytes)),
         ));
     }
 

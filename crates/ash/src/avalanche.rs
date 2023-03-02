@@ -8,6 +8,7 @@ pub mod subnets;
 
 // Module that contains code to interact with Avalanche networks
 
+use crate::avalanche::subnets::AvalancheSubnet;
 use crate::{avalanche::jsonrpc::platformvm, conf::AshConfig};
 use avalanche_types::ids::{node::Id as NodeId, Id};
 use serde::{Deserialize, Serialize};
@@ -24,7 +25,7 @@ pub const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY
 pub struct AvalancheNetwork {
     pub name: String,
     /// List of the network's Subnets
-    pub subnets: Vec<subnets::AvalancheSubnet>,
+    pub subnets: Vec<AvalancheSubnet>,
 }
 
 /// Avalanche output owners
@@ -122,7 +123,7 @@ impl AvalancheNetwork {
     }
 
     /// Get a Subnet from the network by its ID
-    pub fn get_subnet(&self, id: &str) -> Option<&subnets::AvalancheSubnet> {
+    pub fn get_subnet(&self, id: &str) -> Option<&AvalancheSubnet> {
         self.subnets
             .iter()
             .find(|&subnet| subnet.id.to_string() == id)
@@ -191,6 +192,7 @@ impl AvalancheNetwork {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::avalanche::blockchains::AvalancheBlockchain;
     use std::env;
 
     const AVAX_FUJI_CCHAIN_ID: &str = "yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp";
@@ -212,7 +214,7 @@ mod tests {
         assert_eq!(fuji.name, "fuji");
         assert_eq!(fuji.subnets.len(), 1);
 
-        let subnets::AvalancheSubnet {
+        let AvalancheSubnet {
             id,
             control_keys,
             threshold,
@@ -224,7 +226,7 @@ mod tests {
         assert_eq!(threshold, &0);
         assert_eq!(blockchains.len(), 3);
 
-        let blockchains::AvalancheBlockchain {
+        let AvalancheBlockchain {
             id,
             name,
             vm_id,

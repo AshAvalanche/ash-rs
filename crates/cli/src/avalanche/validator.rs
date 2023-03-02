@@ -52,7 +52,7 @@ fn list(
 
     let subnet = network
         .get_subnet(subnet_id)
-        .ok_or_else(|| CliError::dataerr(format!("Subnet '{subnet_id}' not found")))?;
+        .ok_or_else(|| CliError::dataerr(format!("Error: Subnet '{subnet_id}' not found")))?;
 
     if json {
         println!("{}", serde_json::to_string(&subnet.validators).unwrap());
@@ -82,11 +82,11 @@ fn info(
 
     let subnet = network
         .get_subnet(subnet_id)
-        .ok_or_else(|| CliError::dataerr(format!("Subnet '{id}' not found")))?;
+        .ok_or_else(|| CliError::dataerr(format!("Error: Subnet '{id}' not found")))?;
 
     let validator = subnet
         .get_validator(id)
-        .ok_or_else(|| CliError::dataerr(format!("Validator '{id}' not found")))?;
+        .ok_or_else(|| CliError::dataerr(format!("Error: validator '{id}' not found")))?;
 
     if json {
         println!("{}", serde_json::to_string(&validator).unwrap());

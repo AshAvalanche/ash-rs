@@ -3,7 +3,7 @@
 
 // Module that contains the network subcommand parser
 
-use crate::utils::error::CliError;
+use crate::utils::{error::CliError, templating::type_colorize};
 use ash::conf::AshConfig;
 use clap::{Parser, Subcommand};
 
@@ -39,7 +39,7 @@ fn list(config: Option<&str>, json: bool) -> Result<(), CliError> {
 
     println!("Available Avalanche networks:");
     for network in networks {
-        println!("  - '{}'", network.name);
+        println!("  - '{}'", type_colorize(&network.name));
     }
     Ok(())
 }
