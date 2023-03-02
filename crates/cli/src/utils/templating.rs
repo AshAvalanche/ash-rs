@@ -51,20 +51,103 @@ pub(crate) fn template_validator_info(
     validator: &subnets::AvalancheSubnetValidator,
     list: bool,
     indent: u8,
+    extended: bool,
 ) -> String {
     let mut info = String::new();
 
     if list {
-        info.push_str(&formatdoc!(
-            "
+        // If extended is true, we want to show all the information
+        if extended {
+            info.push_str(&formatdoc!(
+                "
+                - {}:
+                  Tx ID:            {}
+                  Start time:       {}
+                  End time:         {}
+                  Stake amount:     {}
+                  Weight:           {}
+                  Potential reward: {}
+                  Delegation fee:   {}
+                  Connected:        {}
+                  Uptime:           {}
+                  Validation reward owner:
+                    Locktime: {}
+                    Threshold: {}
+                    Addresses: {:?}
+                  Delegator count:  {}
+                  Delegator weight: {}
+                  Delegation reward owner:
+                    Locktime: {}
+                    Threshold: {}
+                    Addresses: {:?}",
+                validator.node_id,
+                validator.tx_id,
+                validator.start_time,
+                validator.end_time,
+                validator.stake_amount,
+                validator.weight,
+                validator.potential_reward,
+                validator.delegation_fee,
+                validator.connected,
+                validator.uptime,
+                validator.validation_reward_owner.locktime,
+                validator.validation_reward_owner.threshold,
+                validator.validation_reward_owner.addresses,
+                validator.delegator_count,
+                validator.delegator_weight,
+                validator.delegation_reward_owner.locktime,
+                validator.delegation_reward_owner.threshold,
+                validator.delegation_reward_owner.addresses,
+            ));
+        } else {
+            info.push_str(&formatdoc!(
+                "
             - {}",
-            validator.node_id,
-        ));
+                validator.node_id,
+            ));
+        }
     } else {
         info.push_str(&formatdoc!(
             "
-            Validator '{}'",
+            Validator '{}' on Subnet '{}':
+              Tx ID:            {}
+              Start time:       {}
+              End time:         {}
+              Stake amount:     {}
+              Weight:           {}
+              Potential reward: {}
+              Delegation fee:   {}
+              Connected:        {}
+              Uptime:           {}
+              Validation reward owner:
+                Locktime: {}
+                Threshold: {}
+                Addresses: {:?}
+              Delegator count:  {}
+              Delegator weight: {}
+              Delegation reward owner:
+                Locktime: {}
+                Threshold: {}
+                Addresses: {:?}",
             validator.node_id,
+            validator.subnet_id,
+            validator.tx_id,
+            validator.start_time,
+            validator.end_time,
+            validator.stake_amount,
+            validator.weight,
+            validator.potential_reward,
+            validator.delegation_fee,
+            validator.connected,
+            validator.uptime,
+            validator.validation_reward_owner.locktime,
+            validator.validation_reward_owner.threshold,
+            validator.validation_reward_owner.addresses,
+            validator.delegator_count,
+            validator.delegator_weight,
+            validator.delegation_reward_owner.locktime,
+            validator.delegation_reward_owner.threshold,
+            validator.delegation_reward_owner.addresses,
         ));
     }
 
@@ -95,7 +178,7 @@ pub(crate) fn template_subnet_info(
     for validator in subnet.validators.iter() {
         validators_info.push_str(&format!(
             "\n{}",
-            template_validator_info(validator, true, subindent)
+            template_validator_info(validator, true, subindent, false)
         ));
     }
 

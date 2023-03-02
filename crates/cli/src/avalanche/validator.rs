@@ -1,0 +1,112 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023, E36 Knots
+
+// Module that contains the validator subcommand parser
+
+use crate::avalanche::{load_network_and_update_subnets, update_subnet_validators};
+use crate::utils::{error::CliError, templating::*};
+use ash::avalanche::AVAX_PRIMARY_NETWORK_ID;
+use clap::{Parser, Subcommand};
+
+#[derive(Parser)]
+#[command(about = "Interact with Avalanche validators")]
+pub(crate) struct ValidatorCommand {
+    #[command(subcommand)]
+    command: ValidatorSubcommands,
+    #[arg(
+        long,
+        help = "Avalanche network",
+        default_value = "mainnet",
+        global = true
+    )]
+    network: String,
+    #[arg(
+        long,
+        help = "Avalanche Subnet ID",
+        default_value = AVAX_PRIMARY_NETWORK_ID,
+        global = true
+    )]
+    subnet_id: String,
+}
+
+#[derive(Subcommand)]
+enum ValidatorSubcommands {
+    #[command(about = "List the Subnet's validators")]
+    List,
+    #[command(about = "Show validator information")]
+    Info {
+        #[arg(long, help = "Validator NodeID")]
+        id: String,
+    },
+}
+
+// List the Subnet's validators
+fn list(
+    network_name: &str,
+    subnet_id: &str,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
+    let mut network = load_network_and_update_subnets(network_name, config)?;
+    update_subnet_validators(&mut network, subnet_id).map_err(|e| CliError::dataerr(e.message))?;
+
+    let subnet = network
+        .get_subnet(subnet_id)
+        .ok_or_else(|| CliError::dataerr(format!("Subnet '{subnet_id}' not found")))?;
+
+    if json {
+        println!("{}", serde_json::to_string(&subnet.validators).unwrap());
+        return Ok(());
+    }
+
+    println!(
+        "Found {} Subnet(s) on '{}':",
+        subnet.validators.len(),
+        subnet_id
+    );
+    for validator in subnet.validators.iter() {
+        println!("{}", template_validator_info(validator, true, 2, true));
+    }
+    Ok(())
+}
+
+fn info(
+    network_name: &str,
+    subnet_id: &str,
+    id: &str,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
+    let mut network = load_network_and_update_subnets(network_name, config)?;
+    update_subnet_validators(&mut network, subnet_id).map_err(|e| CliError::dataerr(e.message))?;
+
+    let subnet = network
+        .get_subnet(subnet_id)
+        .ok_or_else(|| CliError::dataerr(format!("Subnet '{id}' not found")))?;
+
+    let validator = subnet
+        .get_validator(id)
+        .ok_or_else(|| CliError::dataerr(format!("Validator '{id}' not found")))?;
+
+    if json {
+        println!("{}", serde_json::to_string(&validator).unwrap());
+        return Ok(());
+    }
+
+    println!("{}", template_validator_info(validator, false, 0, true));
+    Ok(())
+}
+
+// Parse subnet subcommand
+pub(crate) fn parse(
+    validator: ValidatorCommand,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
+    match validator.command {
+        ValidatorSubcommands::Info { id } => {
+            info(&validator.network, &validator.subnet_id, &id, config, json)
+        }
+        ValidatorSubcommands::List => list(&validator.network, &validator.subnet_id, config, json),
+    }
+}

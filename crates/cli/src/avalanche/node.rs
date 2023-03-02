@@ -9,13 +9,13 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche nodes")]
-pub struct NodeCommand {
+pub(crate) struct NodeCommand {
     #[command(subcommand)]
-    command: NodeCommands,
+    command: NodeSubcommands,
 }
 
 #[derive(Subcommand)]
-enum NodeCommands {
+enum NodeSubcommands {
     #[command(about = "Show Avalanche node information")]
     Info {
         #[arg(
@@ -57,9 +57,9 @@ fn info(http_host: &str, http_port: u16, json: bool) -> Result<(), CliError> {
 }
 
 // Parse node subcommand
-pub fn parse(node: NodeCommand, json: bool) -> Result<(), CliError> {
+pub(crate) fn parse(node: NodeCommand, json: bool) -> Result<(), CliError> {
     match node.command {
-        NodeCommands::Info {
+        NodeSubcommands::Info {
             http_host,
             http_port,
         } => info(&http_host, http_port, json),

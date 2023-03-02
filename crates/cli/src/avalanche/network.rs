@@ -9,13 +9,13 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche networks")]
-pub struct NetworkCommand {
+pub(crate) struct NetworkCommand {
     #[command(subcommand)]
-    command: NetworkCommands,
+    command: NetworkSubcommands,
 }
 
 #[derive(Subcommand)]
-enum NetworkCommands {
+enum NetworkSubcommands {
     #[command(about = "List Avalanche networks")]
     List,
 }
@@ -45,8 +45,12 @@ fn list(config: Option<&str>, json: bool) -> Result<(), CliError> {
 }
 
 // Parse network subcommand
-pub fn parse(network: NetworkCommand, config: Option<&str>, json: bool) -> Result<(), CliError> {
+pub(crate) fn parse(
+    network: NetworkCommand,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
     match network.command {
-        NetworkCommands::List => list(config, json),
+        NetworkSubcommands::List => list(config, json),
     }
 }

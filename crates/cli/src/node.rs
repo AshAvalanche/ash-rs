@@ -9,13 +9,13 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(about = "Interact with Ash nodes")]
-pub struct NodeCommand {
+pub(crate) struct NodeCommand {
     #[command(subcommand)]
-    command: NodeCommands,
+    command: NodeSubcommands,
 }
 
 #[derive(Subcommand)]
-enum NodeCommands {
+enum NodeSubcommands {
     #[command(about = "Show node information")]
     Info {
         #[arg(long, help = "Node ID (CB58 or hex string)")]
@@ -40,8 +40,8 @@ fn info(id: &str, json: bool) -> Result<(), CliError> {
 }
 
 // Parse node subcommand
-pub fn parse(node: NodeCommand, json: bool) -> Result<(), CliError> {
+pub(crate) fn parse(node: NodeCommand, json: bool) -> Result<(), CliError> {
     match node.command {
-        NodeCommands::Info { id } => info(&id, json),
+        NodeSubcommands::Info { id } => info(&id, json),
     }
 }

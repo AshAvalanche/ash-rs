@@ -9,13 +9,13 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(about = "Interact with Ash configuration files")]
-pub struct ConfCommand {
+pub(crate) struct ConfCommand {
     #[command(subcommand)]
-    command: ConfCommands,
+    command: ConfSubcommands,
 }
 
 #[derive(Subcommand)]
-enum ConfCommands {
+enum ConfSubcommands {
     #[command(about = "Initialize an Ash config file")]
     Init {
         #[arg(from_global)]
@@ -35,8 +35,8 @@ fn init(config: String, force: bool) -> Result<(), CliError> {
 }
 
 // Parse conf subcommand
-pub fn parse(conf: ConfCommand) -> Result<(), CliError> {
+pub(crate) fn parse(conf: ConfCommand) -> Result<(), CliError> {
     match conf.command {
-        ConfCommands::Init { config, force } => init(config, force),
+        ConfSubcommands::Init { config, force } => init(config, force),
     }
 }
