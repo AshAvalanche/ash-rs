@@ -3,7 +3,7 @@
 
 // Module that contains the conf subcommand parser
 
-use crate::error::CliError;
+use crate::utils::error::CliError;
 use ash::conf::AshConfig;
 use clap::{Parser, Subcommand};
 

@@ -5,8 +5,8 @@
 
 mod avalanche;
 mod conf;
-mod error;
 mod node;
+mod utils;
 
 use clap::{Parser, Subcommand};
 use std::process::exit;

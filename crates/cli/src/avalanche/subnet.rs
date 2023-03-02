@@ -3,8 +3,8 @@
 
 // Module that contains the subnet subcommand parser
 
-use crate::error::CliError;
-use ash::avalanche::{subnets::AvalancheSubnet, AvalancheNetwork};
+use crate::utils::{error::CliError, templating::*};
+use ash::avalanche::AvalancheNetwork;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -49,6 +49,17 @@ fn load_network_and_update_subnets(
     Ok(network)
 }
 
+// Update a Subnet's validators
+fn update_subnet_validators(
+    network: &mut AvalancheNetwork,
+    subnet_id: &str,
+) -> Result<(), CliError> {
+    network
+        .update_subnet_validators(subnet_id)
+        .map_err(|e| CliError::dataerr(format!("Error updating validators: {e}")))?;
+    Ok(())
+}
+
 // List the network's Subnets
 fn list(network_name: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
     let network = load_network_and_update_subnets(network_name, config)?;
@@ -64,13 +75,15 @@ fn list(network_name: &str, config: Option<&str>, json: bool) -> Result<(), CliE
         network.name
     );
     for subnet in network.subnets.iter() {
-        print_info(subnet, true);
+        println!("{}", template_subnet_info(subnet, true, 0));
     }
     Ok(())
 }
 
 fn info(network: &str, id: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
-    let network = load_network_and_update_subnets(network, config)?;
+    let mut network = load_network_and_update_subnets(network, config)?;
+    update_subnet_validators(&mut network, id).map_err(|e| CliError::dataerr(e.message))?;
+
     let subnet = network
         .get_subnet(id)
         .ok_or_else(|| CliError::dataerr(format!("Subnet '{id}' not found")))?;
@@ -80,29 +93,8 @@ fn info(network: &str, id: &str, config: Option<&str>, json: bool) -> Result<(),
         return Ok(());
     }
 
-    print_info(subnet, false);
+    println!("{}", template_subnet_info(subnet, false, 0));
     Ok(())
-}
-
-// Print Subnet information (when not in JSON mode)
-fn print_info(subnet: &AvalancheSubnet, separator: bool) {
-    let subnet_id_line = format!("Subnet '{}':", subnet.id);
-
-    if separator {
-        // Print a separator of the same length as `subnet_id_line`
-        println!("{}", "-".repeat(subnet_id_line.len()));
-    }
-
-    // Print ID, number of blockchains, blockchains IDs and names
-    println!("{subnet_id_line}");
-    println!("  Number of blockchains: {}", subnet.blockchains.len());
-    println!("  Blockchains:");
-    for blockchain in subnet.blockchains.iter() {
-        println!("  - {}:", blockchain.name);
-        println!("      ID:      {}", blockchain.id);
-        println!("      VM type: {}", blockchain.vm_type);
-        println!("      RPC URL: {}", blockchain.rpc_url);
-    }
 }
 
 // Parse subnet subcommand

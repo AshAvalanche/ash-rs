@@ -3,7 +3,7 @@
 
 // Module that contains the node subcommand parser
 
-use crate::error::CliError;
+use crate::utils::{error::CliError, templating::template_ash_node_info};
 use ash::nodes::AshNode;
 use clap::{Parser, Subcommand};
 
@@ -34,9 +34,8 @@ fn info(id: &str, json: bool) -> Result<(), CliError> {
         return Ok(());
     }
 
-    println!("Node '{id}':");
-    println!("  Node ID (CB58): {}", node_info.id.cb58);
-    println!("  Node ID (hex): {}", node_info.id.hex);
+    println!("{}", template_ash_node_info(&node_info, false, 0));
+
     Ok(())
 }
 

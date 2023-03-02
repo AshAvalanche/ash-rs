@@ -7,7 +7,7 @@ mod network;
 mod node;
 mod subnet;
 
-use crate::error::CliError;
+use crate::utils::error::CliError;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
