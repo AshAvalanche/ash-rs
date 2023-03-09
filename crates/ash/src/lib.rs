@@ -3,4 +3,5 @@
 
 pub mod avalanche;
 pub mod conf;
+pub mod error;
 pub mod nodes;

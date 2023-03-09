@@ -9,6 +9,7 @@ pub mod subnets;
 // Module that contains code to interact with Avalanche networks
 
 use crate::avalanche::subnets::AvalancheSubnet;
+use crate::error::AshError;
 use crate::{avalanche::jsonrpc::platformvm, conf::AshConfig};
 use avalanche_types::ids::{node::Id as NodeId, Id};
 use serde::{Deserialize, Serialize};
@@ -58,55 +59,42 @@ where
 
 impl AvalancheNetwork {
     /// Load an AvalancheNetwork from the configuration
-    pub fn load(network: &str, config: Option<&str>) -> Result<AvalancheNetwork, String> {
-        let ash_config = AshConfig::load(config).map_err(|e| e.to_string())?;
+    pub fn load(network: &str, config: Option<&str>) -> Result<AvalancheNetwork, AshError> {
+        let ash_config = AshConfig::load(config)
+            .map_err(|e| AshError::ConfigError(format!("Failed to load configuration: {}", e)))?;
         let avax_network = ash_config
             .avalanche_networks
             .iter()
             .find(|&avax_network| avax_network.name == network)
-            .ok_or(format!(
-                "Avalanche network '{network}' not found in configuration"
-            ))?;
+            .ok_or(AshError::ConfigError(format!(
+                "Couldn't find network '{}' in configuration",
+                network
+            )))?;
 
         // Error if the primary network is not found
-        let primary_subnet = avax_network
-            .subnets
-            .iter()
-            .find(|&subnet| subnet.id.to_string() == AVAX_PRIMARY_NETWORK_ID)
-            .ok_or(format!(
-                "Primary network (ID: '{AVAX_PRIMARY_NETWORK_ID}') not found in configuration"
-            ))?;
+        let primary_subnet = avax_network.get_subnet(AVAX_PRIMARY_NETWORK_ID)?;
 
         // Error if the P-Chain is not found
-        let _ = primary_subnet
-            .get_blockchain(AVAX_PRIMARY_NETWORK_ID)
-            .ok_or(format!(
-                "P-Chain (ID: '{AVAX_PRIMARY_NETWORK_ID}') not found in configuration",
-            ))?;
+        let _ = primary_subnet.get_blockchain(AVAX_PRIMARY_NETWORK_ID)?;
 
         Ok(avax_network.clone())
     }
 
-    pub fn get_pchain_rpc_url(&self) -> Result<String, String> {
+    pub fn get_pchain_rpc_url(&self) -> Result<String, AshError> {
         // Get the P-Chain RPC URL
         let rpc_url = &self
-            .get_subnet(AVAX_PRIMARY_NETWORK_ID)
-            .ok_or(format!(
-                "Primary network (ID: '{AVAX_PRIMARY_NETWORK_ID}') not found in configuration"
-            ))?
-            .get_blockchain(AVAX_PRIMARY_NETWORK_ID)
-            .ok_or(format!(
-                "P-Chain (ID: '{AVAX_PRIMARY_NETWORK_ID}') not found in configuration",
-            ))?
+            .get_subnet(AVAX_PRIMARY_NETWORK_ID)?
+            .get_blockchain(AVAX_PRIMARY_NETWORK_ID)?
             .rpc_url;
         Ok(rpc_url.to_string())
     }
 
     /// Update the AvalancheNetwork Subnets by querying an API endpoint
-    pub fn update_subnets(&mut self) -> Result<(), String> {
+    pub fn update_subnets(&mut self) -> Result<(), AshError> {
         let rpc_url = self.get_pchain_rpc_url()?;
 
-        let subnets = platformvm::get_network_subnets(&rpc_url).map_err(|e| e.to_string())?;
+        let subnets = platformvm::get_network_subnets(&rpc_url)
+            .map_err(|e| AshError::RpcError(format!("Failed to get network subnets: {}", e)))?;
 
         // Replace the primary network with the pre-configured one
         // This is done to ensure that the P-Chain is kept in the blockchains list
@@ -123,19 +111,23 @@ impl AvalancheNetwork {
     }
 
     /// Get a Subnet from the network by its ID
-    pub fn get_subnet(&self, id: &str) -> Option<&AvalancheSubnet> {
+    pub fn get_subnet(&self, id: &str) -> Result<&AvalancheSubnet, AshError> {
         self.subnets
             .iter()
             .find(|&subnet| subnet.id.to_string() == id)
+            .ok_or(AshError::AvalancheNetworkError {
+                network: self.name.clone(),
+                msg: format!("Couldn't find Subnet '{}'", id),
+            })
     }
 
     /// Update the AvalancheNetwork blockchains by querying an API endpoint
     /// This function will update the blockchains of all subnets
-    pub fn update_blockchains(&mut self) -> Result<(), String> {
+    pub fn update_blockchains(&mut self) -> Result<(), AshError> {
         let rpc_url = self.get_pchain_rpc_url()?;
 
-        let blockchains =
-            platformvm::get_network_blockchains(&rpc_url).map_err(|e| e.to_string())?;
+        let blockchains = platformvm::get_network_blockchains(&rpc_url)
+            .map_err(|e| AshError::RpcError(format!("Failed to get network blockchains: {}", e)))?;
 
         // For each Subnet, replace the blockchains with the ones returned by the API
         // Skip the primary network, as the P-Chain is not returned by the API
@@ -161,17 +153,18 @@ impl AvalancheNetwork {
     }
 
     /// Update the validators of a Subnet by querying an API endpoint
-    pub fn update_subnet_validators(&mut self, subnet_id: &str) -> Result<(), String> {
+    pub fn update_subnet_validators(&mut self, subnet_id: &str) -> Result<(), AshError> {
         let rpc_url = self.get_pchain_rpc_url()?;
 
-        let validators =
-            platformvm::get_current_validators(&rpc_url, subnet_id).map_err(|e| e.to_string())?;
+        let validators = platformvm::get_current_validators(&rpc_url, subnet_id).map_err(|e| {
+            AshError::RpcError(format!(
+                "Failed to get current validators for Subnet '{}': {}",
+                subnet_id, e
+            ))
+        })?;
 
         // Replace the validators of the Subnet
-        let mut subnet = self
-            .get_subnet(subnet_id)
-            .ok_or(format!("Subnet '{}' not found", subnet_id))?
-            .clone();
+        let mut subnet = self.get_subnet(subnet_id)?.clone();
 
         subnet.validators = validators;
 
@@ -180,7 +173,10 @@ impl AvalancheNetwork {
             .subnets
             .iter()
             .position(|subnet| subnet.id.to_string() == subnet_id)
-            .ok_or(format!("Subnet '{}' not found", subnet_id))?;
+            .ok_or(AshError::AvalancheNetworkError {
+                network: self.name.clone(),
+                msg: format!("Couldn't find Subnet '{}'", subnet_id),
+            })?;
 
         // Replace the Subnet
         self.subnets[subnet_index] = subnet;
@@ -279,7 +275,7 @@ mod tests {
         assert_eq!(primary_subnet.id.to_string(), AVAX_PRIMARY_NETWORK_ID);
         assert_eq!(primary_subnet.blockchains.len(), 3);
 
-        assert!(fuji.get_subnet("invalid").is_none());
+        assert!(fuji.get_subnet("invalid").is_err());
     }
 
     #[test]

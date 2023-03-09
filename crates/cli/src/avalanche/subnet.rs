@@ -54,11 +54,11 @@ fn list(network_name: &str, config: Option<&str>, json: bool) -> Result<(), CliE
 
 fn info(network_name: &str, id: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
     let mut network = load_network_and_update_subnets(network_name, config)?;
-    update_subnet_validators(&mut network, id).map_err(|e| CliError::dataerr(e.message))?;
+    update_subnet_validators(&mut network, id)?;
 
     let subnet = network
         .get_subnet(id)
-        .ok_or_else(|| CliError::dataerr(format!("Error: Subnet '{id}' not found")))?;
+        .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {}", e)))?;
 
     if json {
         println!("{}", serde_json::to_string(&subnet).unwrap());

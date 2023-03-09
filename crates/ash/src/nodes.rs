@@ -4,10 +4,11 @@
 // Module that contains code to interact with Ash nodes
 
 use crate::avalanche::nodes::AvalancheNode;
+use crate::error::AshError;
 use avalanche_types::ids::node::Id;
 use regex::Regex;
 use serde::Serialize;
-use std::{io::Error, str::FromStr};
+use std::str::FromStr;
 
 /// Node of the Ash protocol
 #[derive(Debug)]
@@ -18,8 +19,11 @@ pub struct AshNode {
 
 impl AshNode {
     /// Create a new Ash node from an Avalanche node ID string
-    pub fn from_cb58_id(nodeid: &str) -> Result<Self, Error> {
-        let id = Id::from_str(nodeid)?;
+    pub fn from_cb58_id(node_id: &str) -> Result<Self, AshError> {
+        let id = Id::from_str(node_id).map_err(|e| AshError::AshNodeError {
+            id: Id::default(),
+            msg: format!("Could not convert string to Avalanche node ID: '{}'", e),
+        })?;
 
         Ok(AshNode {
             avalanche_node: AvalancheNode {
@@ -30,8 +34,18 @@ impl AshNode {
     }
 
     /// Create a new Ash node from an Avalanche node ID byte slice
-    pub fn from_bytes_id(nodeid: &[u8]) -> Result<Self, Error> {
-        let id = Id::from_slice(nodeid);
+    pub fn from_bytes_id(node_id: &[u8]) -> Result<Self, AshError> {
+        if node_id.len() != 20 {
+            return Err(AshError::AshNodeError {
+                id: Id::default(),
+                msg: format!(
+                    "Invalid node ID length (should be 20 bytes): '{}'",
+                    node_id.len()
+                ),
+            });
+        }
+
+        let id = Id::from_slice(node_id);
 
         Ok(AshNode {
             avalanche_node: AvalancheNode {
@@ -42,22 +56,22 @@ impl AshNode {
     }
 
     /// Create a new Ash node from an Avalanche node ID hex string
-    pub fn from_hex_id(nodeid: &str) -> Result<Self, Error> {
+    pub fn from_hex_id(node_id: &str) -> Result<Self, AshError> {
         // Convert the hex string to a byte slice
-        let nodeid = hex::decode(nodeid);
+        let nodeid = hex::decode(node_id);
 
         match nodeid {
             Ok(nodeid) => AshNode::from_bytes_id(&nodeid),
-            Err(_) => Err(Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "Could not convert string to bytes",
-            )),
+            Err(_) => Err(AshError::AshNodeError {
+                id: Id::default(),
+                msg: format!("Invalid hex string: '{}'", node_id),
+            }),
         }
     }
 
     /// Create a new Ash node from a string
     /// Try to find out the node ID format using a regex
-    pub fn from_string(nodeid: &str) -> Result<Self, Error> {
+    pub fn from_string(nodeid: &str) -> Result<Self, AshError> {
         // Check if the node ID is a valid CB58 string
         let re = Regex::new(r"^(NodeID-)?[A-Za-z0-9]{32,33}$").unwrap();
 
@@ -72,10 +86,10 @@ impl AshNode {
             return AshNode::from_hex_id(nodeid.trim_start_matches("0x"));
         }
 
-        Err(Error::new(
-            std::io::ErrorKind::InvalidInput,
-            "Invalid node ID",
-        ))
+        Err(AshError::AshNodeError {
+            id: Id::default(),
+            msg: format!("Invalid node ID: '{}'", nodeid),
+        })
     }
 
     /// Get the node's ID as an AshNodeId struct

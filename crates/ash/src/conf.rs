@@ -3,7 +3,7 @@
 
 // Module that contains code to interact with the lib configuration
 
-use crate::avalanche::AvalancheNetwork;
+use crate::{avalanche::AvalancheNetwork, error::AshError};
 use config::{Config, ConfigError, Environment, File, FileFormat};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
@@ -35,15 +35,19 @@ impl AshConfig {
     }
 
     /// Dump the Ash lib default configuration to a file in YAML format
-    pub fn dump_default(config_file: &str, force: bool) -> Result<(), String> {
+    pub fn dump_default(config_file: &str, force: bool) -> Result<(), AshError> {
         let ash_conf = Self::load(None).unwrap();
 
         // If the config file already exists, return an error unless force is set to true
         match (Path::new(config_file).exists(), force) {
-            (true, false) => Err(format!("Configuration file '{config_file}' already exists")),
+            (true, false) => Err(AshError::ConfigError(format!(
+                "Configuration file '{config_file}' already exists"
+            ))),
             _ => {
                 fs::write(config_file, serde_yaml::to_string(&ash_conf).unwrap()).map_err(|e| {
-                    format!("Failed to write default configuration to {config_file}: {e}")
+                    AshError::ConfigError(format!(
+                        "Failed to write default configuration to '{config_file}': {e}"
+                    ))
                 })?;
                 Ok(())
             }
