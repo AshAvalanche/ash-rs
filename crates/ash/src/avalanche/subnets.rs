@@ -27,7 +27,7 @@ pub struct AvalancheSubnet {
 }
 
 impl AvalancheSubnet {
-    /// Get a Blockchain of the Subnet by its ID
+    /// Get a blockchain of the Subnet by its ID
     pub fn get_blockchain(&self, id: &str) -> Result<&AvalancheBlockchain, AshError> {
         self.blockchains
             .iter()
@@ -42,7 +42,18 @@ impl AvalancheSubnet {
             )
     }
 
-    /// Get a Validator of the Subnet by its ID
+    /// Get a blockchain of the Subnet by its name
+    pub fn get_blockchain_by_name(&self, name: &str) -> Result<&AvalancheBlockchain, AshError> {
+        self.blockchains
+            .iter()
+            .find(|&blockchain| blockchain.name == name)
+            .ok_or(AshError::AvalancheSubnetError {
+                id: self.id,
+                msg: format!("Couldn't find blockchain with name '{}'", name),
+            })
+    }
+
+    /// Get a validator of the Subnet by its ID
     pub fn get_validator(&self, id: &str) -> Result<&AvalancheSubnetValidator, AshError> {
         self.validators
             .iter()
