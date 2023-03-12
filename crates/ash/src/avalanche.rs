@@ -277,13 +277,17 @@ mod tests {
     }
 
     #[test]
-    fn test_avalanche_network_get_pchain() {
+    fn test_avalanche_network_get_chain() {
         let fuji = load_test_network();
 
         let pchain = fuji.get_pchain().unwrap();
+        let cchain = fuji.get_cchain().unwrap();
 
         assert_eq!(pchain.id.to_string(), AVAX_PRIMARY_NETWORK_ID);
         assert_eq!(pchain.name, "P-Chain");
+
+        assert_eq!(cchain.id.to_string(), AVAX_FUJI_CCHAIN_ID);
+        assert_eq!(cchain.name, "C-Chain");
     }
 
     #[test]
