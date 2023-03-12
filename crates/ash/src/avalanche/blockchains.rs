@@ -4,7 +4,9 @@
 // Module that contains code to interact with Avalanche blockchains
 
 use crate::avalanche::avalanche_id_from_string;
+use crate::error::AshError;
 use avalanche_types::ids::Id;
+use ethers::providers::{Http, Provider};
 use serde::{Deserialize, Serialize};
 
 /// Avalanche blockchain
@@ -22,4 +24,64 @@ pub struct AvalancheBlockchain {
     pub vm_type: String,
     #[serde(default)]
     pub rpc_url: String,
+}
+
+impl AvalancheBlockchain {
+    /// Get an ethers Provider for this blockchain
+    /// Only works for EVM blockchains
+    pub fn get_ethers_provider(&self) -> Result<Provider<Http>, AshError> {
+        match self.vm_type.as_str() {
+            "EVM" => Ok(
+                Provider::<Http>::try_from(self.rpc_url.clone()).map_err(|e| {
+                    AshError::AvalancheBlockchainError {
+                        id: self.id,
+                        msg: format!("Couldn't create ethers Provider: {}", e),
+                    }
+                })?,
+            ),
+            _ => Err(AshError::AvalancheBlockchainError {
+                id: self.id,
+                msg: format!(
+                    "Couldn't create ethers Provider for '{}' type blockchain",
+                    self.vm_type
+                ),
+            }),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::avalanche::AvalancheNetwork;
+    use std::env;
+
+    // Load the test network from the ASH_TEST_CONFIG file
+    fn load_test_network() -> AvalancheNetwork {
+        let config_path =
+            env::var("ASH_TEST_AVAX_CONFIG").unwrap_or("tests/conf/default.yml".to_string());
+        AvalancheNetwork::load("fuji", Some(&config_path)).unwrap()
+    }
+
+    #[test]
+    fn test_avalanche_blockchain_get_ethers_provider() {
+        let fuji = load_test_network();
+
+        // Test that we can get an ethers Provider for the C-Chain
+        let cchain_provider = fuji.get_cchain().unwrap().get_ethers_provider();
+        assert!(cchain_provider.is_ok());
+
+        // Test that the provider URL is correct
+        assert_eq!(
+            cchain_provider.unwrap().url().to_string(),
+            fuji.get_cchain().unwrap().rpc_url
+        );
+    }
+
+    #[test]
+    fn test_avalanche_blockchain_get_ethers_provider_not_evm() {
+        let fuji = load_test_network();
+
+        // Test that we can't get an ethers Provider for the P-Chain
+        assert!(fuji.get_pchain().unwrap().get_ethers_provider().is_err());
+    }
 }

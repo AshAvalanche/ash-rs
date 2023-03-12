@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023, E36 Knots
 
+pub mod ash_router_http;
+
 // Module that contains code to interact with Ash contracts
 
 use crate::{conf::AshConfig, error::AshError};
