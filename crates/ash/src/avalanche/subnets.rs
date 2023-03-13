@@ -49,7 +49,7 @@ impl AvalancheSubnet {
             .find(|&blockchain| blockchain.name == name)
             .ok_or(AshError::AvalancheSubnetError {
                 id: self.id,
-                msg: format!("Couldn't find blockchain with name '{}'", name),
+                msg: format!("Couldn't find blockchain with name '{name}'"),
             })
     }
 

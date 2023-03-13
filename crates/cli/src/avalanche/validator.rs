@@ -52,7 +52,7 @@ fn list(
 
     let subnet = network
         .get_subnet(subnet_id)
-        .map_err(|e| CliError::dataerr(format!("Error listing validators: {}", e)))?;
+        .map_err(|e| CliError::dataerr(format!("Error listing validators: {e}")))?;
 
     if json {
         println!("{}", serde_json::to_string(&subnet.validators).unwrap());
@@ -82,11 +82,11 @@ fn info(
 
     let subnet = network
         .get_subnet(subnet_id)
-        .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {}", e)))?;
+        .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {e}")))?;
 
     let validator = subnet
         .get_validator(id)
-        .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {}", e)))?;
+        .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {e}")))?;
 
     if json {
         println!("{}", serde_json::to_string(&validator).unwrap());

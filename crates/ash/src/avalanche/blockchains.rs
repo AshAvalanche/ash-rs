@@ -35,7 +35,7 @@ impl AvalancheBlockchain {
                 Provider::<Http>::try_from(self.rpc_url.clone()).map_err(|e| {
                     AshError::AvalancheBlockchainError {
                         id: self.id,
-                        msg: format!("Couldn't create ethers Provider: {}", e),
+                        msg: format!("Couldn't create ethers Provider: {e}"),
                     }
                 })?,
             ),
