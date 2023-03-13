@@ -3,19 +3,19 @@
 
 // Module that contains the node subcommand parser
 
-use crate::error::CliError;
+use crate::utils::{error::CliError, templating::template_avalanche_node_info};
 use ash::avalanche::nodes::AvalancheNode;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche nodes")]
-pub struct NodeCommand {
+pub(crate) struct NodeCommand {
     #[command(subcommand)]
-    command: NodeCommands,
+    command: NodeSubcommands,
 }
 
 #[derive(Subcommand)]
-enum NodeCommands {
+enum NodeSubcommands {
     #[command(about = "Show Avalanche node information")]
     Info {
         #[arg(
@@ -51,35 +51,15 @@ fn info(http_host: &str, http_port: u16, json: bool) -> Result<(), CliError> {
         return Ok(());
     }
 
-    println!("Node info ({http_host}:{http_port}):");
-    println!("  ID: {}", node.id);
-    println!("  Public IP: {}", node.public_ip);
-    println!("  Stacking port: {}", node.stacking_port);
-    println!("  Versions:");
-    println!("    AvalancheGo: {}", node.versions.avalanchego_version);
-    println!("    Database: {}", node.versions.database_version);
-    println!("    Git commit: {}", node.versions.git_commit);
-    println!("    VMs:");
-    println!("      AVM: {}", node.versions.vm_versions.avm);
-    println!("      EVM: {}", node.versions.vm_versions.evm);
-    println!("      Platform: {}", node.versions.vm_versions.platform);
-    println!("  Uptime:");
-    println!(
-        "    Rewarding stake: {}%",
-        node.uptime.rewarding_stake_percentage
-    );
-    println!(
-        "    Weighted average: {}%",
-        node.uptime.weighted_average_percentage
-    );
+    println!("{}", template_avalanche_node_info(&node, 0));
 
     Ok(())
 }
 
 // Parse node subcommand
-pub fn parse(node: NodeCommand, json: bool) -> Result<(), CliError> {
+pub(crate) fn parse(node: NodeCommand, json: bool) -> Result<(), CliError> {
     match node.command {
-        NodeCommands::Info {
+        NodeSubcommands::Info {
             http_host,
             http_port,
         } => info(&http_host, http_port, json),

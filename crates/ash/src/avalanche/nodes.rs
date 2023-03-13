@@ -16,7 +16,7 @@ pub struct AvalancheNode {
     pub http_host: String,
     pub http_port: u16,
     pub public_ip: String,
-    pub stacking_port: u16,
+    pub staking_port: u16,
     pub versions: AvalancheNodeVersions,
     pub uptime: AvalancheNodeUptime,
 }
@@ -55,7 +55,7 @@ impl AvalancheNode {
         let node_ip = get_node_ip(&api_path).map_err(|e| e.to_string())?;
         let node_ip_split: Vec<&str> = node_ip.split(':').collect();
         self.public_ip = node_ip_split[0].to_string();
-        self.stacking_port = node_ip_split[1].parse().unwrap();
+        self.staking_port = node_ip_split[1].parse().unwrap();
 
         self.versions = get_node_version(&api_path).map_err(|e| e.to_string())?;
         self.uptime = get_node_uptime(&api_path).map_err(|e| e.to_string())?;
@@ -92,7 +92,7 @@ mod tests {
         // Test the node id, public_ip and stacking_port
         assert_eq!(node.id.to_string(), ASH_TEST_NODE_ID);
         assert_eq!(node.public_ip, ASH_TEST_HTTP_HOST);
-        assert_eq!(node.stacking_port, ASH_TEST_STACKING_PORT);
+        assert_eq!(node.staking_port, ASH_TEST_STACKING_PORT);
 
         // Only test that the node version is not empty
         assert!(!node.versions.avalanchego_version.is_empty());

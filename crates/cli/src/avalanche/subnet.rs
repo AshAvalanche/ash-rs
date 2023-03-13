@@ -3,15 +3,15 @@
 
 // Module that contains the subnet subcommand parser
 
-use crate::error::CliError;
-use ash::avalanche::{subnets::AvalancheSubnet, AvalancheNetwork};
+use crate::avalanche::{load_network_and_update_subnets, update_subnet_validators};
+use crate::utils::{error::CliError, templating::*};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche Subnets")]
-pub struct SubnetCommand {
+pub(crate) struct SubnetCommand {
     #[command(subcommand)]
-    command: SubnetCommands,
+    command: SubnetSubcommands,
     #[arg(
         long,
         help = "Avalanche network",
@@ -22,31 +22,14 @@ pub struct SubnetCommand {
 }
 
 #[derive(Subcommand)]
-enum SubnetCommands {
+enum SubnetSubcommands {
     #[command(about = "List the network's Subnets")]
     List,
     #[command(about = "Show Subnet information")]
     Info {
-        #[arg(long, help = "Subnet ID (CB58)")]
+        #[arg(long, help = "Subnet ID")]
         id: String,
     },
-}
-
-// Load the network configuation and recursively update the Subnets (and their blockchains)
-fn load_network_and_update_subnets(
-    network_name: &str,
-    config: Option<&str>,
-) -> Result<AvalancheNetwork, CliError> {
-    let mut network = AvalancheNetwork::load(network_name, config)
-        .map_err(|e| CliError::dataerr(format!("Error loading network: {e}")))?;
-    network
-        .update_subnets()
-        .map_err(|e| CliError::dataerr(format!("Error updating subnets: {e}")))?;
-    network
-        .update_blockchains()
-        .map_err(|e| CliError::dataerr(format!("Error updating blockchains: {e}")))?;
-
-    Ok(network)
 }
 
 // List the network's Subnets
@@ -60,55 +43,40 @@ fn list(network_name: &str, config: Option<&str>, json: bool) -> Result<(), CliE
 
     println!(
         "Found {} Subnet(s) on '{}':",
-        network.subnets.len(),
-        network.name
+        type_colorize(&network.subnets.len()),
+        type_colorize(&network.name)
     );
     for subnet in network.subnets.iter() {
-        print_info(subnet, true);
+        println!("{}", template_subnet_info(subnet, true, 0));
     }
     Ok(())
 }
 
-fn info(network: &str, id: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
-    let network = load_network_and_update_subnets(network, config)?;
+fn info(network_name: &str, id: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
+    let mut network = load_network_and_update_subnets(network_name, config)?;
+    update_subnet_validators(&mut network, id).map_err(|e| CliError::dataerr(e.message))?;
+
     let subnet = network
         .get_subnet(id)
-        .ok_or_else(|| CliError::dataerr(format!("Subnet '{id}' not found")))?;
+        .ok_or_else(|| CliError::dataerr(format!("Error: Subnet '{id}' not found")))?;
 
     if json {
         println!("{}", serde_json::to_string(&subnet).unwrap());
         return Ok(());
     }
 
-    print_info(subnet, false);
+    println!("{}", template_subnet_info(subnet, false, 0));
     Ok(())
 }
 
-// Print Subnet information (when not in JSON mode)
-fn print_info(subnet: &AvalancheSubnet, separator: bool) {
-    let subnet_id_line = format!("Subnet '{}':", subnet.id);
-
-    if separator {
-        // Print a separator of the same length as `subnet_id_line`
-        println!("{}", "-".repeat(subnet_id_line.len()));
-    }
-
-    // Print ID, number of blockchains, blockchains IDs and names
-    println!("{subnet_id_line}");
-    println!("  Number of blockchains: {}", subnet.blockchains.len());
-    println!("  Blockchains:");
-    for blockchain in subnet.blockchains.iter() {
-        println!("  - {}:", blockchain.name);
-        println!("      ID:      {}", blockchain.id);
-        println!("      VM type: {}", blockchain.vm_type);
-        println!("      RPC URL: {}", blockchain.rpc_url);
-    }
-}
-
 // Parse subnet subcommand
-pub fn parse(subnet: SubnetCommand, config: Option<&str>, json: bool) -> Result<(), CliError> {
+pub(crate) fn parse(
+    subnet: SubnetCommand,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
     match subnet.command {
-        SubnetCommands::Info { id } => info(&subnet.network, &id, config, json),
-        SubnetCommands::List => list(&subnet.network, config, json),
+        SubnetSubcommands::Info { id } => info(&subnet.network, &id, config, json),
+        SubnetSubcommands::List => list(&subnet.network, config, json),
     }
 }

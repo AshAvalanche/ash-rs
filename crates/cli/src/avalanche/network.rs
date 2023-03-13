@@ -3,19 +3,19 @@
 
 // Module that contains the network subcommand parser
 
-use crate::error::CliError;
+use crate::utils::{error::CliError, templating::type_colorize};
 use ash::conf::AshConfig;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche networks")]
-pub struct NetworkCommand {
+pub(crate) struct NetworkCommand {
     #[command(subcommand)]
-    command: NetworkCommands,
+    command: NetworkSubcommands,
 }
 
 #[derive(Subcommand)]
-enum NetworkCommands {
+enum NetworkSubcommands {
     #[command(about = "List Avalanche networks")]
     List,
 }
@@ -39,14 +39,18 @@ fn list(config: Option<&str>, json: bool) -> Result<(), CliError> {
 
     println!("Available Avalanche networks:");
     for network in networks {
-        println!("  - '{}'", network.name);
+        println!("  - '{}'", type_colorize(&network.name));
     }
     Ok(())
 }
 
 // Parse network subcommand
-pub fn parse(network: NetworkCommand, config: Option<&str>, json: bool) -> Result<(), CliError> {
+pub(crate) fn parse(
+    network: NetworkCommand,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
     match network.command {
-        NetworkCommands::List => list(config, json),
+        NetworkSubcommands::List => list(config, json),
     }
 }

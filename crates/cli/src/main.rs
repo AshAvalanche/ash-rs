@@ -5,10 +5,11 @@
 
 mod avalanche;
 mod conf;
-mod error;
 mod node;
+mod utils;
 
 use clap::{Parser, Subcommand};
+use colored::Colorize;
 use std::process::exit;
 
 #[derive(Parser)]
@@ -42,7 +43,7 @@ fn main() {
         CliCommands::Node(node) => node::parse(node, cli.json),
     }
     .unwrap_or_else(|e| {
-        eprintln!("{}", e.message);
+        eprintln!("{}", e.message.red());
         exit(e.exit_code)
     });
 }
