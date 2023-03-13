@@ -4,7 +4,7 @@
 // Module that contains code to interact with Ash nodes
 
 use crate::avalanche::nodes::AvalancheNode;
-use crate::error::AshError;
+use crate::errors::*;
 use avalanche_types::ids::node::Id;
 use regex::Regex;
 use serde::Serialize;
@@ -20,9 +20,11 @@ pub struct AshNode {
 impl AshNode {
     /// Create a new Ash node from an Avalanche node ID string
     pub fn from_cb58_id(node_id: &str) -> Result<Self, AshError> {
-        let id = Id::from_str(node_id).map_err(|e| AshError::AshNodeError {
-            id: Id::default(),
-            msg: format!("Could not convert string to Avalanche node ID: '{}'", e),
+        let id = Id::from_str(node_id).map_err(|e| {
+            AshError::AshNodeError(AshNodeError::InvalidId {
+                id: node_id.to_string(),
+                msg: e.to_string(),
+            })
         })?;
 
         Ok(AshNode {
@@ -36,13 +38,10 @@ impl AshNode {
     /// Create a new Ash node from an Avalanche node ID byte slice
     pub fn from_bytes_id(node_id: &[u8]) -> Result<Self, AshError> {
         if node_id.len() != 20 {
-            return Err(AshError::AshNodeError {
-                id: Id::default(),
-                msg: format!(
-                    "Invalid node ID length (should be 20 bytes): '{}'",
-                    node_id.len()
-                ),
-            });
+            return Err(AshError::AshNodeError(AshNodeError::InvalidId {
+                id: hex::encode(node_id),
+                msg: "should be 20 bytes long".to_string(),
+            }));
         }
 
         let id = Id::from_slice(node_id);
@@ -62,10 +61,10 @@ impl AshNode {
 
         match nodeid {
             Ok(nodeid) => AshNode::from_bytes_id(&nodeid),
-            Err(_) => Err(AshError::AshNodeError {
-                id: Id::default(),
-                msg: format!("Invalid hex string: '{}'", node_id),
-            }),
+            Err(e) => Err(AshError::AshNodeError(AshNodeError::InvalidId {
+                id: node_id.to_string(),
+                msg: e.to_string(),
+            })),
         }
     }
 
@@ -86,10 +85,10 @@ impl AshNode {
             return AshNode::from_hex_id(nodeid.trim_start_matches("0x"));
         }
 
-        Err(AshError::AshNodeError {
-            id: Id::default(),
-            msg: format!("Invalid node ID: '{}'", nodeid),
-        })
+        Err(AshError::AshNodeError(AshNodeError::InvalidId {
+            id: nodeid.to_string(),
+            msg: "unknown node ID format".to_string(),
+        }))
     }
 
     /// Get the node's ID as an AshNodeId struct

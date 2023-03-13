@@ -21,6 +21,7 @@ regex = "1.7.1"
 serde = "1.0.152"
 serde-aux = "4.1.2"
 serde_yaml = "0.9.17"
+thiserror = "1.0.39"
 ureq = { version = "2.6.2", features = ["json"] }
 
 [dev-dependencies]

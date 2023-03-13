@@ -7,7 +7,7 @@ use crate::avalanche::blockchains::AvalancheBlockchain;
 use crate::avalanche::{
     avalanche_id_from_string, avalanche_node_id_from_string, AvalancheOutputOwners,
 };
-use crate::error::AshError;
+use crate::errors::*;
 use avalanche_types::{ids::node::Id as NodeId, ids::Id};
 use serde::{Deserialize, Serialize};
 
@@ -32,10 +32,13 @@ impl AvalancheSubnet {
         self.blockchains
             .iter()
             .find(|&blockchain| blockchain.id.to_string() == id)
-            .ok_or(AshError::AvalancheSubnetError {
-                id: self.id,
-                msg: format!("Couldn't find blockchain '{}'", id),
-            })
+            .ok_or(AshError::AvalancheSubnetError(
+                AvalancheSubnetError::NotFound {
+                    subnet_id: self.id,
+                    target_type: "blockchain".to_string(),
+                    target_value: id.to_string(),
+                },
+            ))
     }
 
     /// Get a Validator of the Subnet by its ID
@@ -43,10 +46,13 @@ impl AvalancheSubnet {
         self.validators
             .iter()
             .find(|&validator| validator.node_id.to_string() == id)
-            .ok_or(AshError::AvalancheSubnetError {
-                id: self.id,
-                msg: format!("Couldn't find validator with node ID '{}'", id),
-            })
+            .ok_or(AshError::AvalancheSubnetError(
+                AvalancheSubnetError::NotFound {
+                    subnet_id: self.id,
+                    target_type: "validator".to_string(),
+                    target_value: id.to_string(),
+                },
+            ))
     }
 }
 
