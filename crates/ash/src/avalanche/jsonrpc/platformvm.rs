@@ -40,6 +40,17 @@ struct PlatformApiSubnet {
     threshold: u8,
 }
 
+impl From<PlatformApiSubnet> for AvalancheSubnet {
+    fn from(value: PlatformApiSubnet) -> Self {
+        AvalancheSubnet {
+            id: value.id,
+            control_keys: value.control_keys,
+            threshold: value.threshold,
+            ..Default::default()
+        }
+    }
+}
+
 #[derive(Deserialize)]
 #[allow(dead_code)]
 struct PlatformApiGetBlockchainsResponse {
@@ -64,6 +75,18 @@ struct PlatformApiBlockchain {
     subnet_id: Id,
     #[serde(alias = "vmID", deserialize_with = "avalanche_id_from_string")]
     vm_id: Id,
+}
+
+impl From<PlatformApiBlockchain> for AvalancheBlockchain {
+    fn from(value: PlatformApiBlockchain) -> Self {
+        AvalancheBlockchain {
+            id: value.id,
+            name: value.name,
+            subnet_id: value.subnet_id,
+            vm_id: value.vm_id,
+            ..Default::default()
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -111,7 +134,30 @@ struct PlatformApiValidator {
     delegation_reward_owner: PlatformApiRewardOwner,
 }
 
-#[derive(Default, Deserialize)]
+impl PlatformApiValidator {
+    pub fn into_avalanche_subnet_validator(self, subnet_id: Id) -> AvalancheSubnetValidator {
+        AvalancheSubnetValidator {
+            tx_id: self.tx_id,
+            node_id: self.node_id,
+            subnet_id,
+            start_time: self.start_time,
+            end_time: self.end_time,
+            stake_amount: self.stake_amount,
+            weight: self.weight,
+            potential_reward: self.potential_reward,
+            delegation_fee: self.delegation_fee,
+            connected: self.connected,
+            uptime: self.uptime,
+            validation_reward_owner: self.validation_reward_owner.into(),
+            delegator_count: self.delegator_count,
+            delegator_weight: self.delegator_weight,
+            delegators: self.delegators.into_iter().map(Into::into).collect(),
+            delegation_reward_owner: self.delegation_reward_owner.into(),
+        }
+    }
+}
+
+#[derive(Default, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 struct PlatformApiDelegator {
     #[serde(rename = "txID", deserialize_with = "avalanche_id_from_string")]
@@ -130,6 +176,21 @@ struct PlatformApiDelegator {
     potential_reward: u64,
 }
 
+impl From<PlatformApiDelegator> for AvalancheSubnetDelegator {
+    fn from(value: PlatformApiDelegator) -> Self {
+        AvalancheSubnetDelegator {
+            tx_id: value.tx_id,
+            node_id: value.node_id,
+            start_time: value.start_time,
+            end_time: value.end_time,
+            stake_amount: value.stake_amount,
+            weight: value.weight,
+            potential_reward: value.potential_reward,
+            ..Default::default()
+        }
+    }
+}
+
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct PlatformApiRewardOwner {
@@ -138,6 +199,16 @@ struct PlatformApiRewardOwner {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     threshold: u32,
     addresses: Vec<String>,
+}
+
+impl From<PlatformApiRewardOwner> for AvalancheOutputOwners {
+    fn from(value: PlatformApiRewardOwner) -> Self {
+        AvalancheOutputOwners {
+            locktime: value.locktime,
+            threshold: value.threshold,
+            addresses: value.addresses,
+        }
+    }
 }
 
 // Get the Subnets of the network by querying the P-Chain API
@@ -151,17 +222,7 @@ pub fn get_network_subnets(rpc_url: &str) -> Result<Vec<AvalancheSubnet>, ureq::
         }))?
         .into_json()?;
 
-    let network_subnets = resp
-        .result
-        .subnets
-        .iter()
-        .map(|subnet| AvalancheSubnet {
-            id: subnet.id,
-            control_keys: subnet.control_keys.clone(),
-            threshold: subnet.threshold,
-            ..Default::default()
-        })
-        .collect();
+    let network_subnets = resp.result.subnets.into_iter().map(Into::into).collect();
 
     Ok(network_subnets)
 }
@@ -180,15 +241,8 @@ pub fn get_network_blockchains(rpc_url: &str) -> Result<Vec<AvalancheBlockchain>
     let network_blockchains = resp
         .result
         .blockchains
-        .iter()
-        .map(|blockchain| AvalancheBlockchain {
-            id: blockchain.id,
-            name: blockchain.name.clone(),
-            subnet_id: blockchain.subnet_id,
-            vm_id: blockchain.vm_id,
-            vm_type: String::new(),
-            rpc_url: String::new(),
-        })
+        .into_iter()
+        .map(Into::into)
         .collect();
 
     Ok(network_blockchains)
@@ -210,49 +264,13 @@ pub fn get_current_validators(
         }))?
         .into_json()?;
 
+    let subnet_id = Id::from_str(subnet_id).unwrap();
+
     let current_validators = resp
         .result
         .validators
-        .iter()
-        .map(|validator| AvalancheSubnetValidator {
-            tx_id: validator.tx_id,
-            node_id: validator.node_id,
-            subnet_id: Id::from_str(subnet_id).unwrap(),
-            start_time: validator.start_time,
-            end_time: validator.end_time,
-            stake_amount: validator.stake_amount,
-            weight: validator.weight,
-            potential_reward: validator.potential_reward,
-            delegation_fee: validator.delegation_fee,
-            connected: validator.connected,
-            uptime: validator.uptime,
-            validation_reward_owner: AvalancheOutputOwners {
-                locktime: validator.validation_reward_owner.locktime,
-                threshold: validator.validation_reward_owner.threshold,
-                addresses: validator.validation_reward_owner.addresses.clone(),
-            },
-            delegators: validator
-                .delegators
-                .iter()
-                .map(|delegator| AvalancheSubnetDelegator {
-                    tx_id: delegator.tx_id,
-                    node_id: delegator.node_id,
-                    start_time: delegator.start_time,
-                    end_time: delegator.end_time,
-                    stake_amount: delegator.stake_amount,
-                    weight: delegator.weight,
-                    potential_reward: delegator.potential_reward,
-                    ..Default::default()
-                })
-                .collect(),
-            delegator_count: validator.delegator_count,
-            delegator_weight: validator.delegator_weight,
-            delegation_reward_owner: AvalancheOutputOwners {
-                locktime: validator.delegation_reward_owner.locktime,
-                threshold: validator.delegation_reward_owner.threshold,
-                addresses: validator.delegation_reward_owner.addresses.clone(),
-            },
-        })
+        .into_iter()
+        .map(|validator| validator.into_avalanche_subnet_validator(subnet_id))
         .collect();
 
     Ok(current_validators)
