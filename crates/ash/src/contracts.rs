@@ -5,7 +5,7 @@ pub mod ash_router_http;
 
 // Module that contains code to interact with Ash contracts
 
-use crate::{conf::AshConfig, error::AshError};
+use crate::{conf::AshConfig, errors::*};
 use serde::{Deserialize, Serialize};
 
 /// Ash contract metadata
@@ -27,18 +27,16 @@ pub struct AshContractAddress {
 impl AshContractMetadata {
     /// Load an AshContract from the configuration
     pub fn load(name: &str, config: Option<&str>) -> Result<AshContractMetadata, AshError> {
-        let ash_config = AshConfig::load(config).map_err(|e| {
-            AshError::ConfigError(format!("Failed to load Ash configuration: {e}",))
-        })?;
+        let ash_config = AshConfig::load(config)?;
 
         let contract = ash_config
             .ash_contracts
             .iter()
             .find(|&contract| contract.name == name)
-            .ok_or(AshError::ConfigError(format!(
-                "Couldn't find contract '{}' in configuration",
-                name
-            )))?;
+            .ok_or(ConfigError::NotFound {
+                target_type: "Ash contract".to_string(),
+                target_value: name.to_string(),
+            })?;
 
         Ok(contract.clone())
     }

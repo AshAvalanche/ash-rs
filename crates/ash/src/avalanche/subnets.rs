@@ -47,10 +47,14 @@ impl AvalancheSubnet {
         self.blockchains
             .iter()
             .find(|&blockchain| blockchain.name == name)
-            .ok_or(AshError::AvalancheSubnetError {
-                id: self.id,
-                msg: format!("Couldn't find blockchain with name '{name}'"),
-            })
+            .ok_or(
+                AvalancheSubnetError::NotFound {
+                    subnet_id: self.id,
+                    target_type: "blockchain".to_string(),
+                    target_value: name.to_string(),
+                }
+                .into(),
+            )
     }
 
     /// Get a validator of the Subnet by its ID

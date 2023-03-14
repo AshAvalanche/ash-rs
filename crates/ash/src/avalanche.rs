@@ -100,7 +100,7 @@ impl AvalancheNetwork {
         let rpc_url = &self.get_pchain()?.rpc_url;
 
         let subnets =
-            platformvm::get_network_subnets(&rpc_url).map_err(|e| RpcError::GetFailure {
+            platformvm::get_network_subnets(rpc_url).map_err(|e| RpcError::GetFailure {
                 data_type: "network's Subnets".to_string(),
                 target_type: "network".to_string(),
                 target_value: self.name.clone(),
@@ -142,7 +142,7 @@ impl AvalancheNetwork {
         let rpc_url = &self.get_pchain()?.rpc_url;
 
         let blockchains =
-            platformvm::get_network_blockchains(&rpc_url).map_err(|e| RpcError::GetFailure {
+            platformvm::get_network_blockchains(rpc_url).map_err(|e| RpcError::GetFailure {
                 data_type: "blockchains".to_string(),
                 target_type: "network".to_string(),
                 target_value: self.name.clone(),
@@ -176,7 +176,7 @@ impl AvalancheNetwork {
     pub fn update_subnet_validators(&mut self, subnet_id: &str) -> Result<(), AshError> {
         let rpc_url = &self.get_pchain()?.rpc_url;
 
-        let validators = platformvm::get_current_validators(&rpc_url, subnet_id).map_err(|e| {
+        let validators = platformvm::get_current_validators(rpc_url, subnet_id).map_err(|e| {
             RpcError::GetFailure {
                 data_type: "validators".to_string(),
                 target_type: "Subnet".to_string(),

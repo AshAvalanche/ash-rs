@@ -5,7 +5,7 @@
 
 include!(concat!(env!("OUT_DIR"), "/ash_router_abigen.rs"));
 
-use crate::{avalanche::blockchains::AvalancheBlockchain, error::AshError};
+use crate::{avalanche::blockchains::AvalancheBlockchain, errors::*};
 use ethers::{core::types::Address, providers::Http, providers::Provider};
 use AshRouter;
 
@@ -22,9 +22,13 @@ impl AshRouterHttp {
     ) -> Result<AshRouterHttp, AshError> {
         let client = chain.get_ethers_provider()?;
         let ash_router = AshRouter::new(
-            ash_router_address.parse::<Address>().map_err(|e| {
-                AshError::ConfigError(format!("Failed to parse AshRouter address: {e}",))
-            })?,
+            ash_router_address
+                .parse::<Address>()
+                .map_err(|e| ConfigError::ParseFailure {
+                    value: ash_router_address.to_string(),
+                    target_type: "Address".to_string(),
+                    msg: e.to_string(),
+                })?,
             client.into(),
         );
 
@@ -35,12 +39,16 @@ impl AshRouterHttp {
 
     /// Get the AshFactory contract address
     pub async fn factory_addr(&self) -> Result<Address, AshError> {
-        let factory_address = self
-            .provider
-            .factory_addr()
-            .call()
-            .await
-            .map_err(|e| AshError::RpcError(format!("Failed to get factory address: {e}",)))?;
+        let factory_address =
+            self.provider
+                .factory_addr()
+                .call()
+                .await
+                .map_err(|e| RpcError::EthCallFailure {
+                    contract_addr: self.provider.address().to_string(),
+                    function_name: "factoryAddr".to_string(),
+                    msg: e.to_string(),
+                })?;
 
         Ok(factory_address)
     }

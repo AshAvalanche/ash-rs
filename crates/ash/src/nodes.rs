@@ -86,7 +86,7 @@ impl AshNode {
         }
 
         Err(AshNodeError::InvalidId {
-            id: nodeid.to_string(),
+            id: node_id.to_string(),
             msg: "unknown node ID format".to_string(),
         }
         .into())

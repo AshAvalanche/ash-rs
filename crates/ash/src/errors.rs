@@ -17,6 +17,8 @@ pub enum AshError {
     AvalancheNetworkError(#[from] AvalancheNetworkError),
     #[error("AvalancheSubnet error: {0}")]
     AvalancheSubnetError(#[from] AvalancheSubnetError),
+    #[error("AvalancheBlockchain error: {0}")]
+    AvalancheBlockchainError(#[from] AvalancheBlockchainError),
     #[error("AshNode error: {0}")]
     AshNodeError(#[from] AshNodeError),
 }
@@ -34,6 +36,12 @@ pub enum ConfigError {
         target_type: String,
         target_value: String,
     },
+    #[error("failed to parse '{value}' as {target_type}: {msg}")]
+    ParseFailure {
+        value: String,
+        target_type: String,
+        msg: String,
+    },
 }
 
 #[derive(Error, Debug)]
@@ -43,6 +51,12 @@ pub enum RpcError {
         data_type: String,
         target_type: String,
         target_value: String,
+        msg: String,
+    },
+    #[error("failed to call {function_name} on '{contract_addr}': {msg}")]
+    EthCallFailure {
+        contract_addr: String,
+        function_name: String,
         msg: String,
     },
 }
@@ -65,6 +79,12 @@ pub enum AvalancheSubnetError {
         target_type: String,
         target_value: String,
     },
+}
+
+#[derive(Error, Debug)]
+pub enum AvalancheBlockchainError {
+    #[error("failed to get ethers Provider for blockchain '{blockchain_id}': {msg}")]
+    EthersProvider { blockchain_id: Id, msg: String },
 }
 
 #[derive(Error, Debug)]

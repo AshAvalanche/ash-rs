@@ -4,7 +4,7 @@
 // Module that contains code to interact with Avalanche blockchains
 
 use crate::avalanche::avalanche_id_from_string;
-use crate::error::AshError;
+use crate::errors::*;
 use avalanche_types::ids::Id;
 use ethers::providers::{Http, Provider};
 use serde::{Deserialize, Serialize};
@@ -33,19 +33,20 @@ impl AvalancheBlockchain {
         match self.vm_type.as_str() {
             "EVM" => Ok(
                 Provider::<Http>::try_from(self.rpc_url.clone()).map_err(|e| {
-                    AshError::AvalancheBlockchainError {
-                        id: self.id,
-                        msg: format!("Couldn't create ethers Provider: {e}"),
+                    AvalancheBlockchainError::EthersProvider {
+                        blockchain_id: self.id,
+                        msg: e.to_string(),
                     }
                 })?,
             ),
-            _ => Err(AshError::AvalancheBlockchainError {
-                id: self.id,
+            _ => Err(AvalancheBlockchainError::EthersProvider {
+                blockchain_id: self.id,
                 msg: format!(
-                    "Couldn't create ethers Provider for '{}' type blockchain",
+                    "cannot create an ethers Provider for '{}' type blockchain",
                     self.vm_type
                 ),
-            }),
+            }
+            .into()),
         }
     }
 }
