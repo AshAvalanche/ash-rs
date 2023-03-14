@@ -32,13 +32,14 @@ impl AvalancheSubnet {
         self.blockchains
             .iter()
             .find(|&blockchain| blockchain.id.to_string() == id)
-            .ok_or(AshError::AvalancheSubnetError(
+            .ok_or(
                 AvalancheSubnetError::NotFound {
                     subnet_id: self.id,
                     target_type: "blockchain".to_string(),
                     target_value: id.to_string(),
-                },
-            ))
+                }
+                .into(),
+            )
     }
 
     /// Get a Validator of the Subnet by its ID
@@ -46,13 +47,14 @@ impl AvalancheSubnet {
         self.validators
             .iter()
             .find(|&validator| validator.node_id.to_string() == id)
-            .ok_or(AshError::AvalancheSubnetError(
+            .ok_or(
                 AvalancheSubnetError::NotFound {
                     subnet_id: self.id,
                     target_type: "validator".to_string(),
                     target_value: id.to_string(),
-                },
-            ))
+                }
+                .into(),
+            )
     }
 }
 

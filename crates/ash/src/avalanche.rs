@@ -65,10 +65,10 @@ impl AvalancheNetwork {
             .avalanche_networks
             .iter()
             .find(|&avax_network| avax_network.name == network)
-            .ok_or(AshError::ConfigError(ConfigError::NotFound {
+            .ok_or(ConfigError::NotFound {
                 target_type: "network".to_string(),
                 target_value: network.to_string(),
-            }))?;
+            })?;
 
         // Error if the primary network is not found
         let primary_subnet = avax_network.get_subnet(AVAX_PRIMARY_NETWORK_ID)?;
@@ -92,14 +92,13 @@ impl AvalancheNetwork {
     pub fn update_subnets(&mut self) -> Result<(), AshError> {
         let rpc_url = self.get_pchain_rpc_url()?;
 
-        let subnets = platformvm::get_network_subnets(&rpc_url).map_err(|e| {
-            AshError::RpcError(RpcError::GetFailure {
+        let subnets =
+            platformvm::get_network_subnets(&rpc_url).map_err(|e| RpcError::GetFailure {
                 data_type: "network's Subnets".to_string(),
                 target_type: "network".to_string(),
                 target_value: self.name.clone(),
                 msg: e.to_string(),
-            })
-        })?;
+            })?;
 
         // Replace the primary network with the pre-configured one
         // This is done to ensure that the P-Chain is kept in the blockchains list
@@ -120,13 +119,14 @@ impl AvalancheNetwork {
         self.subnets
             .iter()
             .find(|&subnet| subnet.id.to_string() == id)
-            .ok_or(AshError::AvalancheNetworkError(
+            .ok_or(
                 AvalancheNetworkError::NotFound {
                     network: self.name.clone(),
                     target_type: "Subnet".to_string(),
                     target_value: id.to_string(),
-                },
-            ))
+                }
+                .into(),
+            )
     }
 
     /// Update the AvalancheNetwork blockchains by querying an API endpoint
@@ -134,14 +134,13 @@ impl AvalancheNetwork {
     pub fn update_blockchains(&mut self) -> Result<(), AshError> {
         let rpc_url = self.get_pchain_rpc_url()?;
 
-        let blockchains = platformvm::get_network_blockchains(&rpc_url).map_err(|e| {
-            AshError::RpcError(RpcError::GetFailure {
+        let blockchains =
+            platformvm::get_network_blockchains(&rpc_url).map_err(|e| RpcError::GetFailure {
                 data_type: "blockchains".to_string(),
                 target_type: "network".to_string(),
                 target_value: self.name.clone(),
                 msg: e.to_string(),
-            })
-        })?;
+            })?;
 
         // For each Subnet, replace the blockchains with the ones returned by the API
         // Skip the primary network, as the P-Chain is not returned by the API
@@ -171,12 +170,12 @@ impl AvalancheNetwork {
         let rpc_url = self.get_pchain_rpc_url()?;
 
         let validators = platformvm::get_current_validators(&rpc_url, subnet_id).map_err(|e| {
-            AshError::RpcError(RpcError::GetFailure {
+            RpcError::GetFailure {
                 data_type: "validators".to_string(),
                 target_type: "Subnet".to_string(),
                 target_value: subnet_id.to_string(),
                 msg: e.to_string(),
-            })
+            }
         })?;
 
         // Replace the validators of the Subnet
@@ -189,13 +188,11 @@ impl AvalancheNetwork {
             .subnets
             .iter()
             .position(|subnet| subnet.id.to_string() == subnet_id)
-            .ok_or(AshError::AvalancheNetworkError(
-                AvalancheNetworkError::NotFound {
-                    network: self.name.clone(),
-                    target_type: "Subnet".to_string(),
-                    target_value: subnet_id.to_string(),
-                },
-            ))?;
+            .ok_or(AvalancheNetworkError::NotFound {
+                network: self.name.clone(),
+                target_type: "Subnet".to_string(),
+                target_value: subnet_id.to_string(),
+            })?;
 
         // Replace the Subnet
         self.subnets[subnet_index] = subnet;

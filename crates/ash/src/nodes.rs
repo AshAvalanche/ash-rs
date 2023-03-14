@@ -20,11 +20,9 @@ pub struct AshNode {
 impl AshNode {
     /// Create a new Ash node from an Avalanche node ID string
     pub fn from_cb58_id(node_id: &str) -> Result<Self, AshError> {
-        let id = Id::from_str(node_id).map_err(|e| {
-            AshError::AshNodeError(AshNodeError::InvalidId {
-                id: node_id.to_string(),
-                msg: e.to_string(),
-            })
+        let id = Id::from_str(node_id).map_err(|e| AshNodeError::InvalidId {
+            id: node_id.to_string(),
+            msg: e.to_string(),
         })?;
 
         Ok(AshNode {
@@ -38,10 +36,11 @@ impl AshNode {
     /// Create a new Ash node from an Avalanche node ID byte slice
     pub fn from_bytes_id(node_id: &[u8]) -> Result<Self, AshError> {
         if node_id.len() != 20 {
-            return Err(AshError::AshNodeError(AshNodeError::InvalidId {
+            return Err(AshNodeError::InvalidId {
                 id: hex::encode(node_id),
                 msg: "should be 20 bytes long".to_string(),
-            }));
+            }
+            .into());
         }
 
         let id = Id::from_slice(node_id);
@@ -61,10 +60,11 @@ impl AshNode {
 
         match nodeid {
             Ok(nodeid) => AshNode::from_bytes_id(&nodeid),
-            Err(e) => Err(AshError::AshNodeError(AshNodeError::InvalidId {
+            Err(e) => Err(AshNodeError::InvalidId {
                 id: node_id.to_string(),
                 msg: e.to_string(),
-            })),
+            }
+            .into()),
         }
     }
 
@@ -85,10 +85,11 @@ impl AshNode {
             return AshNode::from_hex_id(nodeid.trim_start_matches("0x"));
         }
 
-        Err(AshError::AshNodeError(AshNodeError::InvalidId {
+        Err(AshNodeError::InvalidId {
             id: nodeid.to_string(),
             msg: "unknown node ID format".to_string(),
-        }))
+        }
+        .into())
     }
 
     /// Get the node's ID as an AshNodeId struct

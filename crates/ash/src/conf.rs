@@ -31,13 +31,14 @@ impl AshConfig {
         }
         .add_source(Environment::with_prefix("ASH"))
         .build()
-        .map_err(|e| AshError::ConfigError(ConfigError::BuildFailure(e.to_string())))?
+        .map_err(|e| ConfigError::BuildFailure(e.to_string()))?
         .try_deserialize()
         .map_err(|e| {
-            AshError::ConfigError(ConfigError::DeserializeFailure {
+            ConfigError::DeserializeFailure {
                 config_file: config_file.unwrap_or("default").to_string(),
                 msg: e.to_string(),
-            })
+            }
+            .into()
         })
     }
 
@@ -47,16 +48,17 @@ impl AshConfig {
 
         // If the config file already exists, return an error unless force is set to true
         match (Path::new(config_file).exists(), force) {
-            (true, false) => Err(AshError::ConfigError(ConfigError::DumpFailure {
+            (true, false) => Err(ConfigError::DumpFailure {
                 config_file: config_file.to_string(),
                 msg: "file already exists".to_string(),
-            })),
+            }
+            .into()),
             _ => {
                 fs::write(config_file, serde_yaml::to_string(&ash_conf).unwrap()).map_err(|e| {
-                    AshError::ConfigError(ConfigError::DumpFailure {
+                    ConfigError::DumpFailure {
                         config_file: config_file.to_string(),
                         msg: e.to_string(),
-                    })
+                    }
                 })?;
                 Ok(())
             }

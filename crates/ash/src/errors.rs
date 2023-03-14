@@ -10,15 +10,15 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum AshError {
     #[error("Config error: {0}")]
-    ConfigError(ConfigError),
+    ConfigError(#[from] ConfigError),
     #[error("RPC error: {0}")]
-    RpcError(RpcError),
+    RpcError(#[from] RpcError),
     #[error("AvalancheNetwork error: {0}")]
-    AvalancheNetworkError(AvalancheNetworkError),
+    AvalancheNetworkError(#[from] AvalancheNetworkError),
     #[error("AvalancheSubnet error: {0}")]
-    AvalancheSubnetError(AvalancheSubnetError),
+    AvalancheSubnetError(#[from] AvalancheSubnetError),
     #[error("AshNode error: {0}")]
-    AshNodeError(AshNodeError),
+    AshNodeError(#[from] AshNodeError),
 }
 
 #[derive(Error, Debug)]

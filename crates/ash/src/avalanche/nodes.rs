@@ -48,43 +48,35 @@ impl AvalancheNode {
         let node_host = format!("{}:{}", self.http_host, self.http_port);
         let api_path = format!("http://{node_host}/{AVAX_INFO_API_ENDPOINT}",);
 
-        self.id = get_node_id(&api_path).map_err(|e| {
-            AshError::RpcError(RpcError::GetFailure {
-                data_type: "ID".to_string(),
-                target_type: "node".to_string(),
-                target_value: node_host.to_string(),
-                msg: e.to_string(),
-            })
+        self.id = get_node_id(&api_path).map_err(|e| RpcError::GetFailure {
+            data_type: "ID".to_string(),
+            target_type: "node".to_string(),
+            target_value: node_host.to_string(),
+            msg: e.to_string(),
         })?;
 
         // The get_node_ip() return has to be splited to get public_ip and stacking_port
-        let node_ip = get_node_ip(&api_path).map_err(|e| {
-            AshError::RpcError(RpcError::GetFailure {
-                data_type: "node IP".to_string(),
-                target_type: "node".to_string(),
-                target_value: node_host.to_string(),
-                msg: e.to_string(),
-            })
+        let node_ip = get_node_ip(&api_path).map_err(|e| RpcError::GetFailure {
+            data_type: "node IP".to_string(),
+            target_type: "node".to_string(),
+            target_value: node_host.to_string(),
+            msg: e.to_string(),
         })?;
         let node_ip_split: Vec<&str> = node_ip.split(':').collect();
         self.public_ip = node_ip_split[0].to_string();
         self.staking_port = node_ip_split[1].parse().unwrap();
 
-        self.versions = get_node_version(&api_path).map_err(|e| {
-            AshError::RpcError(RpcError::GetFailure {
-                data_type: "version".to_string(),
-                target_type: "node".to_string(),
-                target_value: node_host.to_string(),
-                msg: e.to_string(),
-            })
+        self.versions = get_node_version(&api_path).map_err(|e| RpcError::GetFailure {
+            data_type: "version".to_string(),
+            target_type: "node".to_string(),
+            target_value: node_host.to_string(),
+            msg: e.to_string(),
         })?;
-        self.uptime = get_node_uptime(&api_path).map_err(|e| {
-            AshError::RpcError(RpcError::GetFailure {
-                data_type: "uptime".to_string(),
-                target_type: "node".to_string(),
-                target_value: node_host.to_string(),
-                msg: e.to_string(),
-            })
+        self.uptime = get_node_uptime(&api_path).map_err(|e| RpcError::GetFailure {
+            data_type: "uptime".to_string(),
+            target_type: "node".to_string(),
+            target_value: node_host.to_string(),
+            msg: e.to_string(),
         })?;
 
         Ok(())
