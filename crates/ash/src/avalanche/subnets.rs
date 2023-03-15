@@ -3,10 +3,11 @@
 
 // Module that contains code to interact with Avalanche subnets and validators
 
+use crate::avalanche::blockchains::AvalancheBlockchain;
 use crate::avalanche::{
-    avalanche_id_from_string, avalanche_node_id_from_string, blockchains::AvalancheBlockchain,
-    AvalancheOutputOwners,
+    avalanche_id_from_string, avalanche_node_id_from_string, AvalancheOutputOwners,
 };
+use crate::errors::*;
 use avalanche_types::{ids::node::Id as NodeId, ids::Id};
 use serde::{Deserialize, Serialize};
 
@@ -27,17 +28,33 @@ pub struct AvalancheSubnet {
 
 impl AvalancheSubnet {
     /// Get a Blockchain of the Subnet by its ID
-    pub fn get_blockchain(&self, id: &str) -> Option<&AvalancheBlockchain> {
+    pub fn get_blockchain(&self, id: &str) -> Result<&AvalancheBlockchain, AshError> {
         self.blockchains
             .iter()
             .find(|&blockchain| blockchain.id.to_string() == id)
+            .ok_or(
+                AvalancheSubnetError::NotFound {
+                    subnet_id: self.id,
+                    target_type: "blockchain".to_string(),
+                    target_value: id.to_string(),
+                }
+                .into(),
+            )
     }
 
     /// Get a Validator of the Subnet by its ID
-    pub fn get_validator(&self, id: &str) -> Option<&AvalancheSubnetValidator> {
+    pub fn get_validator(&self, id: &str) -> Result<&AvalancheSubnetValidator, AshError> {
         self.validators
             .iter()
             .find(|&validator| validator.node_id.to_string() == id)
+            .ok_or(
+                AvalancheSubnetError::NotFound {
+                    subnet_id: self.id,
+                    target_type: "validator".to_string(),
+                    target_value: id.to_string(),
+                }
+                .into(),
+            )
     }
 }
 

@@ -3,8 +3,8 @@
 
 // Module that contains code to interact with the lib configuration
 
-use crate::avalanche::AvalancheNetwork;
-use config::{Config, ConfigError, Environment, File, FileFormat};
+use crate::{avalanche::AvalancheNetwork, errors::*};
+use config::{Config, Environment, File, FileFormat};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
 
@@ -22,7 +22,7 @@ impl AshConfig {
     /// Load the Ash lib configuration from config files
     /// The default config file is located at `conf/avalanche.yml`
     /// A custom config can be provided with the config_file parameter
-    pub fn load(config_file: Option<&str>) -> Result<AshConfig, ConfigError> {
+    pub fn load(config_file: Option<&str>) -> Result<AshConfig, AshError> {
         let ash_conf = Config::builder();
 
         match config_file {
@@ -30,20 +30,35 @@ impl AshConfig {
             None => ash_conf.add_source(File::from_str(DEFAULT_CONF, FileFormat::Yaml)),
         }
         .add_source(Environment::with_prefix("ASH"))
-        .build()?
+        .build()
+        .map_err(|e| ConfigError::BuildFailure(e.to_string()))?
         .try_deserialize()
+        .map_err(|e| {
+            ConfigError::DeserializeFailure {
+                config_file: config_file.unwrap_or("default").to_string(),
+                msg: e.to_string(),
+            }
+            .into()
+        })
     }
 
     /// Dump the Ash lib default configuration to a file in YAML format
-    pub fn dump_default(config_file: &str, force: bool) -> Result<(), String> {
+    pub fn dump_default(config_file: &str, force: bool) -> Result<(), AshError> {
         let ash_conf = Self::load(None).unwrap();
 
         // If the config file already exists, return an error unless force is set to true
         match (Path::new(config_file).exists(), force) {
-            (true, false) => Err(format!("Configuration file '{config_file}' already exists")),
+            (true, false) => Err(ConfigError::DumpFailure {
+                config_file: config_file.to_string(),
+                msg: "file already exists".to_string(),
+            }
+            .into()),
             _ => {
                 fs::write(config_file, serde_yaml::to_string(&ash_conf).unwrap()).map_err(|e| {
-                    format!("Failed to write default configuration to {config_file}: {e}")
+                    ConfigError::DumpFailure {
+                        config_file: config_file.to_string(),
+                        msg: e.to_string(),
+                    }
                 })?;
                 Ok(())
             }

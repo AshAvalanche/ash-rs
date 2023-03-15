@@ -48,11 +48,11 @@ fn list(
     json: bool,
 ) -> Result<(), CliError> {
     let mut network = load_network_and_update_subnets(network_name, config)?;
-    update_subnet_validators(&mut network, subnet_id).map_err(|e| CliError::dataerr(e.message))?;
+    update_subnet_validators(&mut network, subnet_id)?;
 
     let subnet = network
         .get_subnet(subnet_id)
-        .ok_or_else(|| CliError::dataerr(format!("Error: Subnet '{subnet_id}' not found")))?;
+        .map_err(|e| CliError::dataerr(format!("Error listing validators: {}", e)))?;
 
     if json {
         println!("{}", serde_json::to_string(&subnet.validators).unwrap());
@@ -78,15 +78,15 @@ fn info(
     json: bool,
 ) -> Result<(), CliError> {
     let mut network = load_network_and_update_subnets(network_name, config)?;
-    update_subnet_validators(&mut network, subnet_id).map_err(|e| CliError::dataerr(e.message))?;
+    update_subnet_validators(&mut network, subnet_id)?;
 
     let subnet = network
         .get_subnet(subnet_id)
-        .ok_or_else(|| CliError::dataerr(format!("Error: Subnet '{id}' not found")))?;
+        .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {}", e)))?;
 
     let validator = subnet
         .get_validator(id)
-        .ok_or_else(|| CliError::dataerr(format!("Error: validator '{id}' not found")))?;
+        .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {}", e)))?;
 
     if json {
         println!("{}", serde_json::to_string(&validator).unwrap());
