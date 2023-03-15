@@ -3,7 +3,7 @@
 
 // Module that contains the subnet subcommand parser
 
-use crate::avalanche::{load_network_and_update_subnets, update_subnet_validators};
+use crate::avalanche::*;
 use crate::utils::{error::CliError, templating::*};
 use clap::{Parser, Subcommand};
 
@@ -34,7 +34,8 @@ enum SubnetSubcommands {
 
 // List the network's Subnets
 fn list(network_name: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
-    let network = load_network_and_update_subnets(network_name, config)?;
+    let mut network = load_network(network_name, config)?;
+    update_network_subnets(&mut network)?;
 
     if json {
         println!("{}", serde_json::to_string(&network.subnets).unwrap());
@@ -53,7 +54,8 @@ fn list(network_name: &str, config: Option<&str>, json: bool) -> Result<(), CliE
 }
 
 fn info(network_name: &str, id: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
-    let mut network = load_network_and_update_subnets(network_name, config)?;
+    let mut network = load_network(network_name, config)?;
+    update_network_subnets(&mut network)?;
     update_subnet_validators(&mut network, id)?;
 
     let subnet = network

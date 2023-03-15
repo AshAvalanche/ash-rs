@@ -12,6 +12,13 @@ use clap::{Parser, Subcommand};
 pub(crate) struct NodeCommand {
     #[command(subcommand)]
     command: NodeSubcommands,
+    #[arg(
+        long,
+        help = "Avalanche network",
+        default_value = "mainnet",
+        global = true
+    )]
+    network: String,
 }
 
 #[derive(Subcommand)]
@@ -40,7 +47,7 @@ fn info(id: &str, json: bool) -> Result<(), CliError> {
 }
 
 // Parse node subcommand
-pub(crate) fn parse(node: NodeCommand, json: bool) -> Result<(), CliError> {
+pub(crate) fn parse(node: NodeCommand, config: Option<&str>, json: bool) -> Result<(), CliError> {
     match node.command {
         NodeSubcommands::Info { id } => info(&id, json),
     }

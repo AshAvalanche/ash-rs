@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023, E36 Knots
 
-// Module that contains the Ash CLI root parser
-
 mod avalanche;
 mod conf;
-mod node;
+mod protocol;
 mod utils;
+
+// Module that contains the Ash CLI root parser
 
 use clap::{Parser, Subcommand};
 use colored::Colorize;
@@ -29,7 +29,8 @@ enum CliCommands {
     #[command(visible_alias = "avax")]
     Avalanche(avalanche::AvalancheCommand),
     Conf(conf::ConfCommand),
-    Node(node::NodeCommand),
+    #[command(visible_alias = "proto")]
+    Protocol(protocol::ProtocolCommand),
 }
 
 fn main() {
@@ -40,7 +41,9 @@ fn main() {
             avalanche::parse(avalanche, cli.config.as_deref(), cli.json)
         }
         CliCommands::Conf(conf) => conf::parse(conf),
-        CliCommands::Node(node) => node::parse(node, cli.json),
+        CliCommands::Protocol(protocol) => {
+            protocol::parse(protocol, cli.config.as_deref(), cli.json)
+        }
     }
     .unwrap_or_else(|e| {
         eprintln!("{}", e.message.red());

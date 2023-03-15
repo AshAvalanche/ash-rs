@@ -3,7 +3,7 @@
 
 // Module that contains the validator subcommand parser
 
-use crate::avalanche::{load_network_and_update_subnets, update_subnet_validators};
+use crate::avalanche::*;
 use crate::utils::{error::CliError, templating::*};
 use ash::avalanche::AVAX_PRIMARY_NETWORK_ID;
 use clap::{Parser, Subcommand};
@@ -47,7 +47,8 @@ fn list(
     config: Option<&str>,
     json: bool,
 ) -> Result<(), CliError> {
-    let mut network = load_network_and_update_subnets(network_name, config)?;
+    let mut network = load_network(network_name, config)?;
+    update_network_subnets(&mut network)?;
     update_subnet_validators(&mut network, subnet_id)?;
 
     let subnet = network
@@ -77,7 +78,8 @@ fn info(
     config: Option<&str>,
     json: bool,
 ) -> Result<(), CliError> {
-    let mut network = load_network_and_update_subnets(network_name, config)?;
+    let mut network = load_network(network_name, config)?;
+    update_network_subnets(&mut network)?;
     update_subnet_validators(&mut network, subnet_id)?;
 
     let subnet = network
@@ -97,7 +99,7 @@ fn info(
     Ok(())
 }
 
-// Parse subnet subcommand
+// Parse validator subcommand
 pub(crate) fn parse(
     validator: ValidatorCommand,
     config: Option<&str>,
