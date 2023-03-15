@@ -98,6 +98,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "getRentableValidators",
+    "outputs": [
+      {
+        "internalType": "bytes24[]",
+        "name": "rentableValidators",
+        "type": "bytes24[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "bytes24",

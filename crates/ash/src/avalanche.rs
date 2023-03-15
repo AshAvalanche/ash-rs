@@ -10,8 +10,7 @@ pub mod subnets;
 
 use crate::avalanche::blockchains::AvalancheBlockchain;
 use crate::avalanche::subnets::AvalancheSubnet;
-use crate::errors::*;
-use crate::{avalanche::jsonrpc::platformvm, conf::AshConfig};
+use crate::{avalanche::jsonrpc::platformvm, conf::AshConfig, errors::*};
 use avalanche_types::ids::{node::Id as NodeId, Id};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;

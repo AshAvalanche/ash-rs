@@ -3,15 +3,14 @@
 
 // Module that contains code to interact with Ash nodes
 
-use crate::avalanche::nodes::AvalancheNode;
-use crate::errors::*;
+use crate::{avalanche::nodes::AvalancheNode, errors::*};
 use avalanche_types::ids::node::Id;
 use regex::Regex;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 /// Node of the Ash protocol
-#[derive(Debug)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct AshNode {
     /// The Avalanche node
     pub avalanche_node: AvalancheNode,

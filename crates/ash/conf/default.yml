@@ -6,7 +6,7 @@ ashContracts:
   - name: AshRouter
     addresses:
       - network: fuji
-        address: "0xB41b15Dc8C0Cd5A019e9F91ad5763Fb4aC571378"
+        address: "0xDBc0E1c9BDafB2AC47473Ade23d0d6E819428295"
 avalancheNetworks:
   - name: mainnet
     subnets:
