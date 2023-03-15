@@ -4,7 +4,7 @@
 // Module that contains the node subcommand parser
 
 use crate::utils::{error::CliError, templating::template_ash_node_info};
-use ash::nodes::AshNode;
+use ash::protocol::nodes::AshNode;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]

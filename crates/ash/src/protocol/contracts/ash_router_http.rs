@@ -6,7 +6,8 @@
 include!(concat!(env!("OUT_DIR"), "/ash_router_abigen.rs"));
 
 use crate::{avalanche::blockchains::AvalancheBlockchain, errors::*};
-use ethers::{core::types::Address, providers::Http, providers::Provider};
+use ethers::core::types::Address;
+use ethers::providers::{Http, Provider};
 use AshRouter;
 
 /// AshRouter contract HTTP provider
@@ -57,7 +58,7 @@ impl AshRouterHttp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{avalanche::AvalancheNetwork, contracts::AshContractMetadata};
+    use crate::{avalanche::AvalancheNetwork, protocol::contracts::AshContractMetadata};
     use std::env;
 
     // Load the test network from the ASH_TEST_CONFIG file

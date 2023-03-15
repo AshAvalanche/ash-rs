@@ -101,7 +101,7 @@ impl AvalancheNetwork {
 
         let subnets =
             platformvm::get_network_subnets(rpc_url).map_err(|e| RpcError::GetFailure {
-                data_type: "network's Subnets".to_string(),
+                data_type: "Subnets".to_string(),
                 target_type: "network".to_string(),
                 target_value: self.name.clone(),
                 msg: e.to_string(),

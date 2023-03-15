@@ -148,7 +148,7 @@ mod tests {
     ];
 
     #[test]
-    fn create_from_cb58_id() {
+    fn test_ash_node_from_cb58_id() {
         // Creating the node should succeed
         let node = AshNode::from_cb58_id(CB58_ID).unwrap();
 
@@ -156,7 +156,7 @@ mod tests {
     }
 
     #[test]
-    fn create_from_bytes_id() {
+    fn test_ash_node_from_bytes_id() {
         // Creating the node should succeed
         let node = AshNode::from_bytes_id(&BYTES_ID).unwrap();
 
@@ -164,7 +164,7 @@ mod tests {
     }
 
     #[test]
-    fn create_from_hex_id() {
+    fn test_ash_node_from_hex_id() {
         // Creating the node should succeed
         let node = AshNode::from_hex_id(HEX_ID).unwrap();
 
@@ -172,7 +172,7 @@ mod tests {
     }
 
     #[test]
-    fn create_from_string() {
+    fn test_ash_node_from_string() {
         // Creating the node should succeed
         let node = AshNode::from_string(CB58_ID).unwrap();
 
@@ -200,7 +200,7 @@ mod tests {
     }
 
     #[test]
-    fn get_info() {
+    fn test_ash_node_info() {
         let node = AshNode::from_cb58_id(CB58_ID).unwrap();
 
         let node_info = node.info();

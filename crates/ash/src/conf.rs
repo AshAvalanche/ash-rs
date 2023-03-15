@@ -3,7 +3,7 @@
 
 // Module that contains code to interact with the lib configuration
 
-use crate::{avalanche::AvalancheNetwork, contracts::AshContractMetadata, errors::*};
+use crate::{avalanche::AvalancheNetwork, errors::*, protocol::contracts::AshContractMetadata};
 use config::{Config, Environment, File, FileFormat};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
