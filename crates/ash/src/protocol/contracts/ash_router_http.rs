@@ -57,7 +57,7 @@ impl AshRouterHttp {
     }
 
     /// Get the list of rentable Ash nodes
-    pub async fn get_rentable_validators(&self) -> Result<Vec<[u8; 24]>, AshError> {
+    pub async fn get_rentable_validators(&self) -> Result<Vec<[u8; 20]>, AshError> {
         let rentable_validators = self
             .provider
             .get_rentable_validators()

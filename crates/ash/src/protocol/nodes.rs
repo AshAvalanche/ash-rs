@@ -96,13 +96,15 @@ impl AshNode {
         AshNodeId {
             p_chain: self.avalanche_node.id.to_string(),
             cb58: self.avalanche_node.id.short_id().to_string(),
-            hex: self
-                .avalanche_node
-                .id
-                .as_ref()
-                .iter()
-                .map(|b| format!("{b:02x}"))
-                .collect(),
+            hex: format!(
+                "0x{}",
+                self.avalanche_node
+                    .id
+                    .as_ref()
+                    .iter()
+                    .map(|b| format!("{b:02x}"))
+                    .collect::<String>()
+            ),
             bytes: self.avalanche_node.id.to_vec(),
         }
     }
@@ -209,10 +211,13 @@ mod tests {
         assert_eq!(node_info.id.bytes, &BYTES_ID);
         assert_eq!(
             node_info.id.hex,
-            BYTES_ID
-                .iter()
-                .map(|b| format!("{b:02x}"))
-                .collect::<String>()
+            format!(
+                "0x{}",
+                BYTES_ID
+                    .iter()
+                    .map(|b| format!("{b:02x}"))
+                    .collect::<String>()
+            )
         );
     }
 }
