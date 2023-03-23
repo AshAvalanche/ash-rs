@@ -27,7 +27,7 @@ pub struct AvalancheSubnet {
 }
 
 impl AvalancheSubnet {
-    /// Get a Blockchain of the Subnet by its ID
+    /// Get a blockchain of the Subnet by its ID
     pub fn get_blockchain(&self, id: &str) -> Result<&AvalancheBlockchain, AshError> {
         self.blockchains
             .iter()
@@ -42,7 +42,22 @@ impl AvalancheSubnet {
             )
     }
 
-    /// Get a Validator of the Subnet by its ID
+    /// Get a blockchain of the Subnet by its name
+    pub fn get_blockchain_by_name(&self, name: &str) -> Result<&AvalancheBlockchain, AshError> {
+        self.blockchains
+            .iter()
+            .find(|&blockchain| blockchain.name == name)
+            .ok_or(
+                AvalancheSubnetError::NotFound {
+                    subnet_id: self.id,
+                    target_type: "blockchain".to_string(),
+                    target_value: name.to_string(),
+                }
+                .into(),
+            )
+    }
+
+    /// Get a validator of the Subnet by its ID
     pub fn get_validator(&self, id: &str) -> Result<&AvalancheSubnetValidator, AshError> {
         self.validators
             .iter()
@@ -97,4 +112,50 @@ pub struct AvalancheSubnetDelegator {
     pub stake_amount: u64,
     pub potential_reward: u64,
     pub reward_owner: AvalancheOutputOwners,
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::avalanche::{AvalancheNetwork, AVAX_PRIMARY_NETWORK_ID};
+    use std::env;
+
+    const AVAX_FUJI_CCHAIN_ID: &str = "yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp";
+    const ASH_TEST_NODE_ID: &str = "NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg";
+
+    // Load the test network from the ASH_TEST_CONFIG file
+    fn load_test_network() -> AvalancheNetwork {
+        let config_path =
+            env::var("ASH_TEST_AVAX_CONFIG").unwrap_or("tests/conf/default.yml".to_string());
+        AvalancheNetwork::load("fuji", Some(&config_path)).unwrap()
+    }
+
+    #[test]
+    fn test_avalanche_subnet_get_blockchain() {
+        let fuji = load_test_network();
+        let subnet = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+
+        let blockchain = subnet.get_blockchain(AVAX_FUJI_CCHAIN_ID).unwrap();
+        assert_eq!(blockchain.name, "C-Chain");
+    }
+
+    #[test]
+    fn test_avalanche_subnet_get_blockchain_by_name() {
+        let fuji = load_test_network();
+        let subnet = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+
+        let blockchain = subnet.get_blockchain_by_name("C-Chain").unwrap();
+        assert_eq!(blockchain.id.to_string(), AVAX_FUJI_CCHAIN_ID);
+    }
+
+    #[test]
+    fn test_avalanche_subnet_get_validator() {
+        let mut fuji = load_test_network();
+        fuji.update_subnet_validators(AVAX_PRIMARY_NETWORK_ID)
+            .unwrap();
+
+        let subnet = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+
+        let validator = subnet.get_validator(ASH_TEST_NODE_ID).unwrap();
+        assert_eq!(validator.node_id.to_string(), ASH_TEST_NODE_ID);
+    }
 }

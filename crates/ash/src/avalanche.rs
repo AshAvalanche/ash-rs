@@ -8,6 +8,7 @@ pub mod subnets;
 
 // Module that contains code to interact with Avalanche networks
 
+use crate::avalanche::blockchains::AvalancheBlockchain;
 use crate::avalanche::subnets::AvalancheSubnet;
 use crate::errors::*;
 use crate::{avalanche::jsonrpc::platformvm, conf::AshConfig};
@@ -70,30 +71,36 @@ impl AvalancheNetwork {
                 target_value: network.to_string(),
             })?;
 
-        // Error if the primary network is not found
-        let primary_subnet = avax_network.get_subnet(AVAX_PRIMARY_NETWORK_ID)?;
-
-        // Error if the P-Chain is not found
-        let _ = primary_subnet.get_blockchain(AVAX_PRIMARY_NETWORK_ID)?;
+        // Error if the primary network is not found or if the P-Chain is not found
+        let _ = avax_network
+            .get_subnet(AVAX_PRIMARY_NETWORK_ID)?
+            .get_blockchain(AVAX_PRIMARY_NETWORK_ID)?;
 
         Ok(avax_network.clone())
     }
 
-    pub fn get_pchain_rpc_url(&self) -> Result<String, AshError> {
-        // Get the P-Chain RPC URL
-        let rpc_url = &self
+    /// Get the P-Chain
+    pub fn get_pchain(&self) -> Result<&AvalancheBlockchain, AshError> {
+        let pchain = self
             .get_subnet(AVAX_PRIMARY_NETWORK_ID)?
-            .get_blockchain(AVAX_PRIMARY_NETWORK_ID)?
-            .rpc_url;
-        Ok(rpc_url.to_string())
+            .get_blockchain(AVAX_PRIMARY_NETWORK_ID)?;
+        Ok(pchain)
+    }
+
+    /// Get the C-Chain
+    pub fn get_cchain(&self) -> Result<&AvalancheBlockchain, AshError> {
+        let cchain = self
+            .get_subnet(AVAX_PRIMARY_NETWORK_ID)?
+            .get_blockchain_by_name("C-Chain")?;
+        Ok(cchain)
     }
 
     /// Update the AvalancheNetwork Subnets by querying an API endpoint
     pub fn update_subnets(&mut self) -> Result<(), AshError> {
-        let rpc_url = self.get_pchain_rpc_url()?;
+        let rpc_url = &self.get_pchain()?.rpc_url;
 
         let subnets =
-            platformvm::get_network_subnets(&rpc_url).map_err(|e| RpcError::GetFailure {
+            platformvm::get_network_subnets(rpc_url).map_err(|e| RpcError::GetFailure {
                 data_type: "network's Subnets".to_string(),
                 target_type: "network".to_string(),
                 target_value: self.name.clone(),
@@ -114,7 +121,7 @@ impl AvalancheNetwork {
         Ok(())
     }
 
-    /// Get a Subnet from the network by its ID
+    /// Get a Subnet of the network by its ID
     pub fn get_subnet(&self, id: &str) -> Result<&AvalancheSubnet, AshError> {
         self.subnets
             .iter()
@@ -132,10 +139,10 @@ impl AvalancheNetwork {
     /// Update the AvalancheNetwork blockchains by querying an API endpoint
     /// This function will update the blockchains of all subnets
     pub fn update_blockchains(&mut self) -> Result<(), AshError> {
-        let rpc_url = self.get_pchain_rpc_url()?;
+        let rpc_url = &self.get_pchain()?.rpc_url;
 
         let blockchains =
-            platformvm::get_network_blockchains(&rpc_url).map_err(|e| RpcError::GetFailure {
+            platformvm::get_network_blockchains(rpc_url).map_err(|e| RpcError::GetFailure {
                 data_type: "blockchains".to_string(),
                 target_type: "network".to_string(),
                 target_value: self.name.clone(),
@@ -167,9 +174,9 @@ impl AvalancheNetwork {
 
     /// Update the validators of a Subnet by querying an API endpoint
     pub fn update_subnet_validators(&mut self, subnet_id: &str) -> Result<(), AshError> {
-        let rpc_url = self.get_pchain_rpc_url()?;
+        let rpc_url = &self.get_pchain()?.rpc_url;
 
-        let validators = platformvm::get_current_validators(&rpc_url, subnet_id).map_err(|e| {
+        let validators = platformvm::get_current_validators(rpc_url, subnet_id).map_err(|e| {
             RpcError::GetFailure {
                 data_type: "validators".to_string(),
                 target_type: "Subnet".to_string(),
@@ -270,16 +277,17 @@ mod tests {
     }
 
     #[test]
-    fn test_avalanche_network_get_pchain_rpc_url() {
+    fn test_avalanche_network_get_chain() {
         let fuji = load_test_network();
-        assert_eq!(
-            fuji.get_pchain_rpc_url().unwrap(),
-            fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID)
-                .unwrap()
-                .get_blockchain(AVAX_PRIMARY_NETWORK_ID)
-                .unwrap()
-                .rpc_url
-        );
+
+        let pchain = fuji.get_pchain().unwrap();
+        let cchain = fuji.get_cchain().unwrap();
+
+        assert_eq!(pchain.id.to_string(), AVAX_PRIMARY_NETWORK_ID);
+        assert_eq!(pchain.name, "P-Chain");
+
+        assert_eq!(cchain.id.to_string(), AVAX_FUJI_CCHAIN_ID);
+        assert_eq!(cchain.name, "C-Chain");
     }
 
     #[test]

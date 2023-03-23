@@ -58,7 +58,7 @@ fn info(network_name: &str, id: &str, config: Option<&str>, json: bool) -> Resul
 
     let subnet = network
         .get_subnet(id)
-        .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {}", e)))?;
+        .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {e}")))?;
 
     if json {
         println!("{}", serde_json::to_string(&subnet).unwrap());

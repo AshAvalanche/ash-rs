@@ -70,23 +70,23 @@ impl AshNode {
 
     /// Create a new Ash node from a string
     /// Try to find out the node ID format using a regex
-    pub fn from_string(nodeid: &str) -> Result<Self, AshError> {
+    pub fn from_string(node_id: &str) -> Result<Self, AshError> {
         // Check if the node ID is a valid CB58 string
         let re = Regex::new(r"^(NodeID-)?[A-Za-z0-9]{32,33}$").unwrap();
 
-        if re.is_match(nodeid) {
-            return AshNode::from_cb58_id(nodeid);
+        if re.is_match(node_id) {
+            return AshNode::from_cb58_id(node_id);
         }
 
         // Check if the node ID is a valid hex string
         let re = Regex::new(r"^(0x)?[0-9a-fA-F]{40}$").unwrap();
 
-        if re.is_match(nodeid) {
-            return AshNode::from_hex_id(nodeid.trim_start_matches("0x"));
+        if re.is_match(node_id) {
+            return AshNode::from_hex_id(node_id.trim_start_matches("0x"));
         }
 
         Err(AshNodeError::InvalidId {
-            id: nodeid.to_string(),
+            id: node_id.to_string(),
             msg: "unknown node ID format".to_string(),
         }
         .into())

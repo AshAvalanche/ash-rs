@@ -280,7 +280,7 @@ mod tests {
     #[test]
     fn test_get_network_subnets() {
         let fuji = load_test_network();
-        let rpc_url = &fuji.get_pchain_rpc_url().unwrap();
+        let rpc_url = &fuji.get_pchain().unwrap().rpc_url;
 
         let subnets = get_network_subnets(rpc_url).unwrap();
 
@@ -293,7 +293,7 @@ mod tests {
     #[test]
     fn test_get_network_blockchains() {
         let fuji = load_test_network();
-        let rpc_url = &fuji.get_pchain_rpc_url().unwrap();
+        let rpc_url = &fuji.get_pchain().unwrap().rpc_url;
 
         let blockchains = get_network_blockchains(rpc_url).unwrap();
 
@@ -316,7 +316,7 @@ mod tests {
         // The method platform.getCurrentValidators is not available on QuickNode
         // Tempoary workaround: use Ankr public endpoint
         let fuji = AvalancheNetwork::load("fuji-ankr", None).unwrap();
-        let rpc_url = &fuji.get_pchain_rpc_url().unwrap();
+        let rpc_url = &fuji.get_pchain().unwrap().rpc_url;
 
         let validators = get_current_validators(rpc_url, AVAX_PRIMARY_NETWORK_ID).unwrap();
 
