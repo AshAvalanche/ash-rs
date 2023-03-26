@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023, E36 Knots
 
-// Module that contains the avalanche subcommand parser
-
 mod network;
 mod node;
 mod subnet;
 mod validator;
+
+// Module that contains the avalanche subcommand parser
 
 use crate::utils::error::CliError;
 use ash::avalanche::AvalancheNetwork;
@@ -27,25 +27,29 @@ enum AvalancheSubcommands {
     Validator(validator::ValidatorCommand),
 }
 
-// Load the network configuation and recursively update the Subnets (and their blockchains)
-fn load_network_and_update_subnets(
+// Load the network configuation
+pub(crate) fn load_network(
     network_name: &str,
     config: Option<&str>,
 ) -> Result<AvalancheNetwork, CliError> {
-    let mut network = AvalancheNetwork::load(network_name, config)
+    let network = AvalancheNetwork::load(network_name, config)
         .map_err(|e| CliError::dataerr(format!("Error loading network: {e}")))?;
+    Ok(network)
+}
+
+// Recursively update the Subnets (and their blockchains)
+pub(crate) fn update_network_subnets(network: &mut AvalancheNetwork) -> Result<(), CliError> {
     network
         .update_subnets()
         .map_err(|e| CliError::dataerr(format!("Error updating subnets: {e}")))?;
     network
         .update_blockchains()
         .map_err(|e| CliError::dataerr(format!("Error updating blockchains: {e}")))?;
-
-    Ok(network)
+    Ok(())
 }
 
 // Update a Subnet's validators
-fn update_subnet_validators(
+pub(crate) fn update_subnet_validators(
     network: &mut AvalancheNetwork,
     subnet_id: &str,
 ) -> Result<(), CliError> {
@@ -55,7 +59,7 @@ fn update_subnet_validators(
     Ok(())
 }
 
-// Parse subnet subcommand
+// Parse avalanche subcommand
 pub(crate) fn parse(
     avalanche: AvalancheCommand,
     config: Option<&str>,

@@ -40,6 +40,20 @@ impl AshContractMetadata {
 
         Ok(contract.clone())
     }
+
+    /// Get the address of the contract on a specific network
+    pub fn get_address(&self, network: &str) -> Result<String, AshError> {
+        let address = self
+            .addresses
+            .iter()
+            .find(|&address| address.network == network)
+            .ok_or(ConfigError::NotFound {
+                target_type: "contract".to_string(),
+                target_value: self.name.clone(),
+            })?;
+
+        Ok(address.address.clone())
+    }
 }
 
 #[cfg(test)]

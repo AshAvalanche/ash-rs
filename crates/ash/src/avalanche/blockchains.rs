@@ -3,8 +3,7 @@
 
 // Module that contains code to interact with Avalanche blockchains
 
-use crate::avalanche::avalanche_id_from_string;
-use crate::errors::*;
+use crate::{avalanche::avalanche_id_from_string, errors::*};
 use avalanche_types::ids::Id;
 use ethers::providers::{Http, Provider};
 use serde::{Deserialize, Serialize};

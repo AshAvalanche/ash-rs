@@ -3,15 +3,14 @@
 
 // Module that contains code to interact with Ash nodes
 
-use crate::avalanche::nodes::AvalancheNode;
-use crate::errors::*;
+use crate::{avalanche::nodes::AvalancheNode, errors::*};
 use avalanche_types::ids::node::Id;
 use regex::Regex;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 /// Node of the Ash protocol
-#[derive(Debug)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct AshNode {
     /// The Avalanche node
     pub avalanche_node: AvalancheNode,
@@ -97,13 +96,15 @@ impl AshNode {
         AshNodeId {
             p_chain: self.avalanche_node.id.to_string(),
             cb58: self.avalanche_node.id.short_id().to_string(),
-            hex: self
-                .avalanche_node
-                .id
-                .as_ref()
-                .iter()
-                .map(|b| format!("{b:02x}"))
-                .collect(),
+            hex: format!(
+                "0x{}",
+                self.avalanche_node
+                    .id
+                    .as_ref()
+                    .iter()
+                    .map(|b| format!("{b:02x}"))
+                    .collect::<String>()
+            ),
             bytes: self.avalanche_node.id.to_vec(),
         }
     }
@@ -148,7 +149,7 @@ mod tests {
     ];
 
     #[test]
-    fn create_from_cb58_id() {
+    fn test_ash_node_from_cb58_id() {
         // Creating the node should succeed
         let node = AshNode::from_cb58_id(CB58_ID).unwrap();
 
@@ -156,7 +157,7 @@ mod tests {
     }
 
     #[test]
-    fn create_from_bytes_id() {
+    fn test_ash_node_from_bytes_id() {
         // Creating the node should succeed
         let node = AshNode::from_bytes_id(&BYTES_ID).unwrap();
 
@@ -164,7 +165,7 @@ mod tests {
     }
 
     #[test]
-    fn create_from_hex_id() {
+    fn test_ash_node_from_hex_id() {
         // Creating the node should succeed
         let node = AshNode::from_hex_id(HEX_ID).unwrap();
 
@@ -172,7 +173,7 @@ mod tests {
     }
 
     #[test]
-    fn create_from_string() {
+    fn test_ash_node_from_string() {
         // Creating the node should succeed
         let node = AshNode::from_string(CB58_ID).unwrap();
 
@@ -200,7 +201,7 @@ mod tests {
     }
 
     #[test]
-    fn get_info() {
+    fn test_ash_node_info() {
         let node = AshNode::from_cb58_id(CB58_ID).unwrap();
 
         let node_info = node.info();
@@ -210,10 +211,13 @@ mod tests {
         assert_eq!(node_info.id.bytes, &BYTES_ID);
         assert_eq!(
             node_info.id.hex,
-            BYTES_ID
-                .iter()
-                .map(|b| format!("{b:02x}"))
-                .collect::<String>()
+            format!(
+                "0x{}",
+                BYTES_ID
+                    .iter()
+                    .map(|b| format!("{b:02x}"))
+                    .collect::<String>()
+            )
         );
     }
 }

@@ -3,6 +3,5 @@
 
 pub mod avalanche;
 pub mod conf;
-pub mod contracts;
 pub mod errors;
-pub mod nodes;
+pub mod protocol;

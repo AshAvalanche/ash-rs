@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn test_update_info() {
+    fn test_avalanche_node_update_info() {
         let mut node = AvalancheNode {
             http_host: ASH_TEST_HTTP_HOST.to_string(),
             http_port: ASH_TEST_HTTP_PORT,

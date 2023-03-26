@@ -10,8 +10,7 @@ pub mod subnets;
 
 use crate::avalanche::blockchains::AvalancheBlockchain;
 use crate::avalanche::subnets::AvalancheSubnet;
-use crate::errors::*;
-use crate::{avalanche::jsonrpc::platformvm, conf::AshConfig};
+use crate::{avalanche::jsonrpc::platformvm, conf::AshConfig, errors::*};
 use avalanche_types::ids::{node::Id as NodeId, Id};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -101,7 +100,7 @@ impl AvalancheNetwork {
 
         let subnets =
             platformvm::get_network_subnets(rpc_url).map_err(|e| RpcError::GetFailure {
-                data_type: "network's Subnets".to_string(),
+                data_type: "Subnets".to_string(),
                 target_type: "network".to_string(),
                 target_value: self.name.clone(),
                 msg: e.to_string(),

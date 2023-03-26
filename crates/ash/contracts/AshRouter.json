@@ -58,9 +58,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes24",
+        "internalType": "bytes20",
         "name": "nodeIdBytes",
-        "type": "bytes24"
+        "type": "bytes20"
       },
       {
         "internalType": "uint16",
@@ -98,11 +98,24 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "getRentableValidators",
+    "outputs": [
+      {
+        "internalType": "bytes20[]",
+        "name": "rentableValidators",
+        "type": "bytes20[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
-        "internalType": "bytes24",
+        "internalType": "bytes20",
         "name": "nodeIdBytes",
-        "type": "bytes24"
+        "type": "bytes20"
       }
     ],
     "name": "getValidatorRentingContract",
@@ -119,9 +132,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes24",
+        "internalType": "bytes20",
         "name": "nodeIdBytes",
-        "type": "bytes24"
+        "type": "bytes20"
       },
       {
         "internalType": "uint24",
@@ -183,9 +196,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes24",
+        "internalType": "bytes20",
         "name": "nodeIdBytes",
-        "type": "bytes24"
+        "type": "bytes20"
       },
       {
         "internalType": "uint24",
@@ -211,9 +224,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes24[]",
+        "internalType": "bytes20[]",
         "name": "nodeIdsBytes",
-        "type": "bytes24[]"
+        "type": "bytes20[]"
       },
       {
         "internalType": "uint24",
@@ -272,9 +285,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes24",
+        "internalType": "bytes20",
         "name": "nodeIdBytes",
-        "type": "bytes24"
+        "type": "bytes20"
       }
     ],
     "name": "withdrawAllValidatorFunds",
@@ -285,9 +298,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes24",
+        "internalType": "bytes20",
         "name": "nodeIdBytes",
-        "type": "bytes24"
+        "type": "bytes20"
       },
       {
         "internalType": "uint24",

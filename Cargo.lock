@@ -114,6 +114,7 @@ name = "ashcli"
 version = "0.1.0"
 dependencies = [
  "ash",
+ "async-std",
  "clap 4.1.4",
  "colored",
  "exitcode",

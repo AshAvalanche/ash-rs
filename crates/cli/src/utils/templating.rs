@@ -3,7 +3,7 @@
 
 use ash::avalanche::subnets::{AvalancheSubnet, AvalancheSubnetValidator};
 use ash::avalanche::{blockchains::AvalancheBlockchain, nodes::AvalancheNode};
-use ash::nodes::AshNodeInfo;
+use ash::protocol::nodes::AshNodeInfo;
 use colored::{ColoredString, Colorize};
 use indoc::formatdoc;
 
