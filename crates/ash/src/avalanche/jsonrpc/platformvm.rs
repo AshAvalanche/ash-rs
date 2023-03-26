@@ -103,7 +103,7 @@ struct PlatformApiValidator {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     uptime: f32,
     validation_reward_owner: PlatformApiRewardOwner,
-    delegators: Vec<PlatformApiDelegator>,
+    delegators: Option<Vec<PlatformApiDelegator>>,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     delegator_count: u32,
     #[serde(deserialize_with = "deserialize_number_from_string")]
@@ -231,20 +231,22 @@ pub fn get_current_validators(
                 threshold: validator.validation_reward_owner.threshold,
                 addresses: validator.validation_reward_owner.addresses.clone(),
             },
-            delegators: validator
-                .delegators
-                .iter()
-                .map(|delegator| AvalancheSubnetDelegator {
-                    tx_id: delegator.tx_id,
-                    node_id: delegator.node_id,
-                    start_time: delegator.start_time,
-                    end_time: delegator.end_time,
-                    stake_amount: delegator.stake_amount,
-                    weight: delegator.weight,
-                    potential_reward: delegator.potential_reward,
-                    ..Default::default()
-                })
-                .collect(),
+            delegators: match &validator.delegators {
+                Some(delegators) => delegators
+                    .iter()
+                    .map(|delegator| AvalancheSubnetDelegator {
+                        tx_id: delegator.tx_id,
+                        node_id: delegator.node_id,
+                        start_time: delegator.start_time,
+                        end_time: delegator.end_time,
+                        stake_amount: delegator.stake_amount,
+                        weight: delegator.weight,
+                        potential_reward: delegator.potential_reward,
+                        ..Default::default()
+                    })
+                    .collect(),
+                None => Default::default(),
+            },
             delegator_count: validator.delegator_count,
             delegator_weight: validator.delegator_weight,
             delegation_reward_owner: AvalancheOutputOwners {

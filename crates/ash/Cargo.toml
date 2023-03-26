@@ -22,8 +22,11 @@ serde = "1.0.152"
 serde-aux = "4.1.2"
 serde_yaml = "0.9.17"
 thiserror = "1.0.39"
-ureq = { version = "2.6.2", features = ["json"] }
+ureq = { version = "2.6.2", features = ["json", "native-certs"] }
 async-std = { version = "1.10.0", features = ["attributes", "tokio1"] }
+# reqwest is used by ethers
+# We need to enable the rustls-tls-native-roots feature to support self-signed certificates
+reqwest = { version = "0.11.14", features = ["rustls-tls-native-roots"] }
 
 [dev-dependencies]
 tempfile = "3.3.0"
