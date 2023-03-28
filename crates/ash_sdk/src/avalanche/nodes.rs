@@ -3,8 +3,10 @@
 
 // Module that contains code to interact with Avalanche nodes
 
-use crate::avalanche::{avalanche_node_id_from_string, jsonrpc::info::*};
-use crate::errors::*;
+use crate::{
+    avalanche::{avalanche_node_id_from_string, jsonrpc::info::*},
+    errors::*,
+};
 use avalanche_types::{ids::node::Id, jsonrpc::info::VmVersions};
 use serde::{Deserialize, Serialize};
 

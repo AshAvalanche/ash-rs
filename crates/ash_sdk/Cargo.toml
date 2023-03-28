@@ -15,7 +15,7 @@ categories.workspace = true
 keywords.workspace = true
 
 [dependencies]
-avalanche-types = "0.0"
+avalanche-types = { git = "https://github.com/AshAvalanche/avalanche-types-rs", branch = "33-jsonrpc-update" }
 config = { version = "0.13.3", features = ["yaml"] }
 ethers = { version = "1.0.2", features = ["rustls"] }
 hex = "0.4.3"

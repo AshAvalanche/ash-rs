@@ -8,8 +8,10 @@ pub mod nodes;
 
 use crate::avalanche::AvalancheNetwork;
 use crate::errors::*;
-use crate::protocol::contracts::{ash_router_http::AshRouterHttp, AshContractMetadata};
-use crate::protocol::nodes::AshNode;
+use crate::protocol::{
+    contracts::{ash_router_http::AshRouterHttp, AshContractMetadata},
+    nodes::AshNode,
+};
 use serde::Serialize;
 
 /// Ash protocol entities

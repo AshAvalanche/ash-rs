@@ -53,12 +53,20 @@ pub enum RpcError {
         target_value: String,
         msg: String,
     },
+    #[error("RPC response contains an error: code {code}, message: {message}, data: {data:?}")]
+    ResponseError {
+        code: i32,
+        message: String,
+        data: Option<String>,
+    },
     #[error("failed to call {function_name} on '{contract_addr}': {msg}")]
     EthCallFailure {
         contract_addr: String,
         function_name: String,
         msg: String,
     },
+    #[error("unknown RPC error: {0}")]
+    Unknown(String),
 }
 
 #[derive(Error, Debug)]

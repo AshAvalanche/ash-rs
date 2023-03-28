@@ -8,10 +8,15 @@ pub mod subnets;
 
 // Module that contains code to interact with Avalanche networks
 
-use crate::avalanche::blockchains::AvalancheBlockchain;
-use crate::avalanche::subnets::AvalancheSubnet;
-use crate::{avalanche::jsonrpc::platformvm, conf::AshConfig, errors::*};
-use avalanche_types::ids::{node::Id as NodeId, Id};
+use crate::{
+    avalanche::{blockchains::AvalancheBlockchain, jsonrpc::platformvm, subnets::AvalancheSubnet},
+    conf::AshConfig,
+    errors::*,
+};
+use avalanche_types::{
+    ids::{node::Id as NodeId, Id},
+    jsonrpc::platformvm::ApiOwner,
+};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -37,6 +42,16 @@ pub struct AvalancheOutputOwners {
     pub locktime: u64,
     pub threshold: u32,
     pub addresses: Vec<String>,
+}
+
+impl From<ApiOwner> for AvalancheOutputOwners {
+    fn from(api_owner: ApiOwner) -> Self {
+        Self {
+            locktime: api_owner.locktime,
+            threshold: api_owner.threshold,
+            addresses: api_owner.addresses,
+        }
+    }
 }
 
 /// Deserialize an Avalanche ID from a string
@@ -175,14 +190,7 @@ impl AvalancheNetwork {
     pub fn update_subnet_validators(&mut self, subnet_id: &str) -> Result<(), AshError> {
         let rpc_url = &self.get_pchain()?.rpc_url;
 
-        let validators = platformvm::get_current_validators(rpc_url, subnet_id).map_err(|e| {
-            RpcError::GetFailure {
-                data_type: "validators".to_string(),
-                target_type: "Subnet".to_string(),
-                target_value: subnet_id.to_string(),
-                msg: e.to_string(),
-            }
-        })?;
+        let validators = platformvm::get_current_validators(rpc_url, subnet_id)?;
 
         // Replace the validators of the Subnet
         let mut subnet = self.get_subnet(subnet_id)?.clone();
