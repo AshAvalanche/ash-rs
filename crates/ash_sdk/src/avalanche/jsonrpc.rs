@@ -44,11 +44,11 @@ where
         .into_json()
         .map_err(|e| RpcError::Unknown(e.to_string()))?;
 
-    if resp.get_error().is_some() {
+    if let Some(error) = resp.get_error() {
         Err(RpcError::ResponseError {
-            code: resp.get_error().unwrap().code,
-            message: resp.get_error().unwrap().message,
-            data: resp.get_error().unwrap().data,
+            code: error.code,
+            message: error.message,
+            data: error.data,
         })
     } else {
         Ok(resp.get_result().unwrap())

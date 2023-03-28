@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023, E36 Knots
 
-use ash_sdk::avalanche::subnets::{AvalancheSubnet, AvalancheSubnetValidator};
-use ash_sdk::avalanche::{blockchains::AvalancheBlockchain, nodes::AvalancheNode};
+use ash_sdk::avalanche::{
+    blockchains::AvalancheBlockchain,
+    nodes::AvalancheNode,
+    subnets::{AvalancheSubnet, AvalancheSubnetValidator},
+    AVAX_PRIMARY_NETWORK_ID,
+};
 use colored::{ColoredString, Colorize};
 use indoc::formatdoc;
 
@@ -78,112 +82,96 @@ pub(crate) fn template_validator_info(
 ) -> String {
     let mut info = String::new();
 
+    let common_info = &formatdoc!(
+        "
+        Tx ID:            {}
+        Start time:       {}
+        End time:         {}
+        Connected:        {}
+        Uptime:           {}
+        ",
+        type_colorize(&validator.tx_id),
+        type_colorize(&validator.start_time),
+        type_colorize(&validator.end_time),
+        type_colorize(&validator.connected),
+        type_colorize(&validator.uptime),
+    );
+
+    let elastic_subnet_info = &formatdoc!(
+        "
+        Stake amount:     {}
+        Weight:           {}
+        Potential reward: {}
+        Delegation fee:   {}
+        Validation reward owner:
+          Locktime: {}
+          Threshold: {}
+          Addresses: {}
+        Delegator count:  {}
+        Delegator weight: {}
+        Delegation reward owner:
+          Locktime: {}
+          Threshold: {}
+          Addresses: {}",
+        type_colorize(&validator.stake_amount.unwrap()),
+        type_colorize(&validator.weight.unwrap()),
+        type_colorize(&validator.potential_reward.unwrap()),
+        type_colorize(&validator.delegation_fee.unwrap()),
+        type_colorize(&validator.validation_reward_owner.clone().unwrap().locktime),
+        type_colorize(&validator.validation_reward_owner.clone().unwrap().threshold),
+        type_colorize(&format!(
+            "{:?}",
+            validator.validation_reward_owner.clone().unwrap().addresses
+        )),
+        type_colorize(&validator.delegator_count.unwrap()),
+        type_colorize(&validator.delegator_weight.unwrap()),
+        type_colorize(&validator.delegation_reward_owner.clone().unwrap().locktime),
+        type_colorize(&validator.delegation_reward_owner.clone().unwrap().threshold),
+        type_colorize(&format!(
+            "{:?}",
+            validator.delegation_reward_owner.clone().unwrap().addresses
+        )),
+    );
+
     if list {
         // If extended is true, we want to show all the information
         if extended {
             info.push_str(&formatdoc!(
                 "
                 - {}:
-                  Tx ID:            {}
-                  Start time:       {}
-                  End time:         {}
-                  Stake amount:     {}
-                  Weight:           {}
-                  Potential reward: {}
-                  Delegation fee:   {}
-                  Connected:        {}
-                  Uptime:           {}
-                  Validation reward owner:
-                    Locktime: {}
-                    Threshold: {}
-                    Addresses: {}
-                  Delegator count:  {}
-                  Delegator weight: {}
-                  Delegation reward owner:
-                    Locktime: {}
-                    Threshold: {}
-                    Addresses: {}",
+                ",
                 type_colorize(&validator.node_id),
-                type_colorize(&validator.tx_id),
-                type_colorize(&validator.start_time),
-                type_colorize(&validator.end_time),
-                type_colorize(&validator.stake_amount),
-                type_colorize(&validator.weight),
-                type_colorize(&validator.potential_reward),
-                type_colorize(&validator.delegation_fee),
-                type_colorize(&validator.connected),
-                type_colorize(&validator.uptime),
-                type_colorize(&validator.validation_reward_owner.locktime),
-                type_colorize(&validator.validation_reward_owner.threshold),
-                type_colorize(&format!(
-                    "{:?}",
-                    validator.validation_reward_owner.addresses
-                )),
-                type_colorize(&validator.delegator_count),
-                type_colorize(&validator.delegator_weight),
-                type_colorize(&validator.delegation_reward_owner.locktime),
-                type_colorize(&validator.delegation_reward_owner.threshold),
-                type_colorize(&format!(
-                    "{:?}",
-                    validator.delegation_reward_owner.addresses
-                )),
             ));
+
+            info.push_str(&indent::indent_all_by(4, common_info));
+
+            // Display extra information if the validator is a primary validator
+            if validator.subnet_id.to_string() == AVAX_PRIMARY_NETWORK_ID {
+                info.push_str(&indent::indent_all_by(4, elastic_subnet_info));
+            }
         } else {
             info.push_str(&formatdoc!(
                 "
-            - {}",
-                validator.node_id,
+            - {}
+            ",
+                type_colorize(&validator.node_id),
             ));
         }
     } else {
         info.push_str(&formatdoc!(
             "
             Validator '{}' on Subnet '{}':
-              Tx ID:            {}
-              Start time:       {}
-              End time:         {}
-              Stake amount:     {}
-              Weight:           {}
-              Potential reward: {}
-              Delegation fee:   {}
-              Connected:        {}
-              Uptime:           {}
-              Validation reward owner:
-                Locktime: {}
-                Threshold: {}
-                Addresses: {}
-              Delegator count:  {}
-              Delegator weight: {}
-              Delegation reward owner:
-                Locktime: {}
-                Threshold: {}
-                Addresses: {}",
+            ",
             type_colorize(&validator.node_id),
             type_colorize(&validator.subnet_id),
-            type_colorize(&validator.tx_id),
-            type_colorize(&validator.start_time),
-            type_colorize(&validator.end_time),
-            type_colorize(&validator.stake_amount),
-            type_colorize(&validator.weight),
-            type_colorize(&validator.potential_reward),
-            type_colorize(&validator.delegation_fee),
-            type_colorize(&validator.connected),
-            type_colorize(&validator.uptime),
-            type_colorize(&validator.validation_reward_owner.locktime),
-            type_colorize(&validator.validation_reward_owner.threshold),
-            type_colorize(&format!(
-                "{:?}",
-                validator.validation_reward_owner.addresses
-            )),
-            type_colorize(&validator.delegator_count),
-            type_colorize(&validator.delegator_weight),
-            type_colorize(&validator.delegation_reward_owner.locktime),
-            type_colorize(&validator.delegation_reward_owner.threshold),
-            type_colorize(&format!(
-                "{:?}",
-                validator.delegation_reward_owner.addresses
-            )),
         ));
+
+        info.push_str(&indent::indent_all_by(4, common_info));
+
+        // Display extra information if the validator is a primary validator
+        if validator.subnet_id.to_string() == AVAX_PRIMARY_NETWORK_ID {
+            info.push_str(&indent::indent_all_by(4, elastic_subnet_info));
+        }
     }
 
     indent::indent_all_by(indent.into(), info)
