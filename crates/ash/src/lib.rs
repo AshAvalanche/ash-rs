@@ -2,6 +2,7 @@
 // Copyright (c) 2023, E36 Knots
 
 pub mod avalanche;
+pub mod cluster;
 pub mod conf;
 pub mod errors;
 pub mod protocol;

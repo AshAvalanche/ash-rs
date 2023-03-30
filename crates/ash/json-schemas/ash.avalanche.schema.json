@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$id": "ash.avalanche",
+  "title": "ash_collection",
+  "type": "object",
+  "$defs": {
+    "node_conf": {
+      "type": "object",
+      "properties": {
+        "avalanchego_version": { "type": "string" },
+        "avalanchego_install_dir": { "type": "string" },
+        "avalanchego_vms_dir": { "type": "string" },
+        "avalanchego_db_dir": { "type": "string" },
+        "avalanchego_conf_dir": { "type": "string" },
+        "avalanchego_staking_certs_dir": { "type": "string" },
+        "avalanchego_https_certs_dir": { "type": "string" },
+        "avalanchego_gpg_dir": { "type": "string" },
+        "avalanchego_log_dir": { "type": "string" },
+        "avalanchego_user": { "type": "string" },
+        "avalanchego_group": { "type": "string" },
+        "avalanchego_http_host": { "type": "string" },
+        "avalanchego_http_port": { "type": "integer" },
+        "avalanchego_https_enabled": { "type": "boolean" },
+        "avalanchego_https_local_certs_dir": { "type": "string" },
+        "avalanchego_static_public_ip": { "type": "boolean" },
+        "avalanchego_staking_port": { "type": "integer" },
+        "avalanchego_staking_use_local_certs": { "type": "boolean" },
+        "avalanchego_staking_local_certs_dir": { "type": "string" },
+        "avalanchego_network_id": { "type": "string" },
+        "avalanchego_bootstrap_node_id": { "type": "string" },
+        "avalanchego_bootstrap_db": { "type": "string" },
+        "avalanchego_track_subnets": { "type": "array" },
+        "avalanchego_vms_install": { "type": "array" },
+        "ash_node": { "type": "boolean" },
+        "avalanchego_node_json": {
+          "type": "object",
+          "properties": {
+            "http-host": { "type": "string" },
+            "http-port": { "type": "string" },
+            "api-admin-enabled": { "type": "boolean" },
+            "api-keystore-enabled": { "type": "boolean" },
+            "http-tls-enabled": { "type": "string" },
+            "staking-enabled": { "type": "boolean" },
+            "staking-port": { "type": "string" },
+            "network-id": { "type": "string" },
+            "snow-sample-size": { "type": "integer" },
+            "snow-quorum-size": { "type": "integer" },
+            "snow-mixed-query-num-push-vdr": { "type": "integer" },
+            "db-dir": { "type": "string" },
+            "subnet-config-dir": { "type": "string" },
+            "chain-config-dir": { "type": "string" },
+            "vm-aliases-file": { "type": "string" },
+            "log-dir": { "type": "string" },
+            "log-level": { "type": "string" },
+            "track-subnets": { "type": "string" }
+          }
+        },
+        "avalanchego_subnets_configs": { "type": "object" },
+        "avalanchego_chains_configs": { "type": "object" },
+        "avalanche_node_username": { "type": "string" },
+        "avalanche_node_password": { "type": "string" },
+        "avalanche_prefunded_username": { "type": "string" },
+        "avalanche_prefunded_password": { "type": "string" },
+        "avalanche_prefunded_private_key": { "type": "string" },
+        "avalanchego_validation_start_time": { "type": "string" },
+        "avalanchego_validation_end_time": { "type": "string" },
+        "avalanchego_validation_stake_amount": { "type": "string" }
+      }
+    }
+  }
+}
