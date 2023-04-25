@@ -3,7 +3,6 @@
 
 mod avalanche;
 mod conf;
-mod protocol;
 mod utils;
 
 // Module that contains the Ash CLI root parser
@@ -29,8 +28,6 @@ enum CliCommands {
     #[command(visible_alias = "avax")]
     Avalanche(avalanche::AvalancheCommand),
     Conf(conf::ConfCommand),
-    #[command(visible_alias = "proto")]
-    Protocol(protocol::ProtocolCommand),
 }
 
 fn main() {
@@ -41,9 +38,6 @@ fn main() {
             avalanche::parse(avalanche, cli.config.as_deref(), cli.json)
         }
         CliCommands::Conf(conf) => conf::parse(conf),
-        CliCommands::Protocol(protocol) => {
-            protocol::parse(protocol, cli.config.as_deref(), cli.json)
-        }
     }
     .unwrap_or_else(|e| {
         eprintln!("{}", e.message.red());

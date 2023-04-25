@@ -4,4 +4,3 @@
 pub mod avalanche;
 pub mod conf;
 pub mod errors;
-pub mod protocol;
