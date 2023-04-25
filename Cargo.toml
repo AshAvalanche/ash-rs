@@ -2,4 +2,19 @@
 # Copyright (c) 2023, E36 Knots
 
 [workspace]
-members = ["crates/cli", "crates/ash"]
+members = ["crates/cli", "crates/sdk"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["E36 Knots"]
+homepage = "https://ash.center"
+documentation = "https://ash.center/docs/toolkit/ash-rs/introduction"
+license = "BSD-3-Clause"
+repository = "https://github.com/AshAvalanche/ash-rs"
+categories = [
+	"command-line-utilities",
+	"cryptography::cryptocurrencies",
+	"data-structures",
+]
+keywords = ["blockchain", "avalanche", "subnets", "sdk", "rust", "ash"]

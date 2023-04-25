@@ -141,7 +141,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "ash"
+name = "ash_cli"
+version = "0.1.0"
+dependencies = [
+ "ash_sdk",
+ "async-std",
+ "clap 4.2.4",
+ "colored",
+ "exitcode",
+ "indent",
+ "indoc",
+ "serde_json",
+]
+
+[[package]]
+name = "ash_sdk"
 version = "0.1.0"
 dependencies = [
  "async-std",
@@ -157,20 +171,6 @@ dependencies = [
  "tempfile",
  "thiserror",
  "ureq",
-]
-
-[[package]]
-name = "ashcli"
-version = "0.1.0"
-dependencies = [
- "ash",
- "async-std",
- "clap 4.2.4",
- "colored",
- "exitcode",
- "indent",
- "indoc",
- "serde_json",
 ]
 
 [[package]]

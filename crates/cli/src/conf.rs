@@ -4,7 +4,7 @@
 // Module that contains the conf subcommand parser
 
 use crate::utils::error::CliError;
-use ash::conf::AshConfig;
+use ash_sdk::conf::AshConfig;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
