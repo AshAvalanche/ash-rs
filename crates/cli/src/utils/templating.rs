@@ -3,7 +3,6 @@
 
 use ash::avalanche::subnets::{AvalancheSubnet, AvalancheSubnetValidator};
 use ash::avalanche::{blockchains::AvalancheBlockchain, nodes::AvalancheNode};
-use ash::protocol::nodes::AshNodeInfo;
 use colored::{ColoredString, Colorize};
 use indoc::formatdoc;
 
@@ -219,10 +218,10 @@ pub(crate) fn template_subnet_info(subnet: &AvalancheSubnet, list: bool, indent:
             "
             {}
             - {}:
-               Number of blockchains: {}
-               Control keys:          {}
-               Threshold:             {}
-               Blockchains: {}",
+                Number of blockchains: {}
+                Control keys:          {}
+                Threshold:             {}
+                Blockchains: {}",
             template_horizontal_rule('-', format!("- '{}':", subnet.id).len()),
             type_colorize(&subnet.id),
             type_colorize(&subnet.blockchains.len()),
@@ -294,40 +293,6 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> 
         type_colorize(&node.uptime.rewarding_stake_percentage),
         type_colorize(&node.uptime.weighted_average_percentage),
     ));
-
-    indent::indent_all_by(indent.into(), info)
-}
-
-pub(crate) fn template_ash_node_info(node_info: &AshNodeInfo, list: bool, indent: u8) -> String {
-    let mut info = String::new();
-
-    if list {
-        info.push_str(&formatdoc!(
-            "
-            {}
-            - {}:
-               Node ID (CB58): {}
-               RPC URL (hex):  {}
-               Bytes:          {}",
-            template_horizontal_rule('-', format!("- '{}':", node_info.id.p_chain).len()),
-            type_colorize(&node_info.id.p_chain),
-            type_colorize(&node_info.id.cb58),
-            type_colorize(&node_info.id.hex),
-            type_colorize(&format!("{:?}", node_info.id.bytes)),
-        ));
-    } else {
-        info.push_str(&formatdoc!(
-            "
-            Node '{}':
-              Node ID (CB58): {}
-              RPC URL (hex):  {}
-              Bytes:          {}",
-            type_colorize(&node_info.id.p_chain),
-            type_colorize(&node_info.id.cb58),
-            type_colorize(&node_info.id.hex),
-            type_colorize(&format!("{:?}", node_info.id.bytes)),
-        ));
-    }
 
     indent::indent_all_by(indent.into(), info)
 }
