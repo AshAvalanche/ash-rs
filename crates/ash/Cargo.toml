@@ -13,7 +13,7 @@ license = "BSD-3-Clause"
 keywords = ["blockchain", "avalanche", "sdk", "rust", "ash"]
 
 [dependencies]
-avalanche-types = "0.0"
+avalanche-types = { version = "0.0", features = ["jsonrpc_client", "wallet"] }
 config = { version = "0.13.3", features = ["yaml"] }
 ethers = { version = "1.0.2", features = ["rustls"] }
 hex = "0.4.3"
@@ -29,6 +29,7 @@ async-std = { version = "1.10.0", features = ["attributes", "tokio1"] }
 reqwest = { version = "0.11.14", features = ["rustls-tls-native-roots"] }
 
 [dev-dependencies]
+serial_test = "2.0.0"
 tempfile = "3.3.0"
 
 [build-dependencies]

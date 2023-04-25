@@ -5,11 +5,14 @@ pub mod blockchains;
 pub mod jsonrpc;
 pub mod nodes;
 pub mod subnets;
+pub mod txs;
+pub mod wallets;
 
 // Module that contains code to interact with Avalanche networks
 
 use crate::avalanche::blockchains::AvalancheBlockchain;
 use crate::avalanche::subnets::AvalancheSubnet;
+use crate::avalanche::wallets::AvalancheWallet;
 use crate::{avalanche::jsonrpc::platformvm, conf::AshConfig, errors::*};
 use avalanche_types::ids::{node::Id as NodeId, Id};
 use serde::{Deserialize, Serialize};
@@ -92,6 +95,14 @@ impl AvalancheNetwork {
             .get_subnet(AVAX_PRIMARY_NETWORK_ID)?
             .get_blockchain_by_name("C-Chain")?;
         Ok(cchain)
+    }
+
+    /// Get the X-Chain
+    pub fn get_xchain(&self) -> Result<&AvalancheBlockchain, AshError> {
+        let xchain = self
+            .get_subnet(AVAX_PRIMARY_NETWORK_ID)?
+            .get_blockchain_by_name("X-Chain")?;
+        Ok(xchain)
     }
 
     /// Update the AvalancheNetwork Subnets by querying an API endpoint
@@ -204,6 +215,15 @@ impl AvalancheNetwork {
         self.subnets[subnet_index] = subnet;
 
         Ok(())
+    }
+
+    pub async fn create_wallet(&self, private_key: &str) -> Result<AvalancheWallet, AshError> {
+        let xchain_url = &self.get_xchain()?.rpc_url;
+        let pchain_url = &self.get_pchain()?.rpc_url;
+
+        let wallet = AvalancheWallet::new(private_key, xchain_url, pchain_url).await?;
+
+        Ok(wallet)
     }
 }
 

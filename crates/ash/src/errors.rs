@@ -19,6 +19,8 @@ pub enum AshError {
     AvalancheSubnetError(#[from] AvalancheSubnetError),
     #[error("AvalancheBlockchain error: {0}")]
     AvalancheBlockchainError(#[from] AvalancheBlockchainError),
+    #[error("AvalancheWallet error: {0}")]
+    AvalancheWalletError(#[from] AvalancheWalletError),
     #[error("AshNode error: {0}")]
     AshNodeError(#[from] AshNodeError),
 }
@@ -85,6 +87,20 @@ pub enum AvalancheSubnetError {
 pub enum AvalancheBlockchainError {
     #[error("failed to get ethers Provider for blockchain '{blockchain_id}': {msg}")]
     EthersProvider { blockchain_id: Id, msg: String },
+}
+
+#[derive(Error, Debug)]
+pub enum AvalancheWalletError {
+    #[error("failed to use provided private key: {0}")]
+    InvalidPrivateKey(String),
+    #[error("failed to create Avalanche wallet: {0}")]
+    CreationFailure(String),
+    #[error("failed to issue '{tx_type}' transaction on blockchain '{blockchain_name}': {msg}")]
+    IssueTx {
+        blockchain_name: String,
+        tx_type: String,
+        msg: String,
+    },
 }
 
 #[derive(Error, Debug)]
