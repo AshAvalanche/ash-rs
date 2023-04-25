@@ -97,7 +97,7 @@ ASH_INFRA_PATH=path/to/ash-infra
 # Source the tests .env file
 source crates/ash/tests/.env
 # Generate the tests configuration file
-envsubst < crates/ash/tests/conf/quicknode.yml > target/ash-test-avax-conf.yml
+envsubst < crates/sdk/tests/conf/quicknode.yml > target/ash-test-avax-conf.yml
 # Run the tests
 ASH_TEST_AVAX_CONFIG="$PWD/target/ash-test-avax-conf.yml" cargo test
 ```
