@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023, E36 Knots
 
-use ash::avalanche::subnets::{AvalancheSubnet, AvalancheSubnetValidator};
-use ash::avalanche::{blockchains::AvalancheBlockchain, nodes::AvalancheNode};
+use ash_sdk::avalanche::subnets::{AvalancheSubnet, AvalancheSubnetValidator};
+use ash_sdk::avalanche::{blockchains::AvalancheBlockchain, nodes::AvalancheNode};
 use colored::{ColoredString, Colorize};
 use indoc::formatdoc;
 

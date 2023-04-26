@@ -9,7 +9,7 @@ mod validator;
 // Module that contains the avalanche subcommand parser
 
 use crate::utils::error::CliError;
-use ash::avalanche::AvalancheNetwork;
+use ash_sdk::avalanche::AvalancheNetwork;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]

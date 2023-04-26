@@ -5,7 +5,7 @@
 
 use crate::avalanche::*;
 use crate::utils::{error::CliError, templating::*};
-use ash::avalanche::AVAX_PRIMARY_NETWORK_ID;
+use ash_sdk::avalanche::AVAX_PRIMARY_NETWORK_ID;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]

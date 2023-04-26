@@ -25,7 +25,7 @@ jobs:
 
       - name: Template tests config file
         run: |
-          envsubst < crates/ash/tests/conf/quicknode.yml > ${{ runner.temp }}/ash-test-avax-conf.yml
+          envsubst < crates/ash_sdk/tests/conf/quicknode.yml > ${{ runner.temp }}/ash-test-avax-conf.yml
         env:
           ASH_QUICKNODE_FUJI_ENDPOINT: ${{ secrets.ASH_QUICKNODE_FUJI_ENDPOINT }}
           ASH_QUICKNODE_FUJI_TOKEN: ${{ secrets.ASH_QUICKNODE_FUJI_TOKEN }}

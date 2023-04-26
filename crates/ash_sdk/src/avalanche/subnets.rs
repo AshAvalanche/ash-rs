@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023, E36 Knots
 
-// Module that contains code to interact with Avalanche subnets and validators
+// Module that contains code to interact with Avalanche Subnets and validators
 
 use crate::avalanche::blockchains::AvalancheBlockchain;
 use crate::avalanche::{

@@ -2,18 +2,20 @@
 # Copyright (c) 2023, E36 Knots
 
 [package]
-name = "ashcli"
+name = "ash_cli"
 description = "Ash CLI"
-version = "0.1.0"
-authors = ["E36 Knots"]
-edition = "2021"
-readme = "README.md"
-repository = "https://github.com/AshAvalanche/ash-rs"
-license = "BSD-3-Clause"
-keywords = ["blockchain", "avalanche", "sdk", "rust", "ash"]
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+license.workspace = true
+repository.workspace = true
+categories.workspace = true
+keywords.workspace = true
 
 [dependencies]
-ash = { path = "../ash" }
+ash_sdk = { path = "../ash_sdk" }
 clap = { version = "4.0.32", features = ["derive"] }
 colored = "2.0.0"
 exitcode = "1.1.2"

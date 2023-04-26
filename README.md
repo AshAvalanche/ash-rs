@@ -1,11 +1,14 @@
 # ash-rs
 
-This project provides Rust crates to interact with the Ash protocol.
+This project provides Rust crates to interact with:
+
+- Avalanche nodes, Subnets, and blockchains;
+- other Ash tools.
 
 ## Crates
 
-- [ash](crates/ash): Rust SDK to interact with the Ash protocol
-- [ashcli](crates/cli): CLI to interact with the Ash protocol
+- [ash_sdk](crates/ash_sdk): Ash Rust SDK
+- [ash_cli](crates/ash_cli): Ash CLI
 
 ## Ash CLI Installation
 
@@ -13,13 +16,13 @@ This project provides Rust crates to interact with the Ash protocol.
 git clone https://github.com/AshAvalanche/ash-rs.git
 cd ash-rs
 
-cargo install --path crates/cli
+cargo install --path crates/ash_cli
 
 # The CLI is then available globally
 ash --help
 ```
 
-See [Available commands](crates/cli/README.md#available-commands).
+See [Available commands](crates/ash_cli/README.md#available-commands).
 
 ## Configuration
 
@@ -94,7 +97,7 @@ ASH_INFRA_PATH=path/to/ash-infra
 # Source the tests .env file
 source crates/ash/tests/.env
 # Generate the tests configuration file
-envsubst < crates/ash/tests/conf/quicknode.yml > target/ash-test-avax-conf.yml
+envsubst < crates/ash_sdk/tests/conf/quicknode.yml > target/ash-test-avax-conf.yml
 # Run the tests
 ASH_TEST_AVAX_CONFIG="$PWD/target/ash-test-avax-conf.yml" cargo test
 ```
@@ -104,7 +107,7 @@ ASH_TEST_AVAX_CONFIG="$PWD/target/ash-test-avax-conf.yml" cargo test
 - [x] CLI
 - [x] Get Subnets and blockchains information from the Avalanche P-Chain
 - [x] Get nodes information from the Avalanche P-Chain
-- [ ] Get Subnet validators information from the Avalanche P-Chain
-- [ ] Ash protocol integration (abstract smart contracts interaction from the user)
-- [ ] Ledger integration (to sign transactions)
+- [x] Get Subnet validators information from the Avalanche P-Chain
+- [ ] Subnet creation
+- [ ] Blockchain creation
 - [ ] WASM integration (to allow the library to be used from JavaScript)

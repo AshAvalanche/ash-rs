@@ -4,7 +4,7 @@
 // Module that contains the node subcommand parser
 
 use crate::utils::{error::CliError, templating::template_avalanche_node_info};
-use ash::avalanche::nodes::AvalancheNode;
+use ash_sdk::avalanche::nodes::AvalancheNode;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
