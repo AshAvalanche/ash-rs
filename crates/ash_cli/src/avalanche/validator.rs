@@ -17,7 +17,8 @@ pub(crate) struct ValidatorCommand {
         long,
         help = "Avalanche network",
         default_value = "mainnet",
-        global = true
+        global = true,
+        env = "AVALANCHE_NETWORK"
     )]
     network: String,
     #[arg(
