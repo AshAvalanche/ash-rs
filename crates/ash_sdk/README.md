@@ -33,7 +33,7 @@ An `AvalancheNetwork` is a top level struct that represents an Avalanche network
 
 ### Avalanche Subnets and validators
 
-An `AvalancheSubnet` is a struct that represents an Avalanche subnet. It contains all the Subnet metadata, the list of its `AvalancheBlockchain`s and the list of its validators (as `AvalancheSubnetsValidator`s).
+An `AvalancheSubnet` is a struct that represents an Avalanche Subnet. It contains all the Subnet metadata, the list of its `AvalancheBlockchain`s and the list of its validators (as `AvalancheSubnetsValidator`s).
 
 ### Avalanche blockchains
 
@@ -45,9 +45,9 @@ An `AvalancheNode` is a struct that represents an Avalanche node. An `AvalancheN
 
 ## Configuration
 
-The library relies configuration files: YAML files that contains the list of known Avalanche networks. For each network, at least the P-Chain configuration has to be provided (in the Primary Network) with its ID and RPC endpoint. All the other Subnets/blockchains will be retrieved/enriched from the P-Chain.
+The library relies on YAML configuration files that contains the list of known Avalanche networks. For each network, at least the P-Chain configuration has to be provided (in the Primary Network) with its ID and RPC endpoint. All the other Subnets/blockchains will be retrieved/enriched from the P-Chain.
 
-A default configuration is embedded in the library (see [conf/default.yaml](https://github.com/AshAvalanche/ash-rs/blob/main/crates/sdk/conf/default.yml)) and contains the following networks:
+A default configuration is embedded in the library (see [conf/default.yaml](https://github.com/AshAvalanche/ash-rs/blob/main/crates/ash_sdk/conf/default.yml)) and contains the following networks:
 
 - `mainnet` and `fuji` use the default Avalanche public endpoints
 - `mainnet-ankr` and `fuji-ankr` use the Ankr Avalanche public endpoints
@@ -84,7 +84,7 @@ avalancheNetworks:
 
 ## Usage
 
-One can check out the [CLI code](https://github.com/AshAvalanche/ash-rs/tree/main/crates/cli) to see examples of how to use the library.
+One can check out the [CLI code](https://github.com/AshAvalanche/ash-rs/tree/main/crates/ash_cli) to see examples of how to use the library.
 
 ## Modules
 

@@ -10,7 +10,7 @@ ash avalanche network list
 ash avalanche subnet list --network mainnet
 
 # Show detailed information about one of the mainnet Subnets
-# The ouput can be set to JSON and piped to jq for maximum flexibility
+# The output can be set to JSON and piped to jq for maximum flexibility
 ash avalanche subnet info --id Vn3aX6hNRstj5VHHm63TCgPNaeGnRSqCYXQqemSqDd2TQH4qJ --json | jq '.blockchains'
 
 # Show detailed information about a validator of the mainnet Subnet

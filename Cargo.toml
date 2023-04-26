@@ -2,7 +2,7 @@
 # Copyright (c) 2023, E36 Knots
 
 [workspace]
-members = ["crates/cli", "crates/sdk"]
+members = ["crates/ash_cli", "crates/ash_sdk"]
 
 [workspace.package]
 version = "0.1.0"
