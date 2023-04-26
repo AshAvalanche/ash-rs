@@ -22,7 +22,7 @@ pub struct AvalancheSubnet {
     /// List of the Subnet's blockchains
     pub blockchains: Vec<AvalancheBlockchain>,
     /// List of the Subnet's validators
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub validators: Vec<AvalancheSubnetValidator>,
 }
 
