@@ -17,9 +17,14 @@ use std::process::exit;
 struct Cli {
     #[command(subcommand)]
     command: CliCommands,
-    #[arg(long, help = "Output in JSON format", global = true)]
+    #[arg(long, help = "Output in JSON format", global = true, env = "ASH_JSON")]
     json: bool,
-    #[arg(long, help = "Path to the configuration file", global = true)]
+    #[arg(
+        long,
+        help = "Path to the configuration file",
+        global = true,
+        env = "ASH_CONFIG"
+    )]
     config: Option<String>,
 }
 
