@@ -17,4 +17,4 @@ categories = [
 	"cryptography::cryptocurrencies",
 	"data-structures",
 ]
-keywords = ["blockchain", "avalanche", "subnets", "sdk", "rust", "ash"]
+keywords = ["blockchain", "avalanche", "subnets", "ash"]
