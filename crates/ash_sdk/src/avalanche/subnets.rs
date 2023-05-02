@@ -3,14 +3,11 @@
 
 // Module that contains code to interact with Avalanche Subnets and validators
 
-use crate::avalanche::{
-    avalanche_id_from_string, avalanche_node_id_from_string, blockchains::AvalancheBlockchain,
-    AvalancheOutputOwners,
-};
+use crate::avalanche::{blockchains::AvalancheBlockchain, AvalancheOutputOwners};
 use crate::errors::*;
 use avalanche_types::{
     ids::{node::Id as NodeId, Id},
-    jsonrpc::platformvm::{ApiPrimaryDelegator, ApiPrimaryValidator},
+    jsonrpc::platformvm::{ApiPrimaryDelegator, ApiPrimaryValidator, Subnet},
 };
 use serde::{Deserialize, Serialize};
 
@@ -18,10 +15,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheSubnet {
-    #[serde(deserialize_with = "avalanche_id_from_string")]
     pub id: Id,
+    // TODO: store control keys as ShortIds
+    #[serde(default)]
     pub control_keys: Vec<String>,
-    pub threshold: u8,
+    #[serde(default)]
+    pub threshold: u32,
     /// List of the Subnet's blockchains
     pub blockchains: Vec<AvalancheBlockchain>,
     /// List of the Subnet's validators
@@ -76,13 +75,31 @@ impl AvalancheSubnet {
     }
 }
 
+impl From<Subnet> for AvalancheSubnet {
+    fn from(subnet: Subnet) -> Self {
+        Self {
+            id: subnet.id,
+            control_keys: subnet
+                .control_keys
+                .map(|keys| {
+                    keys.into_iter()
+                        .map(|key| key.to_string())
+                        .collect::<Vec<String>>()
+                })
+                .unwrap_or_default(),
+            threshold: subnet.threshold,
+            ..Default::default()
+        }
+    }
+}
+
 /// Avalanche Subnet validator
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheSubnetValidator {
-    #[serde(rename = "txID", deserialize_with = "avalanche_id_from_string")]
+    #[serde(rename = "txID")]
     pub tx_id: Id,
-    #[serde(rename = "nodeID", deserialize_with = "avalanche_node_id_from_string")]
+    #[serde(rename = "nodeID")]
     pub node_id: NodeId,
     #[serde(skip)]
     pub subnet_id: Id,
@@ -139,7 +156,7 @@ impl AvalancheSubnetValidator {
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheSubnetDelegator {
-    #[serde(rename = "txID", deserialize_with = "avalanche_id_from_string")]
+    #[serde(rename = "txID")]
     pub tx_id: Id,
     #[serde(rename = "nodeID", skip)]
     pub node_id: NodeId,

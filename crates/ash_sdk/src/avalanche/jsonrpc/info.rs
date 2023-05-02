@@ -3,10 +3,7 @@
 
 // Module that contains code to interact with Avalanche Info API
 
-use crate::avalanche::{
-    avalanche_node_id_from_string,
-    nodes::{AvalancheNodeUptime, AvalancheNodeVersions},
-};
+use crate::avalanche::nodes::{AvalancheNodeUptime, AvalancheNodeVersions};
 use avalanche_types::{ids::node::Id, jsonrpc::info::*};
 use serde::Deserialize;
 use serde_aux::prelude::*;
@@ -25,7 +22,7 @@ struct InfoApiGetNodeIdResponse {
 
 #[derive(Deserialize)]
 struct InfoApiGetNodeIdResult {
-    #[serde(rename = "nodeID", deserialize_with = "avalanche_node_id_from_string")]
+    #[serde(rename = "nodeID")]
     node_id: Id,
 }
 

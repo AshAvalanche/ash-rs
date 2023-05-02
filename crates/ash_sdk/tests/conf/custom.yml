@@ -6,8 +6,6 @@ avalancheNetworks:
   - name: custom
     subnets:
       - id: 11111111111111111111111111111111LpoYY
-        controlKeys: []
-        threshold: 0
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain

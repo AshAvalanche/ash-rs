@@ -6,8 +6,6 @@ avalancheNetworks:
   - name: mainnet
     subnets:
       - id: 11111111111111111111111111111111LpoYY
-        controlKeys: []
-        threshold: 0
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain
@@ -26,8 +24,6 @@ avalancheNetworks:
   - name: fuji
     subnets:
       - id: 11111111111111111111111111111111LpoYY
-        controlKeys: []
-        threshold: 0
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain
@@ -46,8 +42,6 @@ avalancheNetworks:
   - name: mainnet-ankr
     subnets:
       - id: 11111111111111111111111111111111LpoYY
-        controlKeys: []
-        threshold: 0
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain
@@ -66,8 +60,6 @@ avalancheNetworks:
   - name: fuji-ankr
     subnets:
       - id: 11111111111111111111111111111111LpoYY
-        controlKeys: []
-        threshold: 0
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain
@@ -86,8 +78,6 @@ avalancheNetworks:
   - name: mainnet-blast
     subnets:
       - id: 11111111111111111111111111111111LpoYY
-        controlKeys: []
-        threshold: 0
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain
@@ -106,8 +96,6 @@ avalancheNetworks:
   - name: fuji-blast
     subnets:
       - id: 11111111111111111111111111111111LpoYY
-        controlKeys: []
-        threshold: 0
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain

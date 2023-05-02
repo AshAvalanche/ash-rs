@@ -4,136 +4,71 @@
 // Module that contains code to interact with Avalanche PlatformVM API
 
 use crate::avalanche::{
-    avalanche_id_from_string,
     blockchains::AvalancheBlockchain,
     jsonrpc::{get_json_rpc_req_result, JsonRpcResponse},
     subnets::{AvalancheSubnet, AvalancheSubnetValidator},
 };
-use crate::errors::*;
+use crate::{errors::*, impl_json_rpc_response};
 use avalanche_types::{
     ids::Id,
     jsonrpc::{
-        platformvm::{GetCurrentValidatorsResponse, GetCurrentValidatorsResult},
+        platformvm::{
+            GetBlockchainsResponse, GetBlockchainsResult, GetCurrentValidatorsResponse,
+            GetCurrentValidatorsResult, GetSubnetsResponse, GetSubnetsResult,
+        },
         ResponseError,
     },
 };
-use serde::Deserialize;
-use serde_aux::prelude::*;
 use std::str::FromStr;
 use ureq;
 
-impl JsonRpcResponse<GetCurrentValidatorsResponse, GetCurrentValidatorsResult>
-    for GetCurrentValidatorsResponse
-{
-    fn get_error(&self) -> Option<ResponseError> {
-        self.error.clone()
-    }
-
-    fn get_result(&self) -> Option<GetCurrentValidatorsResult> {
-        self.result.clone()
-    }
-}
-
-#[derive(Deserialize)]
-#[allow(dead_code)]
-struct PlatformApiGetSubnetsResponse {
-    jsonrpc: String,
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    id: u8,
-    result: PlatformApiGetSubnetsResult,
-}
-
-#[derive(Deserialize)]
-struct PlatformApiGetSubnetsResult {
-    subnets: Vec<PlatformApiSubnet>,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PlatformApiSubnet {
-    #[serde(deserialize_with = "avalanche_id_from_string")]
-    id: Id,
-    control_keys: Vec<String>,
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    threshold: u8,
-}
-
-#[derive(Deserialize)]
-#[allow(dead_code)]
-struct PlatformApiGetBlockchainsResponse {
-    jsonrpc: String,
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    id: u8,
-    result: PlatformApiGetBlockchainsResult,
-}
-
-#[derive(Deserialize)]
-struct PlatformApiGetBlockchainsResult {
-    blockchains: Vec<PlatformApiBlockchain>,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PlatformApiBlockchain {
-    #[serde(deserialize_with = "avalanche_id_from_string")]
-    id: Id,
-    name: String,
-    #[serde(alias = "subnetID", deserialize_with = "avalanche_id_from_string")]
-    subnet_id: Id,
-    #[serde(alias = "vmID", deserialize_with = "avalanche_id_from_string")]
-    vm_id: Id,
-}
+impl_json_rpc_response!(GetSubnetsResponse, GetSubnetsResult);
+impl_json_rpc_response!(GetBlockchainsResponse, GetBlockchainsResult);
+impl_json_rpc_response!(GetCurrentValidatorsResponse, GetCurrentValidatorsResult);
 
 // Get the Subnets of the network by querying the P-Chain API
-pub fn get_network_subnets(rpc_url: &str) -> Result<Vec<AvalancheSubnet>, ureq::Error> {
-    let resp: PlatformApiGetSubnetsResponse = ureq::post(rpc_url)
-        .send_json(ureq::json!({
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "platform.getSubnets",
-            "params": {}
-        }))?
-        .into_json()?;
-
-    let network_subnets = resp
-        .result
-        .subnets
-        .iter()
-        .map(|subnet| AvalancheSubnet {
-            id: subnet.id,
-            control_keys: subnet.control_keys.clone(),
-            threshold: subnet.threshold,
-            ..Default::default()
-        })
-        .collect();
+pub fn get_network_subnets(
+    rpc_url: &str,
+    network_name: &str,
+) -> Result<Vec<AvalancheSubnet>, RpcError> {
+    let network_subnets = get_json_rpc_req_result::<GetSubnetsResponse, GetSubnetsResult>(
+        rpc_url,
+        "platform.getSubnets",
+        None,
+    )?
+    .subnets
+    .ok_or(RpcError::GetFailure {
+        data_type: "subnets".to_string(),
+        target_type: "network".to_string(),
+        target_value: network_name.to_string(),
+        msg: "No subnets found".to_string(),
+    })?
+    .into_iter()
+    .map(Into::into)
+    .collect();
 
     Ok(network_subnets)
 }
 
 // Get the blockchains of the network by querying the P-Chain API
-pub fn get_network_blockchains(rpc_url: &str) -> Result<Vec<AvalancheBlockchain>, ureq::Error> {
-    let resp: PlatformApiGetBlockchainsResponse = ureq::post(rpc_url)
-        .send_json(ureq::json!({
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "platform.getBlockchains",
-            "params": {}
-        }))?
-        .into_json()?;
-
-    let network_blockchains = resp
-        .result
-        .blockchains
-        .iter()
-        .map(|blockchain| AvalancheBlockchain {
-            id: blockchain.id,
-            name: blockchain.name.clone(),
-            subnet_id: blockchain.subnet_id,
-            vm_id: blockchain.vm_id,
-            vm_type: String::new(),
-            rpc_url: String::new(),
-        })
-        .collect();
+pub fn get_network_blockchains(
+    rpc_url: &str,
+    network_name: &str,
+) -> Result<Vec<AvalancheBlockchain>, RpcError> {
+    let network_blockchains = get_json_rpc_req_result::<
+        GetBlockchainsResponse,
+        GetBlockchainsResult,
+    >(rpc_url, "platform.getBlockchains", None)?
+    .blockchains
+    .ok_or(RpcError::GetFailure {
+        data_type: "blockchains".to_string(),
+        target_type: "network".to_string(),
+        target_value: network_name.to_string(),
+        msg: "No blockchains found".to_string(),
+    })?
+    .into_iter()
+    .map(Into::into)
+    .collect();
 
     Ok(network_blockchains)
 }
@@ -194,7 +129,7 @@ mod tests {
         let fuji = load_test_network();
         let rpc_url = &fuji.get_pchain().unwrap().rpc_url;
 
-        let subnets = get_network_subnets(rpc_url).unwrap();
+        let subnets = get_network_subnets(rpc_url, &fuji.name).unwrap();
 
         // Test that the primary network subnet is present
         assert!(subnets
@@ -207,7 +142,7 @@ mod tests {
         let fuji = load_test_network();
         let rpc_url = &fuji.get_pchain().unwrap().rpc_url;
 
-        let blockchains = get_network_blockchains(rpc_url).unwrap();
+        let blockchains = get_network_blockchains(rpc_url, &fuji.name).unwrap();
 
         // Test that the C-Chain and X-Chain are present
         let c_chain = blockchains

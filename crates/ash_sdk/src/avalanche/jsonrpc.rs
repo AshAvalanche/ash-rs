@@ -21,6 +21,22 @@ where
     fn get_result(&self) -> Option<Res>;
 }
 
+/// Macro that implements the JsonRpcResponse trait for a response type and its result type
+#[macro_export]
+macro_rules! impl_json_rpc_response {
+    ($resp_type:ty, $res_type:ty) => {
+        impl JsonRpcResponse<$resp_type, $res_type> for $resp_type {
+            fn get_error(&self) -> Option<ResponseError> {
+                self.error.clone()
+            }
+
+            fn get_result(&self) -> Option<$res_type> {
+                self.result.clone()
+            }
+        }
+    };
+}
+
 /// Get the result of a response from a JSON RPC request
 /// If the response contains an error, return an error instead
 pub fn get_json_rpc_req_result<Resp, Res>(
