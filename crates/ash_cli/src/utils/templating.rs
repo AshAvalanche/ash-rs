@@ -27,7 +27,7 @@ where
         "String" => var.to_string().yellow(),
         "&u64" | "&u32" | "&u16" | "&u8" | "&usize" => var.to_string().cyan(),
         "&i64" | "&i32" | "&i16" | "&i8" | "&isize" => var.to_string().cyan(),
-        "&f64" | "&f32" => var.to_string().magenta(),
+        "&f64" | "&f32" | "IpAddr" => var.to_string().magenta(),
         "&bool" => var.to_string().blue(),
         "Id" => var.to_string().green(),
         _ => var.to_string().bright_white(),
