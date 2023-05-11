@@ -24,7 +24,7 @@ where
     T: std::fmt::Display,
 {
     match type_of(var).split(':').last().unwrap() {
-        "String" => var.to_string().yellow(),
+        "String" | "&&str" => var.to_string().yellow(),
         "&u64" | "&u32" | "&u16" | "&u8" | "&usize" => var.to_string().cyan(),
         "&i64" | "&i32" | "&i16" | "&i8" | "&isize" => var.to_string().cyan(),
         "&f64" | "&f32" | "IpAddr" => var.to_string().magenta(),
@@ -152,8 +152,7 @@ pub(crate) fn template_validator_info(
         } else {
             info.push_str(&formatdoc!(
                 "
-            - {}
-            ",
+            - {}",
                 type_colorize(&validator.node_id),
             ));
         }
