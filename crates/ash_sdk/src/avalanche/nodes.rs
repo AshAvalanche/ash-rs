@@ -4,7 +4,10 @@
 // Module that contains code to interact with Avalanche nodes
 
 use crate::{avalanche::jsonrpc::info::*, errors::*};
-use avalanche_types::{ids::node::Id, jsonrpc::info::VmVersions};
+use avalanche_types::{
+    ids::node::Id,
+    jsonrpc::info::{GetNodeVersionResult, UptimeResult, VmVersions},
+};
 use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, Ipv4Addr};
 
@@ -68,12 +71,46 @@ impl AvalancheNode {
             target_value: node_host.to_string(),
             msg: e.to_string(),
         })?;
-        self.uptime = get_node_uptime(&api_path).map_err(|e| RpcError::GetFailure {
-            data_type: "uptime".to_string(),
-            target_type: "node".to_string(),
-            target_value: node_host.to_string(),
-            msg: e.to_string(),
-        })?;
+
+        // If the node is not a validator, the `info.uptime` method will return an error
+        // This should not get in the way of the node's information update
+        let uptime = get_node_uptime(&api_path);
+        match uptime {
+            Ok(uptime) => self.uptime = uptime,
+            Err(e) => match e {
+                RpcError::ResponseError {
+                    code,
+                    message,
+                    data,
+                } => {
+                    if code == -32000 && message.contains("node is not a validator") {
+                        self.uptime = AvalancheNodeUptime::default();
+                    } else {
+                        return Err(AshError::RpcError(RpcError::GetFailure {
+                            data_type: "uptime".to_string(),
+                            target_type: "node".to_string(),
+                            target_value: node_host.to_string(),
+                            msg: format!(
+                                "{:?}",
+                                RpcError::ResponseError {
+                                    code,
+                                    message,
+                                    data,
+                                }
+                            ),
+                        }));
+                    }
+                }
+                _ => {
+                    return Err(AshError::RpcError(RpcError::GetFailure {
+                        data_type: "uptime".to_string(),
+                        target_type: "node".to_string(),
+                        target_value: node_host.to_string(),
+                        msg: e.to_string(),
+                    }));
+                }
+            },
+        }
 
         Ok(())
     }
@@ -91,12 +128,32 @@ pub struct AvalancheNodeVersions {
     // pub rpc_protocol_version: String,
 }
 
+impl From<GetNodeVersionResult> for AvalancheNodeVersions {
+    fn from(node_version: GetNodeVersionResult) -> Self {
+        Self {
+            avalanchego_version: node_version.version,
+            database_version: node_version.database_version,
+            git_commit: node_version.git_commit,
+            vm_versions: node_version.vm_versions,
+        }
+    }
+}
+
 /// Avalanche node uptime
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheNodeUptime {
     pub rewarding_stake_percentage: f64,
     pub weighted_average_percentage: f64,
+}
+
+impl From<UptimeResult> for AvalancheNodeUptime {
+    fn from(node_uptime: UptimeResult) -> Self {
+        Self {
+            rewarding_stake_percentage: node_uptime.rewarding_stake_percentage,
+            weighted_average_percentage: node_uptime.weighted_average_percentage,
+        }
+    }
 }
 
 #[cfg(test)]

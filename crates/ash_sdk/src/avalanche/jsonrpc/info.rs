@@ -20,6 +20,8 @@ pub const AVAX_INFO_API_ENDPOINT: &str = "ext/info";
 
 impl_json_rpc_response!(GetNodeIdResponse, GetNodeIdResult);
 impl_json_rpc_response!(GetNodeIpResponse, GetNodeIpResult);
+impl_json_rpc_response!(GetNodeVersionResponse, GetNodeVersionResult);
+impl_json_rpc_response!(UptimeResponse, UptimeResult);
 
 // Get the ID of a node by querying the Info API
 pub fn get_node_id(rpc_url: &str) -> Result<Id, RpcError> {
@@ -46,41 +48,24 @@ pub fn get_node_ip(rpc_url: &str) -> Result<SocketAddr, RpcError> {
 }
 
 // Get the version of a node by querying the Info API
-pub fn get_node_version(rpc_url: &str) -> Result<AvalancheNodeVersions, ureq::Error> {
-    let resp: GetNodeVersionResponse = ureq::post(rpc_url)
-        .send_json(ureq::json!({
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "info.getNodeVersion",
-            "params": {}
-        }))?
-        .into_json()?;
+pub fn get_node_version(rpc_url: &str) -> Result<AvalancheNodeVersions, RpcError> {
+    let node_version = get_json_rpc_req_result::<GetNodeVersionResponse, GetNodeVersionResult>(
+        rpc_url,
+        "info.getNodeVersion",
+        None,
+    )?
+    .into();
 
-    let node_version = resp.result.unwrap();
-    Ok(AvalancheNodeVersions {
-        avalanchego_version: node_version.version,
-        database_version: node_version.database_version,
-        git_commit: node_version.git_commit,
-        vm_versions: node_version.vm_versions,
-    })
+    Ok(node_version)
 }
 
 // Get the uptime of a node by querying the Info API
-pub fn get_node_uptime(rpc_url: &str) -> Result<AvalancheNodeUptime, ureq::Error> {
-    let resp: UptimeResponse = ureq::post(rpc_url)
-        .send_json(ureq::json!({
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "info.uptime",
-            "params": {}
-        }))?
-        .into_json()?;
+pub fn get_node_uptime(rpc_url: &str) -> Result<AvalancheNodeUptime, RpcError> {
+    let uptime =
+        get_json_rpc_req_result::<UptimeResponse, UptimeResult>(rpc_url, "info.uptime", None)?
+            .into();
 
-    let node_uptime = resp.result.unwrap();
-    Ok(AvalancheNodeUptime {
-        rewarding_stake_percentage: node_uptime.rewarding_stake_percentage,
-        weighted_average_percentage: node_uptime.weighted_average_percentage,
-    })
+    Ok(uptime)
 }
 
 #[cfg(test)]
