@@ -16,6 +16,7 @@ use std::net::{IpAddr, Ipv4Addr};
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheNode {
     pub id: Id,
+    pub network: String,
     pub http_host: String,
     pub http_port: u16,
     pub public_ip: IpAddr,
@@ -40,6 +41,7 @@ impl AvalancheNode {
             staking_port: 9651,
             versions: AvalancheNodeVersions::default(),
             uptime: AvalancheNodeUptime::default(),
+            network: String::from("local"),
         }
     }
 
@@ -67,6 +69,13 @@ impl AvalancheNode {
 
         self.versions = get_node_version(&api_path).map_err(|e| RpcError::GetFailure {
             data_type: "version".to_string(),
+            target_type: "node".to_string(),
+            target_value: node_host.to_string(),
+            msg: e.to_string(),
+        })?;
+
+        self.network = get_network_name(&api_path).map_err(|e| RpcError::GetFailure {
+            data_type: "network".to_string(),
             target_type: "node".to_string(),
             target_value: node_host.to_string(),
             msg: e.to_string(),
@@ -165,6 +174,7 @@ mod tests {
     const ASH_TEST_HTTP_HOST: IpAddr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
     const ASH_TEST_STACKING_PORT: u16 = 9651;
     const ASH_TEST_NODE_ID: &str = "NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg";
+    const ASH_TEST_NETWORK_NAME: &str = "network-1337";
 
     #[test]
     #[ignore]
@@ -181,8 +191,9 @@ mod tests {
 
         node.update_info().unwrap();
 
-        // Test the node id, public_ip and stacking_port
+        // Test the node ID, network, public_ip and stacking_port
         assert_eq!(node.id.to_string(), ASH_TEST_NODE_ID);
+        assert_eq!(node.network, ASH_TEST_NETWORK_NAME);
         assert_eq!(node.public_ip, ASH_TEST_HTTP_HOST);
         assert_eq!(node.staking_port, ASH_TEST_STACKING_PORT);
 

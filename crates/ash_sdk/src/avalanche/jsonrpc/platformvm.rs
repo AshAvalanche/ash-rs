@@ -26,7 +26,7 @@ impl_json_rpc_response!(GetSubnetsResponse, GetSubnetsResult);
 impl_json_rpc_response!(GetBlockchainsResponse, GetBlockchainsResult);
 impl_json_rpc_response!(GetCurrentValidatorsResponse, GetCurrentValidatorsResult);
 
-// Get the Subnets of the network by querying the P-Chain API
+/// Get the Subnets of the network by querying the P-Chain API
 pub fn get_network_subnets(
     rpc_url: &str,
     network_name: &str,
@@ -50,7 +50,7 @@ pub fn get_network_subnets(
     Ok(network_subnets)
 }
 
-// Get the blockchains of the network by querying the P-Chain API
+/// Get the blockchains of the network by querying the P-Chain API
 pub fn get_network_blockchains(
     rpc_url: &str,
     network_name: &str,
@@ -73,7 +73,7 @@ pub fn get_network_blockchains(
     Ok(network_blockchains)
 }
 
-// Get the current validators of a Subnet by querying the P-Chain API
+/// Get the current validators of a Subnet by querying the P-Chain API
 pub fn get_current_validators(
     rpc_url: &str,
     subnet_id: &str,

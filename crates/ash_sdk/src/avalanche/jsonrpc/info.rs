@@ -22,8 +22,9 @@ impl_json_rpc_response!(GetNodeIdResponse, GetNodeIdResult);
 impl_json_rpc_response!(GetNodeIpResponse, GetNodeIpResult);
 impl_json_rpc_response!(GetNodeVersionResponse, GetNodeVersionResult);
 impl_json_rpc_response!(UptimeResponse, UptimeResult);
+impl_json_rpc_response!(GetNetworkNameResponse, GetNetworkNameResult);
 
-// Get the ID of a node by querying the Info API
+/// Get the ID of a node by querying the Info API
 pub fn get_node_id(rpc_url: &str) -> Result<Id, RpcError> {
     let node_id = get_json_rpc_req_result::<GetNodeIdResponse, GetNodeIdResult>(
         rpc_url,
@@ -35,7 +36,7 @@ pub fn get_node_id(rpc_url: &str) -> Result<Id, RpcError> {
     Ok(node_id)
 }
 
-// Get the IP of a node by querying the Info API
+/// Get the IP of a node by querying the Info API
 pub fn get_node_ip(rpc_url: &str) -> Result<SocketAddr, RpcError> {
     let ip = get_json_rpc_req_result::<GetNodeIpResponse, GetNodeIpResult>(
         rpc_url,
@@ -47,7 +48,7 @@ pub fn get_node_ip(rpc_url: &str) -> Result<SocketAddr, RpcError> {
     Ok(ip)
 }
 
-// Get the version of a node by querying the Info API
+/// Get the version of a node by querying the Info API
 pub fn get_node_version(rpc_url: &str) -> Result<AvalancheNodeVersions, RpcError> {
     let node_version = get_json_rpc_req_result::<GetNodeVersionResponse, GetNodeVersionResult>(
         rpc_url,
@@ -59,13 +60,25 @@ pub fn get_node_version(rpc_url: &str) -> Result<AvalancheNodeVersions, RpcError
     Ok(node_version)
 }
 
-// Get the uptime of a node by querying the Info API
+/// Get the uptime of a node by querying the Info API
 pub fn get_node_uptime(rpc_url: &str) -> Result<AvalancheNodeUptime, RpcError> {
     let uptime =
         get_json_rpc_req_result::<UptimeResponse, UptimeResult>(rpc_url, "info.uptime", None)?
             .into();
 
     Ok(uptime)
+}
+
+/// Get the name of the network a node is participating in by querying the Info API
+pub fn get_network_name(rpc_url: &str) -> Result<String, RpcError> {
+    let network_name = get_json_rpc_req_result::<GetNetworkNameResponse, GetNetworkNameResult>(
+        rpc_url,
+        "info.getNetworkName",
+        None,
+    )?
+    .network_name;
+
+    Ok(network_name)
 }
 
 #[cfg(test)]

@@ -254,8 +254,9 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> 
         "
         Node '{}:{}':
           ID:            {}
+          Network:       {}
           Public IP:     {}
-          Stacking port: {}
+          Staking port:  {}
           Versions:
             AvalancheGo: {}
             Database:    {}
@@ -264,12 +265,13 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> 
               AVM:        {}
               EVM:        {}
               PlatformVM: {}
-            Uptime:
-              Rewarding stake:  {}%
-              Weighted average: {}%",
+          Uptime:
+            Rewarding stake:  {}%
+            Weighted average: {}%",
         type_colorize(&node.http_host),
         type_colorize(&node.http_port),
         type_colorize(&node.id),
+        type_colorize(&node.network),
         type_colorize(&node.public_ip),
         type_colorize(&node.staking_port),
         type_colorize(&node.versions.avalanchego_version),
