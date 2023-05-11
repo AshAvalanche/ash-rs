@@ -123,6 +123,22 @@ impl AvalancheNode {
 
         Ok(())
     }
+
+    /// Check whether a given chain is done bootstrapping
+    pub fn check_chain_bootstrapping(&self, chain: &str) -> Result<bool, AshError> {
+        let node_host = format!("{}:{}", self.http_host, self.http_port);
+        let api_path = format!("http://{node_host}/{AVAX_INFO_API_ENDPOINT}",);
+
+        let is_bootstrapped =
+            is_bootstrapped(&api_path, chain).map_err(|e| RpcError::GetFailure {
+                data_type: format!("{} chain bootstrapping", chain),
+                target_type: "node".to_string(),
+                target_value: node_host.to_string(),
+                msg: e.to_string(),
+            })?;
+
+        Ok(is_bootstrapped)
+    }
 }
 
 /// Avalanche node version
@@ -206,5 +222,25 @@ mod tests {
         // Test that the node uptime is not equal to 0
         assert_ne!(node.uptime.rewarding_stake_percentage, 0.0);
         assert_ne!(node.uptime.weighted_average_percentage, 0.0);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_avalanche_node_chain_bootstrapping() {
+        let node = AvalancheNode {
+            http_host: ASH_TEST_HTTP_HOST.to_string(),
+            http_port: ASH_TEST_HTTP_PORT,
+            ..Default::default()
+        };
+
+        // Get the node's bootstrapping status for the P, X and C chains
+        let is_bootstrapped_p = node.check_chain_bootstrapping("P").unwrap();
+        let is_bootstrapped_x = node.check_chain_bootstrapping("X").unwrap();
+        let is_bootstrapped_c = node.check_chain_bootstrapping("C").unwrap();
+
+        // Test that the node is bootstrapped for the P, X and C chains
+        assert!(is_bootstrapped_p);
+        assert!(is_bootstrapped_x);
+        assert!(is_bootstrapped_c);
     }
 }

@@ -23,6 +23,7 @@ impl_json_rpc_response!(GetNodeIpResponse, GetNodeIpResult);
 impl_json_rpc_response!(GetNodeVersionResponse, GetNodeVersionResult);
 impl_json_rpc_response!(UptimeResponse, UptimeResult);
 impl_json_rpc_response!(GetNetworkNameResponse, GetNetworkNameResult);
+impl_json_rpc_response!(IsBootstrappedResponse, IsBootstrappedResult);
 
 /// Get the ID of a node by querying the Info API
 pub fn get_node_id(rpc_url: &str) -> Result<Id, RpcError> {
@@ -79,6 +80,21 @@ pub fn get_network_name(rpc_url: &str) -> Result<String, RpcError> {
     .network_name;
 
     Ok(network_name)
+}
+
+/// Check if a given chain is done boostrapping by querying the Info API
+/// `chain` is the chain ID or alias of the chain to check
+pub fn is_bootstrapped(rpc_url: &str, chain: &str) -> Result<bool, RpcError> {
+    let is_bootstrapped = get_json_rpc_req_result::<IsBootstrappedResponse, IsBootstrappedResult>(
+        rpc_url,
+        "info.isBootstrapped",
+        Some(ureq::json!({
+            "chain": chain.to_string()
+        })),
+    )?
+    .is_bootstrapped;
+
+    Ok(is_bootstrapped)
 }
 
 #[cfg(test)]
