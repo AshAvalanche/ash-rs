@@ -18,11 +18,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-
       - name: Template tests config file
         run: |
           envsubst < crates/ash_sdk/tests/conf/quicknode.yml > ${{ runner.temp }}/ash-test-avax-conf.yml
