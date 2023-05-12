@@ -27,12 +27,6 @@ pub struct AvalancheNode {
 
 impl Default for AvalancheNode {
     fn default() -> Self {
-        Self::default()
-    }
-}
-
-impl AvalancheNode {
-    pub fn default() -> Self {
         Self {
             id: Id::default(),
             http_host: String::from("127.0.0.1"),
@@ -44,7 +38,9 @@ impl AvalancheNode {
             network: String::from("local"),
         }
     }
+}
 
+impl AvalancheNode {
     /// Update the node's information
     pub fn update_info(&mut self) -> Result<(), AshError> {
         let node_host = format!("{}:{}", self.http_host, self.http_port);
@@ -98,7 +94,7 @@ impl AvalancheNode {
                         return Err(AshError::RpcError(RpcError::GetFailure {
                             data_type: "uptime".to_string(),
                             target_type: "node".to_string(),
-                            target_value: node_host.to_string(),
+                            target_value: node_host,
                             msg: format!(
                                 "{:?}",
                                 RpcError::ResponseError {
@@ -114,7 +110,7 @@ impl AvalancheNode {
                     return Err(AshError::RpcError(RpcError::GetFailure {
                         data_type: "uptime".to_string(),
                         target_type: "node".to_string(),
-                        target_value: node_host.to_string(),
+                        target_value: node_host,
                         msg: e.to_string(),
                     }));
                 }
