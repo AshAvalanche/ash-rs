@@ -3,13 +3,9 @@
 
 // Module that contains the node subcommand parser
 
-use crate::utils::{
-    error::CliError,
-    templating::{template_avalanche_node_info, type_colorize},
-};
+use crate::utils::{error::CliError, templating::*};
 use ash_sdk::avalanche::nodes::AvalancheNode;
 use clap::{Parser, Subcommand};
-use colored::Colorize;
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche nodes")]
@@ -86,23 +82,10 @@ fn is_bootstrapped(
         return Ok(());
     }
 
-    if is_bootstrapped {
-        println!(
-            "Chain '{}' on node '{}:{}': {}",
-            type_colorize(&chain),
-            type_colorize(&node.http_host),
-            type_colorize(&node.http_port),
-            "Bootstrapped ✓".green(),
-        );
-    } else {
-        println!(
-            "Chain '{}' on node '{}:{}': {}",
-            type_colorize(&chain),
-            type_colorize(&node.http_host),
-            type_colorize(&node.http_port),
-            "Not yet bootstrapped ✗".red(),
-        );
-    }
+    println!(
+        "{}",
+        template_chain_is_bootstrapped(&node, chain, is_bootstrapped, 0)
+    );
 
     Ok(())
 }

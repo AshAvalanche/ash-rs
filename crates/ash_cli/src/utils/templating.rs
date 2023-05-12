@@ -285,3 +285,25 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> 
 
     indent::indent_all_by(indent.into(), info)
 }
+
+pub(crate) fn template_chain_is_bootstrapped(
+    node: &AvalancheNode,
+    chain: &str,
+    is_bootstrapped: bool,
+    indent: u8,
+) -> String {
+    let mut info = String::new();
+
+    info.push_str(&formatdoc!(
+        "Chain '{}' on node '{}:{}': {}",
+        type_colorize(&chain),
+        type_colorize(&node.http_host),
+        type_colorize(&node.http_port),
+        match is_bootstrapped {
+            true => "Bootstrapped ✓".green(),
+            false => "Not yet bootstrapped ✗".red(),
+        }
+    ));
+
+    indent::indent_all_by(indent.into(), info)
+}
