@@ -12,9 +12,10 @@ use avalanche_types::{
     jsonrpc::platformvm::{ApiPrimaryDelegator, ApiPrimaryValidator, Subnet},
 };
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
 /// Avalanche Subnet types
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Display, Clone, Serialize, Deserialize)]
 pub enum AvalancheSubnetType {
     PrimaryNetwork,
     #[default]

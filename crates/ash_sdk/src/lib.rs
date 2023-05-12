@@ -4,3 +4,6 @@
 pub mod avalanche;
 pub mod conf;
 pub mod errors;
+
+#[macro_use]
+extern crate enum_display_derive;

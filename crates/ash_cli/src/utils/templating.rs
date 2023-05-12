@@ -4,8 +4,7 @@
 use ash_sdk::avalanche::{
     blockchains::AvalancheBlockchain,
     nodes::AvalancheNode,
-    subnets::{AvalancheSubnet, AvalancheSubnetValidator},
-    AVAX_PRIMARY_NETWORK_ID,
+    subnets::{AvalancheSubnet, AvalancheSubnetType, AvalancheSubnetValidator},
 };
 use colored::{ColoredString, Colorize};
 use indoc::formatdoc;
@@ -76,6 +75,7 @@ pub(crate) fn template_blockchain_info(
 
 pub(crate) fn template_validator_info(
     validator: &AvalancheSubnetValidator,
+    subnet: &AvalancheSubnet,
     list: bool,
     indent: u8,
     extended: bool,
@@ -87,20 +87,23 @@ pub(crate) fn template_validator_info(
         Tx ID:            {}
         Start time:       {}
         End time:         {}
-        Connected:        {}
-        Uptime:           {}
         ",
         type_colorize(&validator.tx_id),
         type_colorize(&validator.start_time),
         type_colorize(&validator.end_time),
-        type_colorize(&validator.connected),
-        type_colorize(&validator.uptime),
+    );
+
+    let permissioned_subnet_info = &formatdoc!(
+        "
+        Weight:           {}",
+        type_colorize(&validator.weight.unwrap_or_default()),
     );
 
     let elastic_subnet_info = &formatdoc!(
         "
+        Connected:        {}
+        Uptime:           {}
         Stake amount:     {}
-        Weight:           {}
         Potential reward: {}
         Delegation fee:   {}
         Validation reward owner:
@@ -113,23 +116,56 @@ pub(crate) fn template_validator_info(
           Locktime: {}
           Threshold: {}
           Addresses: {}",
-        type_colorize(&validator.stake_amount.unwrap()),
-        type_colorize(&validator.weight.unwrap()),
-        type_colorize(&validator.potential_reward.unwrap()),
-        type_colorize(&validator.delegation_fee.unwrap()),
-        type_colorize(&validator.validation_reward_owner.clone().unwrap().locktime),
-        type_colorize(&validator.validation_reward_owner.clone().unwrap().threshold),
+        type_colorize(&validator.connected),
+        type_colorize(&validator.uptime.unwrap_or_default()),
+        type_colorize(&validator.stake_amount.unwrap_or_default()),
+        type_colorize(&validator.potential_reward.unwrap_or_default()),
+        type_colorize(&validator.delegation_fee.unwrap_or_default()),
+        type_colorize(
+            &validator
+                .validation_reward_owner
+                .clone()
+                .unwrap_or_default()
+                .locktime
+        ),
+        type_colorize(
+            &validator
+                .validation_reward_owner
+                .clone()
+                .unwrap_or_default()
+                .threshold
+        ),
         type_colorize(&format!(
             "{:?}",
-            validator.validation_reward_owner.clone().unwrap().addresses
+            validator
+                .validation_reward_owner
+                .clone()
+                .unwrap_or_default()
+                .addresses
         )),
-        type_colorize(&validator.delegator_count.unwrap()),
-        type_colorize(&validator.delegator_weight.unwrap()),
-        type_colorize(&validator.delegation_reward_owner.clone().unwrap().locktime),
-        type_colorize(&validator.delegation_reward_owner.clone().unwrap().threshold),
+        type_colorize(&validator.delegator_count.unwrap_or_default()),
+        type_colorize(&validator.delegator_weight.unwrap_or_default()),
+        type_colorize(
+            &validator
+                .delegation_reward_owner
+                .clone()
+                .unwrap_or_default()
+                .locktime
+        ),
+        type_colorize(
+            &validator
+                .delegation_reward_owner
+                .clone()
+                .unwrap_or_default()
+                .threshold
+        ),
         type_colorize(&format!(
             "{:?}",
-            validator.delegation_reward_owner.clone().unwrap().addresses
+            validator
+                .delegation_reward_owner
+                .clone()
+                .unwrap_or_default()
+                .addresses
         )),
     );
 
@@ -146,8 +182,13 @@ pub(crate) fn template_validator_info(
             info.push_str(&indent::indent_all_by(4, common_info));
 
             // Display extra information if the validator is a primary validator
-            if validator.subnet_id.to_string() == AVAX_PRIMARY_NETWORK_ID {
-                info.push_str(&indent::indent_all_by(4, elastic_subnet_info));
+            match subnet.subnet_type {
+                AvalancheSubnetType::Permissioned => {
+                    info.push_str(&indent::indent_all_by(4, permissioned_subnet_info));
+                }
+                AvalancheSubnetType::Elastic | AvalancheSubnetType::PrimaryNetwork => {
+                    info.push_str(&indent::indent_all_by(4, elastic_subnet_info));
+                }
             }
         } else {
             info.push_str(&formatdoc!(
@@ -165,11 +206,16 @@ pub(crate) fn template_validator_info(
             type_colorize(&validator.subnet_id),
         ));
 
-        info.push_str(&indent::indent_all_by(4, common_info));
+        info.push_str(&indent::indent_all_by(2, common_info));
 
         // Display extra information if the validator is a primary validator
-        if validator.subnet_id.to_string() == AVAX_PRIMARY_NETWORK_ID {
-            info.push_str(&indent::indent_all_by(4, elastic_subnet_info));
+        match subnet.subnet_type {
+            AvalancheSubnetType::Permissioned => {
+                info.push_str(&indent::indent_all_by(2, permissioned_subnet_info));
+            }
+            AvalancheSubnetType::Elastic | AvalancheSubnetType::PrimaryNetwork => {
+                info.push_str(&indent::indent_all_by(2, elastic_subnet_info));
+            }
         }
     }
 
@@ -180,7 +226,7 @@ pub(crate) fn template_subnet_info(subnet: &AvalancheSubnet, list: bool, indent:
     let mut info = String::new();
 
     let subindent = match list {
-        true => 3,
+        true => 2,
         false => 2,
     };
 
@@ -196,26 +242,37 @@ pub(crate) fn template_subnet_info(subnet: &AvalancheSubnet, list: bool, indent:
     for validator in subnet.validators.iter() {
         validators_info.push_str(&format!(
             "\n{}",
-            template_validator_info(validator, true, subindent, false)
+            template_validator_info(validator, subnet, true, subindent, false)
         ));
     }
+
+    let permissioned_subnet_info = &formatdoc!(
+        "
+        Control keys: {}
+        Threshold:    {}
+        ",
+        type_colorize(&format!("{:?}", subnet.control_keys)),
+        type_colorize(&subnet.threshold),
+    );
 
     if list {
         info.push_str(&formatdoc!(
             "
             {}
             - {}:
-                Number of blockchains: {}
-                Control keys:          {}
-                Threshold:             {}
-                Blockchains: {}",
+              Type: {}
+            {}  Blockchains list ({}): {}",
             template_horizontal_rule('-', format!("- '{}':", subnet.id).len()),
             type_colorize(&subnet.id),
+            type_colorize(&subnet.subnet_type.to_string()),
+            match subnet.subnet_type {
+                AvalancheSubnetType::Permissioned =>
+                    indent::indent_all_by(subindent.into(), permissioned_subnet_info),
+                _ => "".to_string(),
+            },
             type_colorize(&subnet.blockchains.len()),
-            type_colorize(&format!("{:?}", subnet.control_keys)),
-            type_colorize(&subnet.threshold),
             match blockchains_info.is_empty() {
-                true => String::from("None"),
+                true => String::from("[]"),
                 false => blockchains_info,
             }
         ));
@@ -223,21 +280,24 @@ pub(crate) fn template_subnet_info(subnet: &AvalancheSubnet, list: bool, indent:
         info.push_str(&formatdoc!(
             "
             Subnet '{}':
-              Number of blockchains: {}
-              Control keys:          {}
-              Threshold:             {}
-              Blockchains: {}
-              Validators: {}",
+              Type: {}
+            {}  Blockchains list ({}): {}
+              Validators list ({}): {}",
             type_colorize(&subnet.id),
+            type_colorize(&subnet.subnet_type.to_string()),
+            match subnet.subnet_type {
+                AvalancheSubnetType::Permissioned =>
+                    indent::indent_all_by(2, permissioned_subnet_info),
+                _ => "".to_string(),
+            },
             type_colorize(&subnet.blockchains.len()),
-            type_colorize(&format!("{:?}", subnet.control_keys)),
-            type_colorize(&subnet.threshold),
             match blockchains_info.is_empty() {
-                true => String::from("None"),
+                true => String::from("[]"),
                 false => blockchains_info,
             },
+            type_colorize(&subnet.validators.len()),
             match validators_info.is_empty() {
-                true => String::from("None"),
+                true => String::from("[]"),
                 false => validators_info,
             }
         ));

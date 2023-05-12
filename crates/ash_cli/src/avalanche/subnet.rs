@@ -51,6 +51,7 @@ fn list(network_name: &str, config: Option<&str>, json: bool) -> Result<(), CliE
     for subnet in network.subnets.iter() {
         println!("{}", template_subnet_info(subnet, true, 0));
     }
+
     Ok(())
 }
 
@@ -69,6 +70,7 @@ fn info(network_name: &str, id: &str, config: Option<&str>, json: bool) -> Resul
     }
 
     println!("{}", template_subnet_info(subnet, false, 0));
+
     Ok(())
 }
 
