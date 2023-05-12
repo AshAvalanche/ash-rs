@@ -397,7 +397,7 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 [[package]]
 name = "avalanche-types"
 version = "0.0.379"
-source = "git+https://github.com/AshAvalanche/avalanche-types-rs?branch=68-ids-from-owned-strings#107992684b073869b4a3ece9164f351b5c83cc70"
+source = "git+https://github.com/AshAvalanche/avalanche-types-rs?branch=update-info-jsonrpc-responses#c0bae5724ad635de0dc4656deac915c581123a74"
 dependencies = [
  "async-trait",
  "bech32 0.9.1",
