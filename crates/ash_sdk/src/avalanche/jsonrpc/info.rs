@@ -3,116 +3,109 @@
 
 // Module that contains code to interact with Avalanche Info API
 
-use crate::avalanche::nodes::{AvalancheNodeUptime, AvalancheNodeVersions};
-use avalanche_types::{ids::node::Id, jsonrpc::info::*};
-use serde::Deserialize;
-use serde_aux::prelude::*;
+use crate::{
+    avalanche::jsonrpc::{get_json_rpc_req_result, JsonRpcResponse},
+    avalanche::nodes::{AvalancheNodeUptime, AvalancheNodeVersions},
+    errors::*,
+    impl_json_rpc_response,
+};
+use avalanche_types::{
+    ids::node::Id,
+    jsonrpc::{info::*, ResponseError},
+};
+use std::net::SocketAddr;
 
 /// Info API endpoint
 pub const AVAX_INFO_API_ENDPOINT: &str = "ext/info";
 
-#[derive(Deserialize)]
-#[allow(dead_code)]
-struct InfoApiGetNodeIdResponse {
-    jsonrpc: String,
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    id: u8,
-    result: InfoApiGetNodeIdResult,
+impl_json_rpc_response!(GetNodeIdResponse, GetNodeIdResult);
+impl_json_rpc_response!(GetNodeIpResponse, GetNodeIpResult);
+impl_json_rpc_response!(GetNodeVersionResponse, GetNodeVersionResult);
+impl_json_rpc_response!(UptimeResponse, UptimeResult);
+impl_json_rpc_response!(GetNetworkNameResponse, GetNetworkNameResult);
+impl_json_rpc_response!(IsBootstrappedResponse, IsBootstrappedResult);
+
+/// Get the ID of a node by querying the Info API
+pub fn get_node_id(rpc_url: &str) -> Result<Id, RpcError> {
+    let node_id = get_json_rpc_req_result::<GetNodeIdResponse, GetNodeIdResult>(
+        rpc_url,
+        "info.getNodeID",
+        None,
+    )?
+    .node_id;
+
+    Ok(node_id)
 }
 
-#[derive(Deserialize)]
-struct InfoApiGetNodeIdResult {
-    #[serde(rename = "nodeID")]
-    node_id: Id,
+/// Get the IP of a node by querying the Info API
+pub fn get_node_ip(rpc_url: &str) -> Result<SocketAddr, RpcError> {
+    let ip = get_json_rpc_req_result::<GetNodeIpResponse, GetNodeIpResult>(
+        rpc_url,
+        "info.getNodeIP",
+        None,
+    )?
+    .ip;
+
+    Ok(ip)
 }
 
-#[derive(Deserialize)]
-#[allow(dead_code)]
-struct InfoApiGetNodeIpResponse {
-    jsonrpc: String,
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    id: u8,
-    result: InfoApiGetNodeIpResult,
+/// Get the version of a node by querying the Info API
+pub fn get_node_version(rpc_url: &str) -> Result<AvalancheNodeVersions, RpcError> {
+    let node_version = get_json_rpc_req_result::<GetNodeVersionResponse, GetNodeVersionResult>(
+        rpc_url,
+        "info.getNodeVersion",
+        None,
+    )?
+    .into();
+
+    Ok(node_version)
 }
 
-#[derive(Deserialize)]
-struct InfoApiGetNodeIpResult {
-    ip: String,
+/// Get the uptime of a node by querying the Info API
+pub fn get_node_uptime(rpc_url: &str) -> Result<AvalancheNodeUptime, RpcError> {
+    let uptime =
+        get_json_rpc_req_result::<UptimeResponse, UptimeResult>(rpc_url, "info.uptime", None)?
+            .into();
+
+    Ok(uptime)
 }
 
-// Get the ID of a node by querying the Info API
-pub fn get_node_id(rpc_url: &str) -> Result<Id, ureq::Error> {
-    let resp: InfoApiGetNodeIdResponse = ureq::post(rpc_url)
-        .send_json(ureq::json!({
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "info.getNodeID",
-            "params": {}
-        }))?
-        .into_json()?;
+/// Get the name of the network a node is participating in by querying the Info API
+pub fn get_network_name(rpc_url: &str) -> Result<String, RpcError> {
+    let network_name = get_json_rpc_req_result::<GetNetworkNameResponse, GetNetworkNameResult>(
+        rpc_url,
+        "info.getNetworkName",
+        None,
+    )?
+    .network_name;
 
-    Ok(resp.result.node_id)
+    Ok(network_name)
 }
 
-// Get the IP of a node by querying the Info API
-pub fn get_node_ip(rpc_url: &str) -> Result<String, ureq::Error> {
-    let resp: InfoApiGetNodeIpResponse = ureq::post(rpc_url)
-        .send_json(ureq::json!({
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "info.getNodeIP",
-            "params": {}
-        }))?
-        .into_json()?;
+/// Check if a given chain is done boostrapping by querying the Info API
+/// `chain` is the chain ID or alias of the chain to check
+pub fn is_bootstrapped(rpc_url: &str, chain: &str) -> Result<bool, RpcError> {
+    let is_bootstrapped = get_json_rpc_req_result::<IsBootstrappedResponse, IsBootstrappedResult>(
+        rpc_url,
+        "info.isBootstrapped",
+        Some(ureq::json!({
+            "chain": chain.to_string()
+        })),
+    )?
+    .is_bootstrapped;
 
-    Ok(resp.result.ip)
-}
-
-// Get the version of a node by querying the Info API
-pub fn get_node_version(rpc_url: &str) -> Result<AvalancheNodeVersions, ureq::Error> {
-    let resp: GetNodeVersionResponse = ureq::post(rpc_url)
-        .send_json(ureq::json!({
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "info.getNodeVersion",
-            "params": {}
-        }))?
-        .into_json()?;
-
-    let node_version = resp.result.unwrap();
-    Ok(AvalancheNodeVersions {
-        avalanchego_version: node_version.version,
-        database_version: node_version.database_version,
-        git_commit: node_version.git_commit,
-        vm_versions: node_version.vm_versions,
-    })
-}
-
-// Get the uptime of a node by querying the Info API
-pub fn get_node_uptime(rpc_url: &str) -> Result<AvalancheNodeUptime, ureq::Error> {
-    let resp: UptimeResponse = ureq::post(rpc_url)
-        .send_json(ureq::json!({
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "info.uptime",
-            "params": {}
-        }))?
-        .into_json()?;
-
-    let node_uptime = resp.result.unwrap();
-    Ok(AvalancheNodeUptime {
-        rewarding_stake_percentage: node_uptime.rewarding_stake_percentage,
-        weighted_average_percentage: node_uptime.weighted_average_percentage,
-    })
+    Ok(is_bootstrapped)
 }
 
 #[cfg(test)]
 mod tests {
+    use std::net::{IpAddr, Ipv4Addr};
+
     use super::*;
     use avalanche_types::jsonrpc::info::VmVersions;
 
     // Using avalanche-network-runner to run a test network
-    const ASH_TEST_HTTP_HOST: &str = "127.0.0.1";
+    const ASH_TEST_HTTP_HOST: IpAddr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
     const ASH_TEST_HTTP_PORT: u16 = 9650;
     const ASH_TEST_STACKING_PORT: u16 = 9651;
     const ASH_TEST_NODE_ID: &str = "NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg";
@@ -138,7 +131,7 @@ mod tests {
         let node_ip = get_node_ip(&rpc_url).unwrap();
         assert_eq!(
             node_ip,
-            format!("{ASH_TEST_HTTP_HOST}:{ASH_TEST_STACKING_PORT}")
+            SocketAddr::new(ASH_TEST_HTTP_HOST, ASH_TEST_STACKING_PORT)
         );
     }
 

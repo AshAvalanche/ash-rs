@@ -24,10 +24,10 @@ where
     T: std::fmt::Display,
 {
     match type_of(var).split(':').last().unwrap() {
-        "String" => var.to_string().yellow(),
+        "String" | "&&str" => var.to_string().yellow(),
         "&u64" | "&u32" | "&u16" | "&u8" | "&usize" => var.to_string().cyan(),
         "&i64" | "&i32" | "&i16" | "&i8" | "&isize" => var.to_string().cyan(),
-        "&f64" | "&f32" => var.to_string().magenta(),
+        "&f64" | "&f32" | "IpAddr" => var.to_string().magenta(),
         "&bool" => var.to_string().blue(),
         "Id" => var.to_string().green(),
         _ => var.to_string().bright_white(),
@@ -152,8 +152,7 @@ pub(crate) fn template_validator_info(
         } else {
             info.push_str(&formatdoc!(
                 "
-            - {}
-            ",
+            - {}",
                 type_colorize(&validator.node_id),
             ));
         }
@@ -254,8 +253,9 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> 
         "
         Node '{}:{}':
           ID:            {}
+          Network:       {}
           Public IP:     {}
-          Stacking port: {}
+          Staking port:  {}
           Versions:
             AvalancheGo: {}
             Database:    {}
@@ -264,12 +264,13 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> 
               AVM:        {}
               EVM:        {}
               PlatformVM: {}
-            Uptime:
-              Rewarding stake:  {}%
-              Weighted average: {}%",
+          Uptime:
+            Rewarding stake:  {}%
+            Weighted average: {}%",
         type_colorize(&node.http_host),
         type_colorize(&node.http_port),
         type_colorize(&node.id),
+        type_colorize(&node.network),
         type_colorize(&node.public_ip),
         type_colorize(&node.staking_port),
         type_colorize(&node.versions.avalanchego_version),
@@ -280,6 +281,28 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> 
         type_colorize(&node.versions.vm_versions.platform),
         type_colorize(&node.uptime.rewarding_stake_percentage),
         type_colorize(&node.uptime.weighted_average_percentage),
+    ));
+
+    indent::indent_all_by(indent.into(), info)
+}
+
+pub(crate) fn template_chain_is_bootstrapped(
+    node: &AvalancheNode,
+    chain: &str,
+    is_bootstrapped: bool,
+    indent: u8,
+) -> String {
+    let mut info = String::new();
+
+    info.push_str(&formatdoc!(
+        "Chain '{}' on node '{}:{}': {}",
+        type_colorize(&chain),
+        type_colorize(&node.http_host),
+        type_colorize(&node.http_port),
+        match is_bootstrapped {
+            true => "Bootstrapped ✓".green(),
+            false => "Not yet bootstrapped ✗".red(),
+        }
     ));
 
     indent::indent_all_by(indent.into(), info)

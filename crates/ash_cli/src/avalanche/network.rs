@@ -16,7 +16,7 @@ pub(crate) struct NetworkCommand {
 
 #[derive(Subcommand)]
 enum NetworkSubcommands {
-    #[command(about = "List Avalanche networks")]
+    #[command(about = "List known Avalanche networks")]
     List,
 }
 

@@ -18,11 +18,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-
       - name: Template tests config file
         run: |
           envsubst < crates/ash_sdk/tests/conf/quicknode.yml > ${{ runner.temp }}/ash-test-avax-conf.yml
@@ -36,6 +31,9 @@ jobs:
 
       - name: Start a local Avalanche network
         run: ~/bin/avalanche network start
+
+      - name: Setup cache for Rust
+        uses: Swatinem/rust-cache@v2
 
       - name: Run cargo check
         uses: actions-rs/cargo@v1
