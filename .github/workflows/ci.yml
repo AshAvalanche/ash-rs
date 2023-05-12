@@ -37,6 +37,9 @@ jobs:
       - name: Start a local Avalanche network
         run: ~/bin/avalanche network start
 
+      - name: Setup cache for Rust
+        uses: Swatinem/rust-cache@v2
+
       - name: Run cargo check
         uses: actions-rs/cargo@v1
         with:
