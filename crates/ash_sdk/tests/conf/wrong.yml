@@ -6,8 +6,6 @@ avalancheNetworks:
   - name: no-primary-network
     subnets:
       - id: yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp
-        controlKeys: []
-        threshold: 0
         blockchains:
           - id: 2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm
             name: MyChain
@@ -16,8 +14,6 @@ avalancheNetworks:
   - name: no-pchain
     subnets:
       - id: 11111111111111111111111111111111LpoYY
-        controlKeys: []
-        threshold: 0
         blockchains:
           - id: yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp
             name: C-Chain

@@ -3,8 +3,8 @@
 
 // Module that contains code to interact with Avalanche blockchains
 
-use crate::{avalanche::avalanche_id_from_string, errors::*};
-use avalanche_types::ids::Id;
+use crate::errors::*;
+use avalanche_types::{ids::Id, jsonrpc::platformvm::Blockchain};
 use ethers::providers::{Http, Provider};
 use serde::{Deserialize, Serialize};
 
@@ -12,12 +12,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheBlockchain {
-    #[serde(deserialize_with = "avalanche_id_from_string")]
     pub id: Id,
     pub name: String,
-    #[serde(deserialize_with = "avalanche_id_from_string", skip)]
+    #[serde(skip)]
     pub subnet_id: Id,
-    #[serde(default, deserialize_with = "avalanche_id_from_string")]
+    #[serde(default)]
     pub vm_id: Id,
     #[serde(default)]
     pub vm_type: String,
@@ -46,6 +45,18 @@ impl AvalancheBlockchain {
                 ),
             }
             .into()),
+        }
+    }
+}
+
+impl From<Blockchain> for AvalancheBlockchain {
+    fn from(blockchain: Blockchain) -> Self {
+        Self {
+            id: blockchain.id,
+            name: blockchain.name,
+            subnet_id: blockchain.subnet_id,
+            vm_id: blockchain.vm_id,
+            ..Default::default()
         }
     }
 }

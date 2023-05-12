@@ -62,7 +62,7 @@ fn list(
     }
 
     println!(
-        "Found {} Subnet(s) on '{}':",
+        "Found {} validator(s) on Subnet '{}':",
         subnet.validators.len(),
         subnet_id
     );

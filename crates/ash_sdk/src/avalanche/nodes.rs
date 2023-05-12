@@ -3,8 +3,7 @@
 
 // Module that contains code to interact with Avalanche nodes
 
-use crate::avalanche::{avalanche_node_id_from_string, jsonrpc::info::*};
-use crate::errors::*;
+use crate::{avalanche::jsonrpc::info::*, errors::*};
 use avalanche_types::{ids::node::Id, jsonrpc::info::VmVersions};
 use serde::{Deserialize, Serialize};
 
@@ -12,7 +11,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheNode {
-    #[serde(deserialize_with = "avalanche_node_id_from_string")]
     pub id: Id,
     pub http_host: String,
     pub http_port: u16,

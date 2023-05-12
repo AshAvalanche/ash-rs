@@ -8,12 +8,13 @@ pub mod subnets;
 
 // Module that contains code to interact with Avalanche networks
 
-use crate::avalanche::blockchains::AvalancheBlockchain;
-use crate::avalanche::subnets::AvalancheSubnet;
-use crate::{avalanche::jsonrpc::platformvm, conf::AshConfig, errors::*};
-use avalanche_types::ids::{node::Id as NodeId, Id};
+use crate::{
+    avalanche::{blockchains::AvalancheBlockchain, jsonrpc::platformvm, subnets::AvalancheSubnet},
+    conf::AshConfig,
+    errors::*,
+};
+use avalanche_types::jsonrpc::platformvm::ApiOwner;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 /// Avalanche primary network ID
 /// This Subnet contains the P-Chain that is used for all Subnet operations
@@ -39,35 +40,27 @@ pub struct AvalancheOutputOwners {
     pub addresses: Vec<String>,
 }
 
-/// Deserialize an Avalanche ID from a string
-fn avalanche_id_from_string<'de, D>(deserializer: D) -> Result<Id, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    Id::from_str(&s).map_err(serde::de::Error::custom)
-}
-
-/// Deserialize an Avalanche NodeID from a string
-fn avalanche_node_id_from_string<'de, D>(deserializer: D) -> Result<NodeId, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    NodeId::from_str(&s).map_err(serde::de::Error::custom)
+impl From<ApiOwner> for AvalancheOutputOwners {
+    fn from(api_owner: ApiOwner) -> Self {
+        Self {
+            locktime: api_owner.locktime,
+            threshold: api_owner.threshold,
+            addresses: api_owner.addresses,
+        }
+    }
 }
 
 impl AvalancheNetwork {
     /// Load an AvalancheNetwork from the configuration
-    pub fn load(network: &str, config: Option<&str>) -> Result<AvalancheNetwork, AshError> {
+    pub fn load(network_name: &str, config: Option<&str>) -> Result<AvalancheNetwork, AshError> {
         let ash_config = AshConfig::load(config)?;
         let avax_network = ash_config
             .avalanche_networks
             .iter()
-            .find(|&avax_network| avax_network.name == network)
+            .find(|&avax_network| avax_network.name == network_name)
             .ok_or(ConfigError::NotFound {
                 target_type: "network".to_string(),
-                target_value: network.to_string(),
+                target_value: network_name.to_string(),
             })?;
 
         // Error if the primary network is not found or if the P-Chain is not found
@@ -98,13 +91,14 @@ impl AvalancheNetwork {
     pub fn update_subnets(&mut self) -> Result<(), AshError> {
         let rpc_url = &self.get_pchain()?.rpc_url;
 
-        let subnets =
-            platformvm::get_network_subnets(rpc_url).map_err(|e| RpcError::GetFailure {
+        let subnets = platformvm::get_network_subnets(rpc_url, &self.name).map_err(|e| {
+            RpcError::GetFailure {
                 data_type: "Subnets".to_string(),
                 target_type: "network".to_string(),
                 target_value: self.name.clone(),
                 msg: e.to_string(),
-            })?;
+            }
+        })?;
 
         // Replace the primary network with the pre-configured one
         // This is done to ensure that the P-Chain is kept in the blockchains list
@@ -141,11 +135,13 @@ impl AvalancheNetwork {
         let rpc_url = &self.get_pchain()?.rpc_url;
 
         let blockchains =
-            platformvm::get_network_blockchains(rpc_url).map_err(|e| RpcError::GetFailure {
-                data_type: "blockchains".to_string(),
-                target_type: "network".to_string(),
-                target_value: self.name.clone(),
-                msg: e.to_string(),
+            platformvm::get_network_blockchains(rpc_url, &self.name).map_err(|e| {
+                RpcError::GetFailure {
+                    data_type: "blockchains".to_string(),
+                    target_type: "network".to_string(),
+                    target_value: self.name.clone(),
+                    msg: e.to_string(),
+                }
             })?;
 
         // For each Subnet, replace the blockchains with the ones returned by the API
@@ -175,14 +171,7 @@ impl AvalancheNetwork {
     pub fn update_subnet_validators(&mut self, subnet_id: &str) -> Result<(), AshError> {
         let rpc_url = &self.get_pchain()?.rpc_url;
 
-        let validators = platformvm::get_current_validators(rpc_url, subnet_id).map_err(|e| {
-            RpcError::GetFailure {
-                data_type: "validators".to_string(),
-                target_type: "Subnet".to_string(),
-                target_value: subnet_id.to_string(),
-                msg: e.to_string(),
-            }
-        })?;
+        let validators = platformvm::get_current_validators(rpc_url, subnet_id)?;
 
         // Replace the validators of the Subnet
         let mut subnet = self.get_subnet(subnet_id)?.clone();
