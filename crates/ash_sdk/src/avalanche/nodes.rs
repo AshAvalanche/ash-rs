@@ -19,6 +19,7 @@ pub struct AvalancheNode {
     pub network: String,
     pub http_host: String,
     pub http_port: u16,
+    pub https_enabled: bool,
     pub public_ip: IpAddr,
     pub staking_port: u16,
     pub versions: AvalancheNodeVersions,
@@ -31,6 +32,7 @@ impl Default for AvalancheNode {
             id: Id::default(),
             http_host: String::from("127.0.0.1"),
             http_port: 9650,
+            https_enabled: false,
             public_ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
             staking_port: 9651,
             versions: AvalancheNodeVersions::default(),
@@ -41,15 +43,26 @@ impl Default for AvalancheNode {
 }
 
 impl AvalancheNode {
+    /// Get the node HTTP endpoint URL
+    /// This endpoint is used to call the node's JSON RPC APIs
+    pub fn get_http_endpoint(&self) -> String {
+        format!(
+            "{api_scheme}://{http_host}:{http_port}",
+            api_scheme = if self.https_enabled { "https" } else { "http" },
+            http_host = self.http_host,
+            http_port = self.http_port
+        )
+    }
+
     /// Update the node's information
     pub fn update_info(&mut self) -> Result<(), AshError> {
-        let node_host = format!("{}:{}", self.http_host, self.http_port);
-        let api_path = format!("http://{node_host}/{AVAX_INFO_API_ENDPOINT}",);
+        let http_endpoint = self.get_http_endpoint();
+        let api_path = format!("{}/{}", http_endpoint, AVAX_INFO_API_ENDPOINT);
 
         self.id = get_node_id(&api_path).map_err(|e| RpcError::GetFailure {
             data_type: "ID".to_string(),
             target_type: "node".to_string(),
-            target_value: node_host.to_string(),
+            target_value: http_endpoint.clone(),
             msg: e.to_string(),
         })?;
 
@@ -57,7 +70,7 @@ impl AvalancheNode {
         let node_ip = get_node_ip(&api_path).map_err(|e| RpcError::GetFailure {
             data_type: "node IP".to_string(),
             target_type: "node".to_string(),
-            target_value: node_host.to_string(),
+            target_value: http_endpoint.clone(),
             msg: e.to_string(),
         })?;
         self.public_ip = node_ip.ip();
@@ -66,14 +79,14 @@ impl AvalancheNode {
         self.versions = get_node_version(&api_path).map_err(|e| RpcError::GetFailure {
             data_type: "version".to_string(),
             target_type: "node".to_string(),
-            target_value: node_host.to_string(),
+            target_value: http_endpoint.clone(),
             msg: e.to_string(),
         })?;
 
         self.network = get_network_name(&api_path).map_err(|e| RpcError::GetFailure {
             data_type: "network".to_string(),
             target_type: "node".to_string(),
-            target_value: node_host.to_string(),
+            target_value: http_endpoint.clone(),
             msg: e.to_string(),
         })?;
 
@@ -94,7 +107,7 @@ impl AvalancheNode {
                         return Err(AshError::RpcError(RpcError::GetFailure {
                             data_type: "uptime".to_string(),
                             target_type: "node".to_string(),
-                            target_value: node_host,
+                            target_value: http_endpoint,
                             msg: format!(
                                 "{:?}",
                                 RpcError::ResponseError {
@@ -110,7 +123,7 @@ impl AvalancheNode {
                     return Err(AshError::RpcError(RpcError::GetFailure {
                         data_type: "uptime".to_string(),
                         target_type: "node".to_string(),
-                        target_value: node_host,
+                        target_value: http_endpoint,
                         msg: e.to_string(),
                     }));
                 }
@@ -122,14 +135,14 @@ impl AvalancheNode {
 
     /// Check whether a given chain is done bootstrapping
     pub fn check_chain_bootstrapping(&self, chain: &str) -> Result<bool, AshError> {
-        let node_host = format!("{}:{}", self.http_host, self.http_port);
-        let api_path = format!("http://{node_host}/{AVAX_INFO_API_ENDPOINT}",);
+        let http_endpoint = self.get_http_endpoint();
+        let api_path = format!("{}/{}", http_endpoint, AVAX_INFO_API_ENDPOINT);
 
         let is_bootstrapped =
             is_bootstrapped(&api_path, chain).map_err(|e| RpcError::GetFailure {
                 data_type: format!("{} chain bootstrapping", chain),
                 target_type: "node".to_string(),
-                target_value: node_host.to_string(),
+                target_value: http_endpoint.clone(),
                 msg: e.to_string(),
             })?;
 
