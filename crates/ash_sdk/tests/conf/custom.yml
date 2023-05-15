@@ -6,6 +6,7 @@ avalancheNetworks:
   - name: custom
     subnets:
       - id: 11111111111111111111111111111111LpoYY
+        subnetType: PrimaryNetwork
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain

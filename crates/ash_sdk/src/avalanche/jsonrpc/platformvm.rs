@@ -177,7 +177,7 @@ mod tests {
         // Test that the node is connected
         assert!(ava_labs_node.connected);
         // Test that the node has a non-zero uptime
-        assert!(ava_labs_node.uptime > 0.0);
+        assert!(ava_labs_node.uptime > Some(0.0));
         // Test that the node has a non-zero weight
         assert!(ava_labs_node.weight > Some(0));
         // Test that the node has a non-zero potential reward

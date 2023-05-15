@@ -63,12 +63,16 @@ fn list(
 
     println!(
         "Found {} validator(s) on Subnet '{}':",
-        subnet.validators.len(),
-        subnet_id
+        type_colorize(&subnet.validators.len()),
+        type_colorize(&subnet_id)
     );
     for validator in subnet.validators.iter() {
-        println!("{}", template_validator_info(validator, true, 2, true));
+        println!(
+            "{}",
+            template_validator_info(validator, subnet, true, 2, true)
+        );
     }
+
     Ok(())
 }
 
@@ -95,8 +99,11 @@ fn info(
         println!("{}", serde_json::to_string(&validator).unwrap());
         return Ok(());
     }
+    println!(
+        "{}",
+        template_validator_info(validator, subnet, false, 0, true)
+    );
 
-    println!("{}", template_validator_info(validator, false, 0, true));
     Ok(())
 }
 

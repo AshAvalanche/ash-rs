@@ -41,6 +41,7 @@ fn list(config: Option<&str>, json: bool) -> Result<(), CliError> {
     for network in networks {
         println!("  - '{}'", type_colorize(&network.name));
     }
+
     Ok(())
 }
 

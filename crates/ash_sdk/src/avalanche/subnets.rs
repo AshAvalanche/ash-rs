@@ -3,19 +3,34 @@
 
 // Module that contains code to interact with Avalanche Subnets and validators
 
-use crate::avalanche::{blockchains::AvalancheBlockchain, AvalancheOutputOwners};
+use crate::avalanche::{
+    blockchains::AvalancheBlockchain, AvalancheOutputOwners, AVAX_PRIMARY_NETWORK_ID,
+};
 use crate::errors::*;
 use avalanche_types::{
     ids::{node::Id as NodeId, Id},
     jsonrpc::platformvm::{ApiPrimaryDelegator, ApiPrimaryValidator, Subnet},
 };
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
+
+/// Avalanche Subnet types
+#[derive(Default, Debug, Display, Clone, Serialize, Deserialize)]
+pub enum AvalancheSubnetType {
+    PrimaryNetwork,
+    #[default]
+    Permissioned,
+    /// Also named "PoS" in the Avalanche documentation
+    Elastic,
+}
 
 /// Avalanche Subnet
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheSubnet {
     pub id: Id,
+    #[serde(default)]
+    pub subnet_type: AvalancheSubnetType,
     // TODO: store control keys as ShortIds
     #[serde(default)]
     pub control_keys: Vec<String>,
@@ -79,6 +94,16 @@ impl From<Subnet> for AvalancheSubnet {
     fn from(subnet: Subnet) -> Self {
         Self {
             id: subnet.id,
+            // Based on Avalanche documentation at https://docs.avax.network/apis/avalanchego/apis/p-chain#platformgetsubnets
+            // "If the Subnet is a PoS (= elastic) Subnet, then threshold will be 0 and controlKeys will be empty."
+            // The Primary Network is an elastic Subnet and its ID is hardcoded
+            subnet_type: match subnet.threshold {
+                0 => match subnet.id.to_string().as_str() {
+                    AVAX_PRIMARY_NETWORK_ID => AvalancheSubnetType::PrimaryNetwork,
+                    _ => AvalancheSubnetType::Elastic,
+                },
+                _ => AvalancheSubnetType::Permissioned,
+            },
             control_keys: subnet
                 .control_keys
                 .map(|keys| {
@@ -110,7 +135,7 @@ pub struct AvalancheSubnetValidator {
     pub potential_reward: Option<u64>,
     pub delegation_fee: Option<f32>,
     pub connected: bool,
-    pub uptime: f32,
+    pub uptime: Option<f32>,
     pub validation_reward_owner: Option<AvalancheOutputOwners>,
     pub delegator_count: Option<u64>,
     pub delegator_weight: Option<u64>,

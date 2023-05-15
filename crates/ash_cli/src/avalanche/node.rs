@@ -21,6 +21,8 @@ pub(crate) struct NodeCommand {
     http_host: String,
     #[arg(long, default_value = "9650", help = "Node's HTTP port", global = true)]
     http_port: u16,
+    #[arg(long, help = "Use HTTPS", global = true)]
+    https: bool,
 }
 
 #[derive(Subcommand)]
@@ -35,10 +37,15 @@ enum NodeSubcommands {
 }
 
 // Create a new node and update its info
-fn create_and_update_info(http_host: &str, http_port: u16) -> Result<AvalancheNode, CliError> {
+fn create_and_update_info(
+    http_host: &str,
+    http_port: u16,
+    https_enabled: bool,
+) -> Result<AvalancheNode, CliError> {
     let mut node = AvalancheNode {
         http_host: http_host.to_string(),
         http_port,
+        https_enabled,
         ..Default::default()
     };
 
@@ -48,8 +55,8 @@ fn create_and_update_info(http_host: &str, http_port: u16) -> Result<AvalancheNo
     Ok(node)
 }
 
-fn info(http_host: &str, http_port: u16, json: bool) -> Result<(), CliError> {
-    let node = create_and_update_info(http_host, http_port)?;
+fn info(http_host: &str, http_port: u16, https_enabled: bool, json: bool) -> Result<(), CliError> {
+    let node = create_and_update_info(http_host, http_port, https_enabled)?;
 
     if json {
         println!("{}", serde_json::to_string(&node).unwrap());
@@ -64,12 +71,14 @@ fn info(http_host: &str, http_port: u16, json: bool) -> Result<(), CliError> {
 fn is_bootstrapped(
     http_host: &str,
     http_port: u16,
+    https_enabled: bool,
     chain: &str,
     json: bool,
 ) -> Result<(), CliError> {
     let node = AvalancheNode {
         http_host: http_host.to_string(),
         http_port,
+        https_enabled,
         ..Default::default()
     };
 
@@ -93,9 +102,9 @@ fn is_bootstrapped(
 // Parse node subcommand
 pub(crate) fn parse(node: NodeCommand, json: bool) -> Result<(), CliError> {
     match node.command {
-        NodeSubcommands::Info => info(&node.http_host, node.http_port, json),
+        NodeSubcommands::Info => info(&node.http_host, node.http_port, node.https, json),
         NodeSubcommands::IsBootstrapped { chain } => {
-            is_bootstrapped(&node.http_host, node.http_port, &chain, json)
+            is_bootstrapped(&node.http_host, node.http_port, node.https, &chain, json)
         }
     }
 }
