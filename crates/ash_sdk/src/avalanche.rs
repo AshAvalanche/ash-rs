@@ -5,6 +5,7 @@ pub mod blockchains;
 pub mod jsonrpc;
 pub mod nodes;
 pub mod subnets;
+pub mod wallets;
 
 // Module that contains code to interact with Avalanche networks
 
@@ -12,6 +13,7 @@ use crate::{
     avalanche::{blockchains::AvalancheBlockchain, jsonrpc::platformvm, subnets::AvalancheSubnet},
     conf::AshConfig,
     errors::*,
+    wallets::AvalancheWallet,
 };
 use avalanche_types::jsonrpc::platformvm::ApiOwner;
 use serde::{Deserialize, Serialize};
@@ -85,6 +87,14 @@ impl AvalancheNetwork {
             .get_subnet(AVAX_PRIMARY_NETWORK_ID)?
             .get_blockchain_by_name("C-Chain")?;
         Ok(cchain)
+    }
+
+    /// Get the X-Chain
+    pub fn get_xchain(&self) -> Result<&AvalancheBlockchain, AshError> {
+        let xchain = self
+            .get_subnet(AVAX_PRIMARY_NETWORK_ID)?
+            .get_blockchain_by_name("X-Chain")?;
+        Ok(xchain)
     }
 
     /// Update the AvalancheNetwork Subnets by querying an API endpoint
@@ -194,6 +204,15 @@ impl AvalancheNetwork {
 
         Ok(())
     }
+
+    pub async fn create_wallet(&self, private_key: &str) -> Result<AvalancheWallet, AshError> {
+        let xchain_url = &self.get_xchain()?.rpc_url;
+        let pchain_url = &self.get_pchain()?.rpc_url;
+
+        let wallet = AvalancheWallet::new(private_key, xchain_url, pchain_url).await?;
+
+        Ok(wallet)
+    }
 }
 
 #[cfg(test)]
@@ -270,12 +289,16 @@ mod tests {
 
         let pchain = fuji.get_pchain().unwrap();
         let cchain = fuji.get_cchain().unwrap();
+        let xchain = fuji.get_xchain().unwrap();
 
         assert_eq!(pchain.id.to_string(), AVAX_PRIMARY_NETWORK_ID);
         assert_eq!(pchain.name, "P-Chain");
 
         assert_eq!(cchain.id.to_string(), AVAX_FUJI_CCHAIN_ID);
         assert_eq!(cchain.name, "C-Chain");
+
+        assert_eq!(xchain.id.to_string(), AVAX_FUJI_EVM_ID);
+        assert_eq!(xchain.name, "X-Chain");
     }
 
     #[test]
