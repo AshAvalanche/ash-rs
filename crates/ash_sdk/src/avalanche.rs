@@ -5,17 +5,25 @@ pub mod blockchains;
 pub mod jsonrpc;
 pub mod nodes;
 pub mod subnets;
+pub mod txs;
 pub mod wallets;
 
 // Module that contains code to interact with Avalanche networks
 
 use crate::{
-    avalanche::{blockchains::AvalancheBlockchain, jsonrpc::platformvm, subnets::AvalancheSubnet},
+    avalanche::{
+        blockchains::AvalancheBlockchain,
+        jsonrpc::{avm, platformvm},
+        subnets::AvalancheSubnet,
+        wallets::AvalancheWallet,
+    },
     conf::AshConfig,
     errors::*,
-    wallets::AvalancheWallet,
 };
-use avalanche_types::jsonrpc::platformvm::ApiOwner;
+use avalanche_types::{
+    jsonrpc::{avm::GetBalanceResult, platformvm::ApiOwner},
+    txs::utxo,
+};
 use serde::{Deserialize, Serialize};
 
 /// Avalanche primary network ID
@@ -30,26 +38,6 @@ pub struct AvalancheNetwork {
     pub name: String,
     /// List of the network's Subnets
     pub subnets: Vec<AvalancheSubnet>,
-}
-
-/// Avalanche output owners
-/// See https://docs.avax.network/specs/platform-transaction-serialization#secp256k1-output-owners-output
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AvalancheOutputOwners {
-    pub locktime: u64,
-    pub threshold: u32,
-    pub addresses: Vec<String>,
-}
-
-impl From<ApiOwner> for AvalancheOutputOwners {
-    fn from(api_owner: ApiOwner) -> Self {
-        Self {
-            locktime: api_owner.locktime,
-            threshold: api_owner.threshold,
-            addresses: api_owner.addresses,
-        }
-    }
 }
 
 impl AvalancheNetwork {
@@ -205,13 +193,35 @@ impl AvalancheNetwork {
         Ok(())
     }
 
+    /// Create a new wallet for the network from a private key
+    /// For security reasons, wallets cannot be created on the mainnet
     pub async fn create_wallet(&self, private_key: &str) -> Result<AvalancheWallet, AshError> {
+        if self.name.contains("mainnet") {
+            return Err(AvalancheNetworkError::WalletCreationNotAllowed {
+                network: self.name.clone(),
+            }
+            .into());
+        }
+
         let xchain_url = &self.get_xchain()?.rpc_url;
         let pchain_url = &self.get_pchain()?.rpc_url;
 
         let wallet = AvalancheWallet::new(private_key, xchain_url, pchain_url).await?;
 
         Ok(wallet)
+    }
+
+    /// Get the balance of an address on the X-Chain
+    pub fn get_xchain_balance(
+        &self,
+        address: &str,
+        asset_id: &str,
+    ) -> Result<AvalancheXChainBalance, AshError> {
+        let xchain_url = &self.get_xchain()?.rpc_url;
+
+        let balance = avm::get_balance(xchain_url, address, asset_id)?;
+
+        Ok(balance)
     }
 }
 
@@ -222,15 +232,23 @@ mod tests {
     use std::env;
 
     const AVAX_FUJI_CCHAIN_ID: &str = "yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp";
+    const AVAX_FUJI_XCHAIN_ID: &str = "2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm";
     const AVAX_FUJI_EVM_ID: &str = "mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6";
     const AVAX_FUJI_DFK_SUBNET_ID: &str = "XHLRR9cvMtCR8KZsjU8nLxg1JbV7aS23AcLVeBMVHLKkSBriS";
     const AVAX_FUJI_DFK_CHAIN_ID: &str = "32sexHqc3tBQsik8h7WP5F2ruL5svqhX5opeTgXCRVX8HpbKF";
+
+    // Using avalanche-network-runner to run a test network
+    const AVAX_EWOQ_XCHAIN_ADDR: &str = "X-custom18jma8ppw3nhx5r4ap8clazz0dps7rv5u9xde7p";
 
     // Load the test network from the ASH_TEST_CONFIG file
     fn load_test_network() -> AvalancheNetwork {
         let config_path =
             env::var("ASH_TEST_AVAX_CONFIG").unwrap_or("tests/conf/default.yml".to_string());
         AvalancheNetwork::load("fuji", Some(&config_path)).unwrap()
+    }
+
+    fn load_avalanche_network_runner() -> AvalancheNetwork {
+        AvalancheNetwork::load("local", Some("tests/conf/avalanche-network-runner.yml")).unwrap()
     }
 
     #[test]
@@ -297,7 +315,7 @@ mod tests {
         assert_eq!(cchain.id.to_string(), AVAX_FUJI_CCHAIN_ID);
         assert_eq!(cchain.name, "C-Chain");
 
-        assert_eq!(xchain.id.to_string(), AVAX_FUJI_EVM_ID);
+        assert_eq!(xchain.id.to_string(), AVAX_FUJI_XCHAIN_ID);
         assert_eq!(xchain.name, "X-Chain");
     }
 
@@ -374,5 +392,53 @@ mod tests {
         // Test that the primary network has validators
         let primary_subnet = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
         assert!(primary_subnet.validators.len() > 0);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_avalanche_network_get_xchain_balance() {
+        let local_network = load_avalanche_network_runner();
+
+        let balance = local_network
+            .get_xchain_balance(AVAX_EWOQ_XCHAIN_ADDR, "AVAX")
+            .unwrap();
+        assert!(balance.balance > 0);
+    }
+}
+
+/// Avalanche output owners
+/// See https://docs.avax.network/specs/platform-transaction-serialization#secp256k1-output-owners-output
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AvalancheOutputOwners {
+    pub locktime: u64,
+    pub threshold: u32,
+    pub addresses: Vec<String>,
+}
+
+impl From<ApiOwner> for AvalancheOutputOwners {
+    fn from(api_owner: ApiOwner) -> Self {
+        Self {
+            locktime: api_owner.locktime,
+            threshold: api_owner.threshold,
+            addresses: api_owner.addresses,
+        }
+    }
+}
+
+/// Avalanche X-Chain balance
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct AvalancheXChainBalance {
+    pub balance: u64,
+    #[serde(rename = "utxoIDs")]
+    pub utxos_ids: Vec<utxo::Id>,
+}
+
+impl From<GetBalanceResult> for AvalancheXChainBalance {
+    fn from(result: GetBalanceResult) -> Self {
+        Self {
+            balance: result.balance,
+            utxos_ids: result.utxo_ids.unwrap_or_default(),
+        }
     }
 }

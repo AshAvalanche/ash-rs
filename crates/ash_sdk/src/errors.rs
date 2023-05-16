@@ -79,6 +79,8 @@ pub enum AvalancheNetworkError {
         target_type: String,
         target_value: String,
     },
+    #[error("wallet creation from private key is not allowed on network '{network}'")]
+    WalletCreationNotAllowed { network: String },
 }
 
 #[derive(Error, Debug)]

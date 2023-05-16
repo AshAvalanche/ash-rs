@@ -11,13 +11,7 @@ use crate::avalanche::{
 use crate::{errors::*, impl_json_rpc_response};
 use avalanche_types::{
     ids::Id,
-    jsonrpc::{
-        platformvm::{
-            GetBlockchainsResponse, GetBlockchainsResult, GetCurrentValidatorsResponse,
-            GetCurrentValidatorsResult, GetSubnetsResponse, GetSubnetsResult,
-        },
-        ResponseError,
-    },
+    jsonrpc::{platformvm::*, ResponseError},
 };
 use std::str::FromStr;
 use ureq;
