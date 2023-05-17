@@ -7,8 +7,9 @@ use crate::utils::{error::CliError, templating::type_colorize};
 use ash_sdk::conf::AshConfig;
 use clap::{Parser, Subcommand};
 
+/// Interact with Avalanche networks
 #[derive(Parser)]
-#[command(about = "Interact with Avalanche networks")]
+#[command()]
 pub(crate) struct NetworkCommand {
     #[command(subcommand)]
     command: NetworkSubcommands,
@@ -16,7 +17,8 @@ pub(crate) struct NetworkCommand {
 
 #[derive(Subcommand)]
 enum NetworkSubcommands {
-    #[command(about = "List known Avalanche networks")]
+    /// List known Avalanche networks
+    #[command()]
     List,
 }
 

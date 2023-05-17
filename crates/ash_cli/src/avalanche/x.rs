@@ -9,14 +9,16 @@ use crate::{avalanche::wallet::*, avalanche::*, utils::templating::template_xcha
 use async_std::task;
 use clap::{Parser, Subcommand};
 
+/// Interact with Avalanche X-Chain
 #[derive(Parser)]
-#[command(about = "Interact with Avalanche X-Chain")]
+#[command()]
 pub(crate) struct XCommand {
     #[command(subcommand)]
     command: XSubcommands,
+    /// Avalanche network
     #[arg(
         long,
-        help = "Avalanche network",
+        short = 'n',
         default_value = "fuji",
         global = true,
         env = "AVALANCHE_NETWORK"
@@ -26,38 +28,38 @@ pub(crate) struct XCommand {
 
 #[derive(Subcommand)]
 enum XSubcommands {
-    #[command(about = "Get the balance of an address for a given asset")]
+    /// Get the balance of an address for a given asset
+    #[command()]
     Balance {
-        #[arg(long, help = "Address to get the balance of")]
+        /// Address to get the balance of
         address: String,
-        #[arg(long, help = "Asset ID to get the balance of", default_value = "AVAX")]
+        /// Asset ID to get the balance of
+        #[arg(long, short = 'a', default_value = "AVAX")]
         asset_id: String,
     },
-    #[command(about = "Transfer any amount of a given asset to an address")]
+    /// Transfer any amount of a given asset to an address
+    #[command()]
     Transfer {
-        #[arg(long, help = "Address to send the asset to")]
-        to: String,
-        #[arg(long, help = "Asset ID to send", default_value = "AVAX")]
-        asset_id: String,
-        #[arg(
-            long,
-            help = "Amount of asset to send (in AVAX equivalent, 1 AVAX = 10^9 nAVAX)"
-        )]
+        /// Amount of asset to send (in AVAX equivalent, 1 AVAX = 10^9 nAVAX)
         amount: f64,
-        #[arg(
-            long,
-            help = "Private key to sign the transaction with",
-            env = "AVALANCHE_PRIVATE_KEY"
-        )]
+        /// Address to send the asset to
+        to: String,
+        /// Asset ID to send
+        #[arg(long, short = 'a', default_value = "AVAX")]
+        asset_id: String,
+        /// Private key to sign the transaction with
+        #[arg(long, short = 'p', env = "AVALANCHE_PRIVATE_KEY")]
         private_key: String,
+        /// Private key format
         #[arg(
             long,
-            help = "Private key format",
+            short = 'f',
             default_value = "cb58",
             env = "AVALANCHE_KEY_FORMAT"
         )]
         key_format: PrivateKeyFormat,
-        #[arg(long, help = "Whether to wait for transaction acceptance")]
+        /// Whether to wait for transaction acceptance
+        #[arg(long, short = 'w')]
         wait: bool,
     },
 }

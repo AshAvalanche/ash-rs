@@ -8,22 +8,25 @@ use crate::utils::{error::CliError, templating::*};
 use ash_sdk::avalanche::AVAX_PRIMARY_NETWORK_ID;
 use clap::{Parser, Subcommand};
 
+/// Interact with Avalanche validators
 #[derive(Parser)]
-#[command(about = "Interact with Avalanche validators")]
+#[command()]
 pub(crate) struct ValidatorCommand {
     #[command(subcommand)]
     command: ValidatorSubcommands,
+    /// Avalanche network
     #[arg(
         long,
-        help = "Avalanche network",
+        short = 'n',
         default_value = "mainnet",
         global = true,
         env = "AVALANCHE_NETWORK"
     )]
     network: String,
+    /// Avalanche Subnet ID
     #[arg(
         long,
-        help = "Avalanche Subnet ID",
+        short = 's',
         default_value = AVAX_PRIMARY_NETWORK_ID,
         global = true
     )]
@@ -32,11 +35,13 @@ pub(crate) struct ValidatorCommand {
 
 #[derive(Subcommand)]
 enum ValidatorSubcommands {
-    #[command(about = "List the Subnet's validators")]
+    /// List the Subnet's validators
+    #[command()]
     List,
-    #[command(about = "Show validator information")]
+    /// Show validator information
+    #[command()]
     Info {
-        #[arg(long, help = "Validator NodeID")]
+        /// Validator NodeID
         id: String,
     },
 }

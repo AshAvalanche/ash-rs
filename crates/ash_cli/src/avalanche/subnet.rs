@@ -7,14 +7,16 @@ use crate::avalanche::*;
 use crate::utils::{error::CliError, templating::*};
 use clap::{Parser, Subcommand};
 
+/// Interact with Avalanche Subnets
 #[derive(Parser)]
-#[command(about = "Interact with Avalanche Subnets")]
+#[command()]
 pub(crate) struct SubnetCommand {
     #[command(subcommand)]
     command: SubnetSubcommands,
+    /// Avalanche network
     #[arg(
         long,
-        help = "Avalanche network",
+        short = 'n',
         default_value = "mainnet",
         global = true,
         env = "AVALANCHE_NETWORK"
@@ -24,11 +26,13 @@ pub(crate) struct SubnetCommand {
 
 #[derive(Subcommand)]
 enum SubnetSubcommands {
-    #[command(about = "List the network's Subnets")]
+    /// List the network's Subnets
+    #[command()]
     List,
-    #[command(about = "Show Subnet information")]
+    /// Show Subnet information
+    #[command()]
     Info {
-        #[arg(long, help = "Subnet ID")]
+        /// Subnet ID
         id: String,
     },
 }

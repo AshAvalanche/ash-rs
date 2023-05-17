@@ -10,14 +10,16 @@ use ash_sdk::avalanche::wallets::{generate_private_key, AvalancheWallet, Avalanc
 use clap::{Parser, Subcommand, ValueEnum};
 use std::fmt::Display;
 
+/// Interact with Avalanche wallets
 #[derive(Parser)]
-#[command(about = "Interact with an Avalanche wallet")]
+#[command()]
 pub(crate) struct WalletCommand {
     #[command(subcommand)]
     command: WalletSubcommands,
+    /// Avalanche network
     #[arg(
         long,
-        help = "Avalanche network",
+        short = 'n',
         default_value = "fuji",
         global = true,
         env = "AVALANCHE_NETWORK"
@@ -27,30 +29,21 @@ pub(crate) struct WalletCommand {
 
 #[derive(Subcommand)]
 enum WalletSubcommands {
-    #[command(about = "Get information about a wallet (linked to a private key)")]
+    /// Get information about a wallet (linked to a private key)
+    #[command()]
     Info {
-        #[arg(
-            long,
-            help = "Private key of the wallet",
-            env = "AVALANCHE_PRIVATE_KEY"
-        )]
+        /// Private key of the wallet
+        #[arg(env = "AVALANCHE_PRIVATE_KEY")]
         private_key: String,
-        #[arg(
-            long,
-            help = "Private key format",
-            default_value = "cb58",
-            env = "AVALANCHE_KEY_FORMAT"
-        )]
+        /// Private key format
+        #[arg(long, short = 'f', default_value = "cb58")]
         key_format: PrivateKeyFormat,
     },
-    #[command(about = "Randomly generate a private key (giving access to a wallet)")]
+    /// Randomly generate a private key (giving access to a wallet)
+    #[command()]
     Generate {
-        #[arg(
-            long,
-            help = "Private key format",
-            default_value = "cb58",
-            env = "AVALANCHE_KEY_FORMAT"
-        )]
+        /// Private key format
+        #[arg(long, short = 'f', default_value = "cb58")]
         key_format: PrivateKeyFormat,
     },
 }
@@ -111,7 +104,7 @@ fn generate(key_format: PrivateKeyFormat, json: bool) -> Result<(), CliError> {
     if json {
         println!(
             "{}",
-            serde_json::json!({ "private_key": private_key_string })
+            serde_json::json!({ "privateKey": private_key_string })
         );
         return Ok(());
     }
