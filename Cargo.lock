@@ -148,6 +148,7 @@ dependencies = [
  "async-std",
  "clap 4.2.7",
  "colored",
+ "enum-display-derive",
  "exitcode",
  "indent",
  "indoc",
@@ -402,6 +403,7 @@ source = "git+https://github.com/AshAvalanche/avalanche-types-rs?branch=update-i
 dependencies = [
  "async-trait",
  "bech32 0.9.1",
+ "bip32",
  "blst",
  "bs58",
  "bytes",
@@ -410,6 +412,7 @@ dependencies = [
  "cmp-manager",
  "ecdsa 0.16.7",
  "ethers-core 2.0.4",
+ "ethers-providers 2.0.4",
  "hex",
  "hmac",
  "k256 0.13.1",
@@ -420,6 +423,7 @@ dependencies = [
  "protoc-gen-prost",
  "protoc-gen-tonic",
  "rand",
+ "rand_core",
  "reqwest",
  "ring",
  "ripemd",
@@ -509,6 +513,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1f45e9417d87227c7a56d22e471c6206462cba514c7590c09aff4cf6d1ddcad"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "bip32"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e40748d60a3296653e45e87e64c6989aebfad607bccce59cc4156c5d81b2f70"
+dependencies = [
+ "bs58",
+ "hmac",
+ "k256 0.13.1",
+ "once_cell",
+ "pbkdf2 0.12.1",
+ "rand_core",
+ "ripemd",
+ "sha2 0.10.6",
+ "subtle",
+ "zeroize",
 ]
 
 [[package]]
@@ -635,6 +657,9 @@ name = "bs58"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
+dependencies = [
+ "sha2 0.9.9",
+]
 
 [[package]]
 name = "bumpalo"
@@ -905,7 +930,7 @@ dependencies = [
  "getrandom",
  "hex",
  "hmac",
- "pbkdf2",
+ "pbkdf2 0.11.0",
  "rand",
  "sha2 0.10.6",
  "thiserror",
@@ -1436,6 +1461,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "enr"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf56acd72bb22d2824e66ae8e9e5ada4d0de17a69c7fd35569dde2ada8ec9116"
+dependencies = [
+ "base64 0.13.1",
+ "bytes",
+ "hex",
+ "k256 0.13.1",
+ "log",
+ "rand",
+ "rlp",
+ "serde",
+ "sha3",
+ "zeroize",
+]
+
+[[package]]
 name = "enum-display-derive"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1478,7 +1521,7 @@ dependencies = [
  "digest 0.10.6",
  "hex",
  "hmac",
- "pbkdf2",
+ "pbkdf2 0.11.0",
  "rand",
  "scrypt",
  "serde",
@@ -1548,7 +1591,7 @@ dependencies = [
  "ethers-core 1.0.2",
  "ethers-etherscan",
  "ethers-middleware",
- "ethers-providers",
+ "ethers-providers 1.0.2",
  "ethers-signers",
  "ethers-solc",
 ]
@@ -1574,7 +1617,7 @@ dependencies = [
  "ethers-contract-abigen",
  "ethers-contract-derive",
  "ethers-core 1.0.2",
- "ethers-providers",
+ "ethers-providers 1.0.2",
  "futures-util",
  "hex",
  "once_cell",
@@ -1711,7 +1754,7 @@ dependencies = [
  "ethers-contract",
  "ethers-core 1.0.2",
  "ethers-etherscan",
- "ethers-providers",
+ "ethers-providers 1.0.2",
  "ethers-signers",
  "futures-locks",
  "futures-util",
@@ -1751,13 +1794,51 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tokio",
- "tokio-tungstenite",
+ "tokio-tungstenite 0.17.2",
  "tracing",
  "tracing-futures",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-timer",
+ "web-sys",
+ "ws_stream_wasm",
+]
+
+[[package]]
+name = "ethers-providers"
+version = "2.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1009041f40476b972b5d79346cc512e97c662b1a0a2f78285eabe9a122909783"
+dependencies = [
+ "async-trait",
+ "auto_impl 1.1.0",
+ "base64 0.21.0",
+ "bytes",
+ "enr",
+ "ethers-core 2.0.4",
+ "futures-channel",
+ "futures-core",
+ "futures-timer",
+ "futures-util",
+ "getrandom",
+ "hashers",
+ "hex",
+ "http",
+ "instant",
+ "once_cell",
+ "pin-project",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tokio-tungstenite 0.18.0",
+ "tracing",
+ "tracing-futures",
+ "url",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
  "ws_stream_wasm",
 ]
@@ -2044,6 +2125,10 @@ name = "futures-timer"
 version = "3.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e64b03909df88034c26dc1547e8970b91f98bdb65165d6a4e9110d94263dbb2c"
+dependencies = [
+ "gloo-timers",
+ "send_wrapper 0.4.0",
+]
 
 [[package]]
 name = "futures-util"
@@ -3082,6 +3167,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "pbkdf2"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0ca0b5a68607598bf3bad68f32227a8164f6254833f84eafaac409cd6746c31"
+dependencies = [
+ "digest 0.10.6",
+ "hmac",
+]
+
+[[package]]
 name = "pem"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3980,7 +4075,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f9e24d2b632954ded8ab2ef9fea0a0c769ea56ea98bddbafbad22caeeadf45d"
 dependencies = [
  "hmac",
- "pbkdf2",
+ "pbkdf2 0.11.0",
  "salsa20",
  "sha2 0.10.6",
 ]
@@ -4054,6 +4149,12 @@ checksum = "bebd363326d05ec3e2f532ab7660680f3b02130d780c299bca73469d521bc0ed"
 dependencies = [
  "serde",
 ]
+
+[[package]]
+name = "send_wrapper"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f638d531eccd6e23b980caf34876660d38e265409d8e99b397ab71eb3612fad0"
 
 [[package]]
 name = "send_wrapper"
@@ -4649,7 +4750,23 @@ dependencies = [
  "rustls 0.20.8",
  "tokio",
  "tokio-rustls",
- "tungstenite",
+ "tungstenite 0.17.3",
+ "webpki",
+ "webpki-roots",
+]
+
+[[package]]
+name = "tokio-tungstenite"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54319c93411147bced34cb5609a80e0a8e44c5999c93903a81cd866630ec0bfd"
+dependencies = [
+ "futures-util",
+ "log",
+ "rustls 0.20.8",
+ "tokio",
+ "tokio-rustls",
+ "tungstenite 0.18.0",
  "webpki",
  "webpki-roots",
 ]
@@ -4776,6 +4893,27 @@ dependencies = [
  "rand",
  "rustls 0.20.8",
  "sha-1",
+ "thiserror",
+ "url",
+ "utf-8",
+ "webpki",
+]
+
+[[package]]
+name = "tungstenite"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "30ee6ab729cd4cf0fd55218530c4522ed30b7b6081752839b68fcec8d0960788"
+dependencies = [
+ "base64 0.13.1",
+ "byteorder",
+ "bytes",
+ "http",
+ "httparse",
+ "log",
+ "rand",
+ "rustls 0.20.8",
+ "sha1",
  "thiserror",
  "url",
  "utf-8",
@@ -5307,7 +5445,7 @@ dependencies = [
  "log",
  "pharos",
  "rustc_version",
- "send_wrapper",
+ "send_wrapper 0.6.0",
  "thiserror",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -5438,7 +5576,7 @@ dependencies = [
  "crossbeam-utils",
  "flate2",
  "hmac",
- "pbkdf2",
+ "pbkdf2 0.11.0",
  "sha1",
  "time 0.3.21",
  "zstd",

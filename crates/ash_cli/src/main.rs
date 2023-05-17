@@ -5,6 +5,9 @@ mod avalanche;
 mod conf;
 mod utils;
 
+#[macro_use]
+extern crate enum_display_derive;
+
 // Module that contains the Ash CLI root parser
 
 use clap::{Parser, Subcommand};

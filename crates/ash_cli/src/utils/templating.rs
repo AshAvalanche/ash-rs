@@ -5,6 +5,8 @@ use ash_sdk::avalanche::{
     blockchains::AvalancheBlockchain,
     nodes::AvalancheNode,
     subnets::{AvalancheSubnet, AvalancheSubnetType, AvalancheSubnetValidator},
+    wallets::AvalancheWalletInfo,
+    AvalancheXChainBalance,
 };
 use colored::{ColoredString, Colorize};
 use indoc::formatdoc;
@@ -42,10 +44,10 @@ pub(crate) fn template_blockchain_info(
     list: bool,
     indent: u8,
 ) -> String {
-    let mut info = String::new();
+    let mut info_str = String::new();
 
     if list {
-        info.push_str(&formatdoc!(
+        info_str.push_str(&formatdoc!(
             "
             - {}:
                ID:      {}
@@ -57,7 +59,7 @@ pub(crate) fn template_blockchain_info(
             type_colorize(&blockchain.rpc_url),
         ));
     } else {
-        info.push_str(&formatdoc!(
+        info_str.push_str(&formatdoc!(
             "
             Blockchain '{}':
               ID:      {}
@@ -70,7 +72,7 @@ pub(crate) fn template_blockchain_info(
         ));
     }
 
-    indent::indent_all_by(indent.into(), info)
+    indent::indent_all_by(indent.into(), info_str)
 }
 
 pub(crate) fn template_validator_info(
@@ -80,7 +82,7 @@ pub(crate) fn template_validator_info(
     indent: u8,
     extended: bool,
 ) -> String {
-    let mut info = String::new();
+    let mut info_str = String::new();
 
     let common_info = &formatdoc!(
         "
@@ -172,33 +174,33 @@ pub(crate) fn template_validator_info(
     if list {
         // If extended is true, we want to show all the information
         if extended {
-            info.push_str(&formatdoc!(
+            info_str.push_str(&formatdoc!(
                 "
                 - {}:
                 ",
                 type_colorize(&validator.node_id),
             ));
 
-            info.push_str(&indent::indent_all_by(4, common_info));
+            info_str.push_str(&indent::indent_all_by(4, common_info));
 
             // Display extra information if the validator is a primary validator
             match subnet.subnet_type {
                 AvalancheSubnetType::Permissioned => {
-                    info.push_str(&indent::indent_all_by(4, permissioned_subnet_info));
+                    info_str.push_str(&indent::indent_all_by(4, permissioned_subnet_info));
                 }
                 AvalancheSubnetType::Elastic | AvalancheSubnetType::PrimaryNetwork => {
-                    info.push_str(&indent::indent_all_by(4, elastic_subnet_info));
+                    info_str.push_str(&indent::indent_all_by(4, elastic_subnet_info));
                 }
             }
         } else {
-            info.push_str(&formatdoc!(
+            info_str.push_str(&formatdoc!(
                 "
             - {}",
                 type_colorize(&validator.node_id),
             ));
         }
     } else {
-        info.push_str(&formatdoc!(
+        info_str.push_str(&formatdoc!(
             "
             Validator '{}' on Subnet '{}':
             ",
@@ -206,24 +208,24 @@ pub(crate) fn template_validator_info(
             type_colorize(&validator.subnet_id),
         ));
 
-        info.push_str(&indent::indent_all_by(2, common_info));
+        info_str.push_str(&indent::indent_all_by(2, common_info));
 
         // Display extra information if the validator is a primary validator
         match subnet.subnet_type {
             AvalancheSubnetType::Permissioned => {
-                info.push_str(&indent::indent_all_by(2, permissioned_subnet_info));
+                info_str.push_str(&indent::indent_all_by(2, permissioned_subnet_info));
             }
             AvalancheSubnetType::Elastic | AvalancheSubnetType::PrimaryNetwork => {
-                info.push_str(&indent::indent_all_by(2, elastic_subnet_info));
+                info_str.push_str(&indent::indent_all_by(2, elastic_subnet_info));
             }
         }
     }
 
-    indent::indent_all_by(indent.into(), info)
+    indent::indent_all_by(indent.into(), info_str)
 }
 
 pub(crate) fn template_subnet_info(subnet: &AvalancheSubnet, list: bool, indent: u8) -> String {
-    let mut info = String::new();
+    let mut info_str = String::new();
 
     let subindent = match list {
         true => 2,
@@ -256,7 +258,7 @@ pub(crate) fn template_subnet_info(subnet: &AvalancheSubnet, list: bool, indent:
     );
 
     if list {
-        info.push_str(&formatdoc!(
+        info_str.push_str(&formatdoc!(
             "
             {}
             - {}:
@@ -277,7 +279,7 @@ pub(crate) fn template_subnet_info(subnet: &AvalancheSubnet, list: bool, indent:
             }
         ));
     } else {
-        info.push_str(&formatdoc!(
+        info_str.push_str(&formatdoc!(
             "
             Subnet '{}':
               Type: {}
@@ -303,13 +305,13 @@ pub(crate) fn template_subnet_info(subnet: &AvalancheSubnet, list: bool, indent:
         ));
     }
 
-    indent::indent_all_by(indent.into(), info)
+    indent::indent_all_by(indent.into(), info_str)
 }
 
 pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> String {
-    let mut info = String::new();
+    let mut info_str = String::new();
 
-    info.push_str(&formatdoc!(
+    info_str.push_str(&formatdoc!(
         "
         Node '{}:{}':
           ID:            {}
@@ -343,7 +345,7 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> 
         type_colorize(&node.uptime.weighted_average_percentage),
     ));
 
-    indent::indent_all_by(indent.into(), info)
+    indent::indent_all_by(indent.into(), info_str)
 }
 
 pub(crate) fn template_chain_is_bootstrapped(
@@ -352,9 +354,9 @@ pub(crate) fn template_chain_is_bootstrapped(
     is_bootstrapped: bool,
     indent: u8,
 ) -> String {
-    let mut info = String::new();
+    let mut bootstrapped_str = String::new();
 
-    info.push_str(&formatdoc!(
+    bootstrapped_str.push_str(&formatdoc!(
         "Chain '{}' on node '{}:{}': {}",
         type_colorize(&chain),
         type_colorize(&node.http_host),
@@ -365,5 +367,90 @@ pub(crate) fn template_chain_is_bootstrapped(
         }
     ));
 
-    indent::indent_all_by(indent.into(), info)
+    indent::indent_all_by(indent.into(), bootstrapped_str)
+}
+
+pub(crate) fn template_generate_private_key(
+    private_key: &str,
+    key_format: &str,
+    indent: u8,
+) -> String {
+    let mut private_key_str = String::new();
+
+    private_key_str.push_str(&formatdoc!(
+        "Private key ({}): {}",
+        type_colorize(&key_format),
+        type_colorize(&private_key),
+    ));
+
+    indent::indent_all_by(indent.into(), private_key_str)
+}
+
+pub(crate) fn template_wallet_info(wallet_info: &AvalancheWalletInfo, indent: u8) -> String {
+    let mut info_str = String::new();
+
+    info_str.push_str(&formatdoc!(
+        "
+        Wallet info:
+          X-Chain address:  {}
+          P-Chain address:  {}
+          Ethereum address: {}",
+        type_colorize(&wallet_info.x_address),
+        type_colorize(&wallet_info.p_address),
+        type_colorize(&wallet_info.eth_address),
+    ));
+
+    indent::indent_all_by(indent.into(), info_str)
+}
+
+pub(crate) fn template_xchain_balance(
+    address: &str,
+    asset_id: &str,
+    balance: &AvalancheXChainBalance,
+    indent: u8,
+) -> String {
+    let mut balance_str = String::new();
+
+    balance_str.push_str(&formatdoc!(
+        "Balance of '{}' on X-Chain (asset '{}'):  {}",
+        type_colorize(&address),
+        type_colorize(&asset_id),
+        type_colorize(&(balance.balance as f64 / 1_000_000_000.0)),
+    ));
+
+    indent::indent_all_by(indent.into(), balance_str)
+}
+
+pub(crate) fn template_xchain_transfer(
+    tx_id: &str,
+    to: &str,
+    asset_id: &str,
+    amount: f64,
+    wait: bool,
+    indent: u8,
+) -> String {
+    let mut transfer_str = String::new();
+
+    match wait {
+        true => transfer_str.push_str(&formatdoc!(
+            "
+            Transfered {} of asset '{}' to {}!
+            Transaction ID: {}",
+            type_colorize(&amount),
+            type_colorize(&asset_id),
+            type_colorize(&to),
+            type_colorize(&tx_id),
+        )),
+        false => transfer_str.push_str(&formatdoc!(
+            "
+            Initiated transfering {} of asset '{}' to {}!
+            Transaction ID: {}",
+            type_colorize(&amount),
+            type_colorize(&asset_id),
+            type_colorize(&to),
+            type_colorize(&tx_id),
+        )),
+    }
+
+    indent::indent_all_by(indent.into(), transfer_str)
 }
