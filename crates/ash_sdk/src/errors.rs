@@ -79,8 +79,8 @@ pub enum AvalancheNetworkError {
         target_type: String,
         target_value: String,
     },
-    #[error("wallet creation from private key is not allowed on network '{network}'")]
-    WalletCreationNotAllowed { network: String },
+    #[error("{operation} is not allowed on network '{network}'")]
+    OperationNotAllowed { operation: String, network: String },
 }
 
 #[derive(Error, Debug)]
@@ -101,6 +101,8 @@ pub enum AvalancheBlockchainError {
 
 #[derive(Error, Debug)]
 pub enum AvalancheWalletError {
+    #[error("failed to generate private key: {0}")]
+    PrivateKeyGenerationFailure(String),
     #[error("failed to use provided private key: {0}")]
     InvalidPrivateKey(String),
     #[error("failed to create Avalanche wallet: {0}")]

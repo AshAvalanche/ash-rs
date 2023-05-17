@@ -18,6 +18,7 @@ keywords.workspace = true
 avalanche-types = { version = "0.0.379", features = [
 	"jsonrpc_client",
 	"wallet",
+	"mnemonic",
 ] }
 config = { version = "0.13.3", features = ["yaml"] }
 ethers = { version = "1.0.2", features = ["rustls"] }
