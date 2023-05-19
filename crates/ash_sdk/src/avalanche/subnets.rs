@@ -133,13 +133,13 @@ pub struct AvalancheSubnetValidator {
     pub stake_amount: Option<u64>,
     pub weight: Option<u64>,
     pub potential_reward: Option<u64>,
-    pub delegation_fee: Option<f32>,
     pub connected: bool,
     pub uptime: Option<f32>,
     pub validation_reward_owner: Option<AvalancheOutputOwners>,
     pub delegator_count: Option<u64>,
     pub delegator_weight: Option<u64>,
     pub delegators: Option<Vec<AvalancheSubnetDelegator>>,
+    pub delegation_fee: Option<f32>,
     pub delegation_reward_owner: Option<AvalancheOutputOwners>,
 }
 
@@ -154,7 +154,6 @@ impl AvalancheSubnetValidator {
             stake_amount: validator.stake_amount,
             weight: validator.weight,
             potential_reward: validator.potential_reward,
-            delegation_fee: validator.delegation_fee,
             connected: validator.connected,
             uptime: validator.uptime,
             validation_reward_owner: validator
@@ -169,6 +168,7 @@ impl AvalancheSubnetValidator {
                     .map(AvalancheSubnetDelegator::from)
                     .collect()
             }),
+            delegation_fee: validator.delegation_fee,
             delegation_reward_owner: validator
                 .delegation_reward_owner
                 .clone()

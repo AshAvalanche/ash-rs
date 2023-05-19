@@ -125,7 +125,7 @@ mod tests {
 
         let subnets = get_network_subnets(rpc_url, &fuji.name).unwrap();
 
-        // Test that the primary network subnet is present
+        // Test that the Primary Network Subnet is present
         assert!(subnets
             .iter()
             .any(|subnet| subnet.id == Id::from_str(AVAX_PRIMARY_NETWORK_ID).unwrap()));
