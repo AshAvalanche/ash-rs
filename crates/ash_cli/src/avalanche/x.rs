@@ -8,6 +8,8 @@ use crate::utils::templating::template_xchain_transfer;
 use crate::{avalanche::wallet::*, avalanche::*, utils::templating::template_xchain_balance};
 use async_std::task;
 use clap::{Parser, Subcommand};
+use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
+use rust_decimal::Decimal;
 
 /// Interact with Avalanche X-Chain
 #[derive(Parser)]
@@ -53,11 +55,11 @@ enum XSubcommands {
         /// Private key format
         #[arg(
             long,
-            short = 'f',
+            short = 'e',
             default_value = "cb58",
-            env = "AVALANCHE_KEY_FORMAT"
+            env = "AVALANCHE_KEY_ENCODING"
         )]
-        key_format: PrivateKeyFormat,
+        key_encoding: PrivateKeyEncoding,
         /// Whether to wait for transaction acceptance
         #[arg(long, short = 'w')]
         wait: bool,
@@ -96,18 +98,28 @@ fn transfer(
     asset_id: &str,
     amount: f64,
     private_key: &str,
-    key_format: PrivateKeyFormat,
+    key_encoding: PrivateKeyEncoding,
     wait: bool,
     config: Option<&str>,
     json: bool,
 ) -> Result<(), CliError> {
     let network = load_network(network_name, config)?;
 
-    let wallet = create_wallet(&network, private_key, key_format)?;
+    let wallet = create_wallet(&network, private_key, key_encoding)?;
+
+    if wait {
+        eprintln!("Waiting for transaction to be accepted...");
+    }
 
     let tx_id = task::block_on(async {
         wallet
-            .transfer_avax_xchain(to, (amount * 1_000_000_000.0) as u64, wait)
+            .transfer_avax_xchain(
+                to,
+                (Decimal::from_f64(amount).unwrap() * Decimal::from_f64(1_000_000_000.0).unwrap())
+                    .to_u64()
+                    .unwrap(),
+                wait,
+            )
             .await
     })
     .map_err(|e| {
@@ -140,7 +152,7 @@ pub(crate) fn parse(x: XCommand, config: Option<&str>, json: bool) -> Result<(),
             asset_id,
             amount,
             private_key,
-            key_format,
+            key_encoding,
             wait,
         } => transfer(
             &x.network,
@@ -148,7 +160,7 @@ pub(crate) fn parse(x: XCommand, config: Option<&str>, json: bool) -> Result<(),
             &asset_id,
             amount,
             &private_key,
-            key_format,
+            key_encoding,
             wait,
             config,
             json,

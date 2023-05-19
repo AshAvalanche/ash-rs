@@ -107,13 +107,13 @@ pub(crate) fn template_validator_info(
         Uptime:           {}
         Stake amount:     {}
         Potential reward: {}
-        Delegation fee:   {}
         Validation reward owner:
           Locktime: {}
           Threshold: {}
           Addresses: {}
         Delegator count:  {}
         Delegator weight: {}
+        Delegation fee:   {}
         Delegation reward owner:
           Locktime: {}
           Threshold: {}
@@ -122,7 +122,6 @@ pub(crate) fn template_validator_info(
         type_colorize(&validator.uptime.unwrap_or_default()),
         type_colorize(&validator.stake_amount.unwrap_or_default()),
         type_colorize(&validator.potential_reward.unwrap_or_default()),
-        type_colorize(&validator.delegation_fee.unwrap_or_default()),
         type_colorize(
             &validator
                 .validation_reward_owner
@@ -161,6 +160,7 @@ pub(crate) fn template_validator_info(
                 .unwrap_or_default()
                 .threshold
         ),
+        type_colorize(&validator.delegation_fee.unwrap_or_default()),
         type_colorize(&format!(
             "{:?}",
             validator
@@ -371,16 +371,18 @@ pub(crate) fn template_chain_is_bootstrapped(
 }
 
 pub(crate) fn template_generate_private_key(
-    private_key: &str,
-    key_format: &str,
+    private_key_cb58: &str,
+    private_key_hex: &str,
     indent: u8,
 ) -> String {
     let mut private_key_str = String::new();
 
     private_key_str.push_str(&formatdoc!(
-        "Private key ({}): {}",
-        type_colorize(&key_format),
-        type_colorize(&private_key),
+        "
+        Private key (CB58): {}
+        Private key (hex):  {}",
+        type_colorize(&private_key_cb58),
+        type_colorize(&private_key_hex),
     ));
 
     indent::indent_all_by(indent.into(), private_key_str)
@@ -391,7 +393,7 @@ pub(crate) fn template_wallet_info(wallet_info: &AvalancheWalletInfo, indent: u8
 
     info_str.push_str(&formatdoc!(
         "
-        Wallet info:
+        Wallet information:
           X-Chain address:  {}
           P-Chain address:  {}
           Ethereum address: {}",
@@ -434,7 +436,7 @@ pub(crate) fn template_xchain_transfer(
     match wait {
         true => transfer_str.push_str(&formatdoc!(
             "
-            Transfered {} of asset '{}' to {}!
+            Transfered {} of asset '{}' to '{}'!
             Transaction ID: {}",
             type_colorize(&amount),
             type_colorize(&asset_id),
@@ -443,7 +445,7 @@ pub(crate) fn template_xchain_transfer(
         )),
         false => transfer_str.push_str(&formatdoc!(
             "
-            Initiated transfering {} of asset '{}' to {}!
+            Initiated transfering {} of asset '{}' to '{}'!
             Transaction ID: {}",
             type_colorize(&amount),
             type_colorize(&asset_id),
