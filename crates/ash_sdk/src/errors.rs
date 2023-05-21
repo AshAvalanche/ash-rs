@@ -3,7 +3,6 @@
 
 // Module that contains code to generate errors
 
-use avalanche_types::ids::Id;
 use thiserror::Error;
 
 /// Ash library errors enum
@@ -87,7 +86,7 @@ pub enum AvalancheNetworkError {
 pub enum AvalancheSubnetError {
     #[error("{target_type} '{target_value}' not found in Subnet '{subnet_id}'")]
     NotFound {
-        subnet_id: Id,
+        subnet_id: String,
         target_type: String,
         target_value: String,
     },
@@ -96,7 +95,7 @@ pub enum AvalancheSubnetError {
 #[derive(Error, Debug)]
 pub enum AvalancheBlockchainError {
     #[error("failed to get ethers Provider for blockchain '{blockchain_id}': {msg}")]
-    EthersProvider { blockchain_id: Id, msg: String },
+    EthersProvider { blockchain_id: String, msg: String },
 }
 
 #[derive(Error, Debug)]

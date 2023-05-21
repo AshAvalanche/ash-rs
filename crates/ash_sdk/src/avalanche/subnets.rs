@@ -4,12 +4,13 @@
 // Module that contains code to interact with Avalanche Subnets and validators
 
 use crate::avalanche::{
-    blockchains::AvalancheBlockchain, AvalancheOutputOwners, AVAX_PRIMARY_NETWORK_ID,
+    blockchains::AvalancheBlockchain, jsonrpc::platformvm::SubnetStringControlKeys,
+    AvalancheOutputOwners, AVAX_PRIMARY_NETWORK_ID,
 };
 use crate::errors::*;
 use avalanche_types::{
     ids::{node::Id as NodeId, Id},
-    jsonrpc::platformvm::{ApiPrimaryDelegator, ApiPrimaryValidator, Subnet},
+    jsonrpc::platformvm::{ApiPrimaryDelegator, ApiPrimaryValidator},
 };
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
@@ -31,7 +32,7 @@ pub struct AvalancheSubnet {
     pub id: Id,
     #[serde(default)]
     pub subnet_type: AvalancheSubnetType,
-    // TODO: store control keys as ShortIds
+    // We do not use ShortIds here to avoid having to retransform the control keys to addresses later
     #[serde(default)]
     pub control_keys: Vec<String>,
     #[serde(default)]
@@ -51,7 +52,7 @@ impl AvalancheSubnet {
             .find(|&blockchain| blockchain.id.to_string() == id)
             .ok_or(
                 AvalancheSubnetError::NotFound {
-                    subnet_id: self.id,
+                    subnet_id: self.id.to_string(),
                     target_type: "blockchain".to_string(),
                     target_value: id.to_string(),
                 }
@@ -66,7 +67,7 @@ impl AvalancheSubnet {
             .find(|&blockchain| blockchain.name == name)
             .ok_or(
                 AvalancheSubnetError::NotFound {
-                    subnet_id: self.id,
+                    subnet_id: self.id.to_string(),
                     target_type: "blockchain".to_string(),
                     target_value: name.to_string(),
                 }
@@ -81,7 +82,7 @@ impl AvalancheSubnet {
             .find(|&validator| validator.node_id.to_string() == id)
             .ok_or(
                 AvalancheSubnetError::NotFound {
-                    subnet_id: self.id,
+                    subnet_id: self.id.to_string(),
                     target_type: "validator".to_string(),
                     target_value: id.to_string(),
                 }
@@ -90,8 +91,8 @@ impl AvalancheSubnet {
     }
 }
 
-impl From<Subnet> for AvalancheSubnet {
-    fn from(subnet: Subnet) -> Self {
+impl From<SubnetStringControlKeys> for AvalancheSubnet {
+    fn from(subnet: SubnetStringControlKeys) -> Self {
         Self {
             id: subnet.id,
             // Based on Avalanche documentation at https://docs.avax.network/apis/avalanchego/apis/p-chain#platformgetsubnets
@@ -104,14 +105,7 @@ impl From<Subnet> for AvalancheSubnet {
                 },
                 _ => AvalancheSubnetType::Permissioned,
             },
-            control_keys: subnet
-                .control_keys
-                .map(|keys| {
-                    keys.into_iter()
-                        .map(|key| key.to_string())
-                        .collect::<Vec<String>>()
-                })
-                .unwrap_or_default(),
+            control_keys: subnet.control_keys,
             threshold: subnet.threshold,
             ..Default::default()
         }
@@ -209,37 +203,37 @@ impl From<ApiPrimaryDelegator> for AvalancheSubnetDelegator {
 #[cfg(test)]
 mod tests {
     use crate::avalanche::{AvalancheNetwork, AVAX_PRIMARY_NETWORK_ID};
-    use std::env;
 
-    const AVAX_FUJI_CCHAIN_ID: &str = "yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp";
-    const ASH_TEST_NODE_ID: &str = "NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg";
+    const NETWORK_RUNNER_CCHAIN_ID: &str = "VctwH3nkmztWbkdNXbuo6eCYndsUuemtM9ZFmEUZ5QpA1Fu8G";
+    const NETWORK_RUNNER_NODE_ID: &str = "NodeID-MFrZFVCXPv5iCn6M9K6XduxGTYp891xXZ";
 
-    // Load the test network from the ASH_TEST_CONFIG file
+    // Load the test network using avalanche-network-runner
     fn load_test_network() -> AvalancheNetwork {
-        let config_path =
-            env::var("ASH_TEST_AVAX_CONFIG").unwrap_or("tests/conf/default.yml".to_string());
-        AvalancheNetwork::load("fuji", Some(&config_path)).unwrap()
+        AvalancheNetwork::load("local", Some("tests/conf/avalanche-network-runner.yml")).unwrap()
     }
 
     #[test]
+    #[ignore]
     fn test_avalanche_subnet_get_blockchain() {
         let fuji = load_test_network();
         let subnet = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
 
-        let blockchain = subnet.get_blockchain(AVAX_FUJI_CCHAIN_ID).unwrap();
+        let blockchain = subnet.get_blockchain(NETWORK_RUNNER_CCHAIN_ID).unwrap();
         assert_eq!(blockchain.name, "C-Chain");
     }
 
     #[test]
+    #[ignore]
     fn test_avalanche_subnet_get_blockchain_by_name() {
         let fuji = load_test_network();
         let subnet = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
 
         let blockchain = subnet.get_blockchain_by_name("C-Chain").unwrap();
-        assert_eq!(blockchain.id.to_string(), AVAX_FUJI_CCHAIN_ID);
+        assert_eq!(blockchain.id.to_string(), NETWORK_RUNNER_CCHAIN_ID);
     }
 
     #[test]
+    #[ignore]
     fn test_avalanche_subnet_get_validator() {
         let mut fuji = load_test_network();
         fuji.update_subnet_validators(AVAX_PRIMARY_NETWORK_ID)
@@ -247,7 +241,7 @@ mod tests {
 
         let subnet = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
 
-        let validator = subnet.get_validator(ASH_TEST_NODE_ID).unwrap();
-        assert_eq!(validator.node_id.to_string(), ASH_TEST_NODE_ID);
+        let validator = subnet.get_validator(NETWORK_RUNNER_NODE_ID).unwrap();
+        assert_eq!(validator.node_id.to_string(), NETWORK_RUNNER_NODE_ID);
     }
 }

@@ -13,10 +13,44 @@ use avalanche_types::{
     ids::Id,
     jsonrpc::{platformvm::*, ResponseError},
 };
+use serde::{Deserialize, Serialize};
+use serde_aux::prelude::*;
 use std::str::FromStr;
 use ureq;
 
-impl_json_rpc_response!(GetSubnetsResponse, GetSubnetsResult);
+/// Subnet with control keys as addresses
+/// This is done to avoid having to retransform the control keys to addresses later
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubnetStringControlKeys {
+    pub id: Id,
+    #[serde(default)]
+    pub control_keys: Vec<String>,
+    #[serde(default, deserialize_with = "deserialize_number_from_string")]
+    pub threshold: u32,
+}
+
+/// GetSubnetsResult without deserializing the control keys to ShortIds
+/// This is done to avoid having to retransform the control keys to addresses later
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetSubnetsResultStringControlKeys {
+    pub subnets: Option<Vec<SubnetStringControlKeys>>,
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct GetSubnetsResponseStringControlKeys {
+    pub jsonrpc: String,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub id: u32,
+    pub result: Option<GetSubnetsResultStringControlKeys>,
+    pub error: Option<ResponseError>,
+}
+
+impl_json_rpc_response!(
+    GetSubnetsResponseStringControlKeys,
+    GetSubnetsResultStringControlKeys
+);
 impl_json_rpc_response!(GetBlockchainsResponse, GetBlockchainsResult);
 impl_json_rpc_response!(GetCurrentValidatorsResponse, GetCurrentValidatorsResult);
 
@@ -25,11 +59,10 @@ pub fn get_network_subnets(
     rpc_url: &str,
     network_name: &str,
 ) -> Result<Vec<AvalancheSubnet>, RpcError> {
-    let network_subnets = get_json_rpc_req_result::<GetSubnetsResponse, GetSubnetsResult>(
-        rpc_url,
-        "platform.getSubnets",
-        None,
-    )?
+    let network_subnets = get_json_rpc_req_result::<
+        GetSubnetsResponseStringControlKeys,
+        GetSubnetsResultStringControlKeys,
+    >(rpc_url, "platform.getSubnets", None)?
     .subnets
     .ok_or(RpcError::GetFailure {
         data_type: "subnets".to_string(),

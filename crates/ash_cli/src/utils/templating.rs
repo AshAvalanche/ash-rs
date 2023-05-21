@@ -113,7 +113,7 @@ pub(crate) fn template_validator_info(
           Addresses: {}
         Delegator count:  {}
         Delegator weight: {}
-        Delegation fee:   {}
+        Delegation fee:   {}%
         Delegation reward owner:
           Locktime: {}
           Threshold: {}
@@ -146,6 +146,7 @@ pub(crate) fn template_validator_info(
         )),
         type_colorize(&validator.delegator_count.unwrap_or_default()),
         type_colorize(&validator.delegator_weight.unwrap_or_default()),
+        type_colorize(&validator.delegation_fee.unwrap_or_default()),
         type_colorize(
             &validator
                 .delegation_reward_owner
@@ -160,7 +161,6 @@ pub(crate) fn template_validator_info(
                 .unwrap_or_default()
                 .threshold
         ),
-        type_colorize(&validator.delegation_fee.unwrap_or_default()),
         type_colorize(&format!(
             "{:?}",
             validator
