@@ -32,13 +32,13 @@ impl AvalancheBlockchain {
             "EVM" => Ok(
                 Provider::<Http>::try_from(self.rpc_url.clone()).map_err(|e| {
                     AvalancheBlockchainError::EthersProvider {
-                        blockchain_id: self.id,
+                        blockchain_id: self.id.to_string(),
                         msg: e.to_string(),
                     }
                 })?,
             ),
             _ => Err(AvalancheBlockchainError::EthersProvider {
-                blockchain_id: self.id,
+                blockchain_id: self.id.to_string(),
                 msg: format!(
                     "cannot create an ethers Provider for '{}' type blockchain",
                     self.vm_type

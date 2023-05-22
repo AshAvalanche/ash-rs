@@ -5,6 +5,8 @@ mod network;
 mod node;
 mod subnet;
 mod validator;
+mod wallet;
+mod x;
 
 // Module that contains the avalanche subcommand parser
 
@@ -25,20 +27,19 @@ enum AvalancheSubcommands {
     Node(node::NodeCommand),
     Subnet(subnet::SubnetCommand),
     Validator(validator::ValidatorCommand),
+    X(x::XCommand),
+    Wallet(wallet::WalletCommand),
 }
 
 // Load the network configuation
-pub(crate) fn load_network(
-    network_name: &str,
-    config: Option<&str>,
-) -> Result<AvalancheNetwork, CliError> {
+fn load_network(network_name: &str, config: Option<&str>) -> Result<AvalancheNetwork, CliError> {
     let network = AvalancheNetwork::load(network_name, config)
         .map_err(|e| CliError::dataerr(format!("Error loading network: {e}")))?;
     Ok(network)
 }
 
 // Recursively update the Subnets (and their blockchains)
-pub(crate) fn update_network_subnets(network: &mut AvalancheNetwork) -> Result<(), CliError> {
+fn update_network_subnets(network: &mut AvalancheNetwork) -> Result<(), CliError> {
     network
         .update_subnets()
         .map_err(|e| CliError::dataerr(format!("Error updating subnets: {e}")))?;
@@ -49,7 +50,7 @@ pub(crate) fn update_network_subnets(network: &mut AvalancheNetwork) -> Result<(
 }
 
 // Update a Subnet's validators
-pub(crate) fn update_subnet_validators(
+fn update_subnet_validators(
     network: &mut AvalancheNetwork,
     subnet_id: &str,
 ) -> Result<(), CliError> {
@@ -70,5 +71,7 @@ pub(crate) fn parse(
         AvalancheSubcommands::Node(node) => node::parse(node, json),
         AvalancheSubcommands::Subnet(subnet) => subnet::parse(subnet, config, json),
         AvalancheSubcommands::Validator(validator) => validator::parse(validator, config, json),
+        AvalancheSubcommands::X(x) => x::parse(x, config, json),
+        AvalancheSubcommands::Wallet(wallet) => wallet::parse(wallet, config, json),
     }
 }

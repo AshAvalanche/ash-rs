@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2023, E36 Knots
+
+avalancheNetworks:
+  - name: local
+    subnets:
+      - id: 11111111111111111111111111111111LpoYY
+        controlKeys: []
+        threshold: 0
+        blockchains:
+          - id: 11111111111111111111111111111111LpoYY
+            name: P-Chain
+            vmType: PVM
+            rpcUrl: http://127.0.0.1:9650/ext/bc/P
+          - id: VctwH3nkmztWbkdNXbuo6eCYndsUuemtM9ZFmEUZ5QpA1Fu8G
+            name: C-Chain
+            vmType: EVM
+            rpcUrl: http://127.0.0.1:9650/ext/bc/C/rpc
+          - id: qzfF3A11KzpcHkkqznEyQgupQrCNS6WV6fTUTwZpEKqhj1QE7
+            name: X-Chain
+            vmType: AVM
+            rpcUrl: http://127.0.0.1:9650/ext/bc/X
+  - name: local-light
+    subnets:
+      - id: 11111111111111111111111111111111LpoYY
+        controlKeys: []
+        threshold: 0
+        blockchains:
+          - id: 11111111111111111111111111111111LpoYY
+            name: P-Chain
+            vmType: PVM
+            rpcUrl: http://127.0.0.1:9650/ext/bc/P

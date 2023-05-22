@@ -5,6 +5,9 @@ mod avalanche;
 mod conf;
 mod utils;
 
+#[macro_use]
+extern crate enum_display_derive;
+
 // Module that contains the Ash CLI root parser
 
 use clap::{Parser, Subcommand};
@@ -17,14 +20,11 @@ use std::process::exit;
 struct Cli {
     #[command(subcommand)]
     command: CliCommands,
-    #[arg(long, help = "Output in JSON format", global = true, env = "ASH_JSON")]
+    /// Output in JSON format
+    #[arg(long, short = 'j', global = true, env = "ASH_JSON")]
     json: bool,
-    #[arg(
-        long,
-        help = "Path to the configuration file",
-        global = true,
-        env = "ASH_CONFIG"
-    )]
+    /// Path to the configuration file
+    #[arg(long, short = 'c', global = true, env = "ASH_CONFIG")]
     config: Option<String>,
 }
 

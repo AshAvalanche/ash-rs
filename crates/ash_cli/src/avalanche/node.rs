@@ -7,31 +7,32 @@ use crate::utils::{error::CliError, templating::*};
 use ash_sdk::avalanche::nodes::AvalancheNode;
 use clap::{Parser, Subcommand};
 
+/// Interact with Avalanche nodes
 #[derive(Parser)]
-#[command(about = "Interact with Avalanche nodes")]
+#[command()]
 pub(crate) struct NodeCommand {
     #[command(subcommand)]
     command: NodeSubcommands,
-    #[arg(
-        long,
-        default_value = "127.0.0.1",
-        help = "Node's HTTP host (IP address or FQDN)",
-        global = true
-    )]
+    /// Node's HTTP host (IP address or FQDN)
+    #[arg(long, short = 'n', default_value = "127.0.0.1", global = true)]
     http_host: String,
-    #[arg(long, default_value = "9650", help = "Node's HTTP port", global = true)]
+    /// Node's HTTP port
+    #[arg(long, short = 'p', default_value = "9650", global = true)]
     http_port: u16,
-    #[arg(long, help = "Use HTTPS", global = true)]
+    /// Use HTTPS
+    #[arg(long, short = 's', global = true)]
     https: bool,
 }
 
 #[derive(Subcommand)]
 enum NodeSubcommands {
-    #[command(about = "Show node information")]
+    /// Show node information
+    #[command()]
     Info,
-    #[command(about = "Check if a chain is done bootstrapping on the node")]
+    /// Check if a chain is done bootstrapping on the node
+    #[command()]
     IsBootstrapped {
-        #[arg(long, help = "Chain ID or alias")]
+        /// Chain ID or alias
         chain: String,
     },
 }
@@ -87,7 +88,10 @@ fn is_bootstrapped(
         .map_err(|e| CliError::dataerr(format!("Error checking if chain is bootstrapped: {e}")))?;
 
     if json {
-        println!("{}", serde_json::to_string(&is_bootstrapped).unwrap());
+        println!(
+            "{}",
+            serde_json::json!({ "isBootstrapped": is_bootstrapped })
+        );
         return Ok(());
     }
 
