@@ -394,12 +394,12 @@ pub(crate) fn template_wallet_info(wallet_info: &AvalancheWalletInfo, indent: u8
     info_str.push_str(&formatdoc!(
         "
         Wallet information:
-          X-Chain address:  {}
-          P-Chain address:  {}
-          Ethereum address: {}",
-        type_colorize(&wallet_info.x_address),
-        type_colorize(&wallet_info.p_address),
-        type_colorize(&wallet_info.eth_address),
+          X-Chain address: {}
+          P-Chain address: {}
+          EVM address:     {}",
+        type_colorize(&wallet_info.xchain_address),
+        type_colorize(&wallet_info.pchain_address),
+        type_colorize(&wallet_info.evm_address),
     ));
 
     indent::indent_all_by(indent.into(), info_str)

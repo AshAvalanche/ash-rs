@@ -16,7 +16,7 @@ pub async fn transfer(
     amount: u64,
     check_acceptance: bool,
 ) -> Result<Id, AshError> {
-    let tx_id = transfer::Tx::new(&wallet.x_wallet.x())
+    let tx_id = transfer::Tx::new(&wallet.xchain_wallet.x())
         .receiver(receiver)
         .amount(amount)
         .check_acceptance(check_acceptance)

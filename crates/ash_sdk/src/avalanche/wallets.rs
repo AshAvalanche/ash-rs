@@ -18,8 +18,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone)]
 pub struct AvalancheWallet {
     pub private_key: PrivateKey,
-    pub x_wallet: Wallet<PrivateKey>,
-    pub p_wallet: Wallet<PrivateKey>,
+    pub xchain_wallet: Wallet<PrivateKey>,
+    pub pchain_wallet: Wallet<PrivateKey>,
 }
 
 impl AvalancheWallet {
@@ -30,12 +30,12 @@ impl AvalancheWallet {
         pchain_url: &str,
     ) -> Result<Self, AshError> {
         // Create one wallet for each chain because the RPC URLs can be different
-        let x_wallet = WalletBuilder::new(&private_key)
+        let xchain_wallet = WalletBuilder::new(&private_key)
             .base_http_url(xchain_url.to_string())
             .build()
             .await
             .map_err(|e| AvalancheWalletError::CreationFailure(e.to_string()))?;
-        let p_wallet = WalletBuilder::new(&private_key)
+        let pchain_wallet = WalletBuilder::new(&private_key)
             .base_http_url(pchain_url.to_string())
             .build()
             .await
@@ -43,8 +43,8 @@ impl AvalancheWallet {
 
         Ok(Self {
             private_key,
-            x_wallet,
-            p_wallet,
+            xchain_wallet,
+            pchain_wallet,
         })
     }
 
@@ -119,19 +119,19 @@ impl AvalancheWallet {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AvalancheWalletInfo {
     /// X-Chain address
-    pub x_address: String,
+    pub xchain_address: String,
     /// P-Chain address
-    pub p_address: String,
-    /// Ethereum address
-    pub eth_address: String,
+    pub pchain_address: String,
+    /// EVM address
+    pub evm_address: String,
 }
 
 impl From<AvalancheWallet> for AvalancheWalletInfo {
     fn from(wallet: AvalancheWallet) -> Self {
         Self {
-            x_address: wallet.x_wallet.x_address,
-            p_address: wallet.p_wallet.p_address,
-            eth_address: wallet.x_wallet.eth_address,
+            xchain_address: wallet.xchain_wallet.x_address,
+            pchain_address: wallet.pchain_wallet.p_address,
+            evm_address: wallet.xchain_wallet.eth_address,
         }
     }
 }

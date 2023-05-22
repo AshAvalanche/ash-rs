@@ -108,7 +108,7 @@ fn generate(json: bool) -> Result<(), CliError> {
     Ok(())
 }
 
-// Parse subnet subcommand
+// Parse wallet subcommand
 pub(crate) fn parse(
     wallet: WalletCommand,
     config: Option<&str>,

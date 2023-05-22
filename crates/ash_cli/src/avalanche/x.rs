@@ -141,7 +141,7 @@ fn transfer(
     Ok(())
 }
 
-// Parse subnet subcommand
+// Parse x subcommand
 pub(crate) fn parse(x: XCommand, config: Option<&str>, json: bool) -> Result<(), CliError> {
     match x.command {
         XSubcommands::Balance { address, asset_id } => {

@@ -172,17 +172,17 @@ mod tests {
         let blockchains = get_network_blockchains(rpc_url, &fuji.name).unwrap();
 
         // Test that the C-Chain and X-Chain are present
-        let c_chain = blockchains
+        let cchain = blockchains
             .iter()
             .find(|blockchain| blockchain.id == Id::from_str(AVAX_FUJI_CCHAIN_ID).unwrap())
             .unwrap();
-        let x_chain = blockchains
+        let xchain = blockchains
             .iter()
             .find(|blockchain| blockchain.id == Id::from_str(AVAX_FUJI_XCHAIN_ID).unwrap())
             .unwrap();
 
-        assert_eq!(c_chain.name, "C-Chain");
-        assert_eq!(x_chain.name, "X-Chain");
+        assert_eq!(cchain.name, "C-Chain");
+        assert_eq!(xchain.name, "X-Chain");
     }
 
     #[test]
