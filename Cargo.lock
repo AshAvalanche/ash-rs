@@ -130,7 +130,7 @@ dependencies = [
 
 [[package]]
 name = "ash_cli"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "ash_sdk",
  "async-std",
@@ -146,7 +146,7 @@ dependencies = [
 
 [[package]]
 name = "ash_sdk"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "async-std",
  "avalanche-types",
