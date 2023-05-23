@@ -23,11 +23,15 @@ use crate::{
 use async_std::task;
 use avalanche_types::{
     ids::short::Id as ShortId,
-    jsonrpc::{avm::GetBalanceResult, platformvm::ApiOwner},
+    jsonrpc::{
+        avm::GetBalanceResult as AvmGetBalanceResult,
+        platformvm::{ApiOwner, GetBalanceResult as PlatformvmGetBalanceResult},
+    },
     key::secp256k1::address::avax_address_to_short_bytes,
     txs::utxo,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Avalanche Primary Network ID
 /// This Subnet contains the P-Chain that is used for all Subnet operations
@@ -344,11 +348,39 @@ pub struct AvalancheXChainBalance {
     pub utxos_ids: Vec<utxo::Id>,
 }
 
-impl From<GetBalanceResult> for AvalancheXChainBalance {
-    fn from(result: GetBalanceResult) -> Self {
+impl From<AvmGetBalanceResult> for AvalancheXChainBalance {
+    fn from(result: AvmGetBalanceResult) -> Self {
         Self {
             balance: result.balance,
             utxos_ids: result.utxo_ids.unwrap_or_default(),
+        }
+    }
+}
+
+/// Avalanche P-Chain balance
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AvalanchePChainBalance {
+    pub balance: u64,
+    pub unlocked: u64,
+    pub locked_stakeable: u64,
+    pub balances: HashMap<String, u64>,
+    pub unlockeds: HashMap<String, u64>,
+    pub locked_not_stakeable: u64,
+    #[serde(rename = "utxoIDs")]
+    pub utxo_ids: Vec<utxo::Id>,
+}
+
+impl From<PlatformvmGetBalanceResult> for AvalanchePChainBalance {
+    fn from(result: PlatformvmGetBalanceResult) -> Self {
+        Self {
+            balance: result.balance,
+            unlocked: result.unlocked,
+            locked_stakeable: result.locked_stakeable.unwrap_or_default(),
+            balances: result.balances.unwrap_or_default(),
+            unlockeds: result.unlockeds.unwrap_or_default(),
+            locked_not_stakeable: result.locked_not_stakeable.unwrap_or_default(),
+            utxo_ids: result.utxo_ids.unwrap_or_default(),
         }
     }
 }

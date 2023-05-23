@@ -7,6 +7,7 @@ use crate::avalanche::{
     blockchains::AvalancheBlockchain,
     jsonrpc::{get_json_rpc_req_result, JsonRpcResponse},
     subnets::{AvalancheSubnet, AvalancheSubnetValidator},
+    AvalanchePChainBalance,
 };
 use crate::{errors::*, impl_json_rpc_response};
 use avalanche_types::{
@@ -53,6 +54,7 @@ impl_json_rpc_response!(
 );
 impl_json_rpc_response!(GetBlockchainsResponse, GetBlockchainsResult);
 impl_json_rpc_response!(GetCurrentValidatorsResponse, GetCurrentValidatorsResult);
+impl_json_rpc_response!(GetBalanceResponse, GetBalanceResult);
 
 /// Get the Subnets of the network by querying the P-Chain API
 pub fn get_network_subnets(
@@ -129,6 +131,20 @@ pub fn get_current_validators(
         .collect();
 
     Ok(current_validators)
+}
+
+/// Get the balance of an address by querying the X-Chain API
+pub fn get_balance(rpc_url: &str, address: &str) -> Result<AvalanchePChainBalance, RpcError> {
+    let balance = get_json_rpc_req_result::<GetBalanceResponse, GetBalanceResult>(
+        rpc_url,
+        "platform.getBalance",
+        Some(ureq::json!({
+            "addresses": vec![address],
+        })),
+    )?
+    .into();
+
+    Ok(balance)
 }
 
 #[cfg(test)]

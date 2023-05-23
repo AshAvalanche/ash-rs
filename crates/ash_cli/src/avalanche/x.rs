@@ -103,6 +103,13 @@ fn transfer(
     config: Option<&str>,
     json: bool,
 ) -> Result<(), CliError> {
+    // For now, only AVAX transfers are supported
+    if asset_id != "AVAX" {
+        return Err(CliError::dataerr(
+            "Error: only AVAX transfers are supported at this time".to_string(),
+        ));
+    }
+
     let network = load_network(network_name, config)?;
 
     let wallet = create_wallet(&network, private_key, key_encoding)?;
