@@ -10,7 +10,7 @@ use avalanche_types::{
 };
 
 /// Transfer AVAX from a wallet to the receiver
-pub async fn transfer(
+pub async fn transfer_avax(
     wallet: &AvalancheWallet,
     receiver: ShortId,
     amount: u64,
@@ -56,7 +56,7 @@ mod tests {
         let rpc_url = &local_network.get_xchain().unwrap().rpc_url;
         let init_balance = get_balance(rpc_url, AVAX_LOCAL_XCHAIN_ADDR, "AVAX").unwrap();
 
-        transfer(
+        transfer_avax(
             &local_wallet,
             address_to_short_id(AVAX_LOCAL_XCHAIN_ADDR, "X"),
             100000000,
