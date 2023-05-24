@@ -193,6 +193,7 @@ impl From<UptimeResult> for AvalancheNodeUptime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr;
 
     // Using avalanche-network-runner to run a test network
     const ASH_TEST_HTTP_PORT: u16 = 9650;
@@ -217,7 +218,7 @@ mod tests {
         node.update_info().unwrap();
 
         // Test the node ID, network, public_ip and stacking_port
-        assert_eq!(node.id.to_string(), ASH_TEST_NODE_ID);
+        assert_eq!(node.id, Id::from_str(ASH_TEST_NODE_ID).unwrap());
         assert_eq!(node.network, ASH_TEST_NETWORK_NAME);
         assert_eq!(node.public_ip, ASH_TEST_HTTP_HOST);
         assert_eq!(node.staking_port, ASH_TEST_STACKING_PORT);

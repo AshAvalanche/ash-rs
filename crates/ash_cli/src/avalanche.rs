@@ -11,7 +11,10 @@ mod x;
 // Module that contains the avalanche subcommand parser
 
 use crate::utils::error::CliError;
-use ash_sdk::{avalanche::AvalancheNetwork, ids};
+use ash_sdk::{
+    avalanche::AvalancheNetwork,
+    ids::{node::Id as NodeId, Id},
+};
 use clap::{Parser, Subcommand};
 use std::str::FromStr;
 
@@ -33,9 +36,15 @@ enum AvalancheSubcommands {
 }
 
 // Parse an ID from a string
-fn parse_id(id: &str) -> Result<ids::Id, CliError> {
-    let id =
-        ids::Id::from_str(id).map_err(|e| CliError::dataerr(format!("Error parsing ID: {e}")))?;
+fn parse_id(id: &str) -> Result<Id, CliError> {
+    let id = Id::from_str(id).map_err(|e| CliError::dataerr(format!("Error parsing ID: {e}")))?;
+    Ok(id)
+}
+
+// Parse a node ID from a string
+fn parse_node_id(id: &str) -> Result<NodeId, CliError> {
+    let id = NodeId::from_str(id)
+        .map_err(|e| CliError::dataerr(format!("Error parsing NodeID: {e}")))?;
     Ok(id)
 }
 

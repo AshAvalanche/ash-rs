@@ -97,7 +97,7 @@ fn info(
         .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {e}")))?;
 
     let validator = subnet
-        .get_validator(id)
+        .get_validator(parse_node_id(id)?)
         .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {e}")))?;
 
     if json {

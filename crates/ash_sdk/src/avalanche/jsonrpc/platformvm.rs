@@ -128,7 +128,7 @@ mod tests {
     use super::*;
     use crate::avalanche::AvalancheNetwork;
     use avalanche_types::ids::node::Id as NodeId;
-    use std::env;
+    use std::{env, str::FromStr};
 
     const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY";
     const AVAX_FUJI_CCHAIN_ID: &str = "yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp";

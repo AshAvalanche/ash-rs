@@ -121,7 +121,7 @@ mod tests {
         local_network.update_blockchains().unwrap();
 
         let subnet = local_network.get_subnet(subnet_id).unwrap();
-        let blockchain = subnet.get_blockchain(&tx_id.to_string()).unwrap();
+        let blockchain = subnet.get_blockchain(tx_id).unwrap();
 
         assert_eq!(blockchain.name, "testCreateBlockchain");
         assert_eq!(blockchain.vm_id, Id::from_str(SUBNET_EVM_VM_ID).unwrap());

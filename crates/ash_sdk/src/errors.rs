@@ -22,8 +22,6 @@ pub enum AshError {
     AvalancheWalletError(#[from] AvalancheWalletError),
     #[error("Avalanche VM error: {0}")]
     AvalancheVMError(#[from] AvalancheVMError),
-    #[error("AshNode error: {0}")]
-    AshNodeError(#[from] AshNodeError),
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -124,10 +122,4 @@ pub enum AvalancheVMError {
     UnsupportedVM(String),
     #[error("failed to encode genesis data: {0}")]
     GenesisEncoding(String),
-}
-
-#[derive(Error, Debug, PartialEq)]
-pub enum AshNodeError {
-    #[error("'{id}' is not a valid node ID: {msg}")]
-    InvalidId { id: String, msg: String },
 }

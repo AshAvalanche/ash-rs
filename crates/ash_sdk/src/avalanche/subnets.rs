@@ -46,10 +46,10 @@ pub struct AvalancheSubnet {
 
 impl AvalancheSubnet {
     /// Get a blockchain of the Subnet by its ID
-    pub fn get_blockchain(&self, id: &str) -> Result<&AvalancheBlockchain, AshError> {
+    pub fn get_blockchain(&self, id: Id) -> Result<&AvalancheBlockchain, AshError> {
         self.blockchains
             .iter()
-            .find(|&blockchain| blockchain.id.to_string() == id)
+            .find(|&blockchain| blockchain.id == id)
             .ok_or(
                 AvalancheSubnetError::NotFound {
                     subnet_id: self.id.to_string(),
@@ -76,10 +76,10 @@ impl AvalancheSubnet {
     }
 
     /// Get a validator of the Subnet by its ID
-    pub fn get_validator(&self, id: &str) -> Result<&AvalancheSubnetValidator, AshError> {
+    pub fn get_validator(&self, id: NodeId) -> Result<&AvalancheSubnetValidator, AshError> {
         self.validators
             .iter()
-            .find(|&validator| validator.node_id.to_string() == id)
+            .find(|&validator| validator.node_id == id)
             .ok_or(
                 AvalancheSubnetError::NotFound {
                     subnet_id: self.id.to_string(),
@@ -222,6 +222,7 @@ impl From<ApiPrimaryDelegator> for AvalancheSubnetDelegator {
 mod tests {
     use super::*;
     use crate::avalanche::AvalancheNetwork;
+    use std::str::FromStr;
 
     const NETWORK_RUNNER_CCHAIN_ID: &str = "VctwH3nkmztWbkdNXbuo6eCYndsUuemtM9ZFmEUZ5QpA1Fu8G";
     const NETWORK_RUNNER_NODE_ID: &str = "NodeID-MFrZFVCXPv5iCn6M9K6XduxGTYp891xXZ";
@@ -241,7 +242,9 @@ mod tests {
             .get_subnet(local_network.primary_network_id)
             .unwrap();
 
-        let blockchain = subnet.get_blockchain(NETWORK_RUNNER_CCHAIN_ID).unwrap();
+        let blockchain = subnet
+            .get_blockchain(Id::from_str(NETWORK_RUNNER_CCHAIN_ID).unwrap())
+            .unwrap();
         assert_eq!(blockchain.name, "C-Chain");
     }
 
@@ -254,7 +257,10 @@ mod tests {
             .unwrap();
 
         let blockchain = subnet.get_blockchain_by_name("C-Chain").unwrap();
-        assert_eq!(blockchain.id.to_string(), NETWORK_RUNNER_CCHAIN_ID);
+        assert_eq!(
+            blockchain.id,
+            Id::from_str(NETWORK_RUNNER_CCHAIN_ID).unwrap()
+        );
     }
 
     #[test]
@@ -269,8 +275,13 @@ mod tests {
             .get_subnet(local_network.primary_network_id)
             .unwrap();
 
-        let validator = subnet.get_validator(NETWORK_RUNNER_NODE_ID).unwrap();
-        assert_eq!(validator.node_id.to_string(), NETWORK_RUNNER_NODE_ID);
+        let validator = subnet
+            .get_validator(NodeId::from_str(NETWORK_RUNNER_NODE_ID).unwrap())
+            .unwrap();
+        assert_eq!(
+            validator.node_id,
+            NodeId::from_str(NETWORK_RUNNER_NODE_ID).unwrap()
+        );
     }
 
     #[async_std::test]

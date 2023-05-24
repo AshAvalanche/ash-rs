@@ -99,10 +99,12 @@ pub fn is_bootstrapped(rpc_url: &str, chain: &str) -> Result<bool, RpcError> {
 
 #[cfg(test)]
 mod tests {
-    use std::net::{IpAddr, Ipv4Addr};
-
     use super::*;
-    use avalanche_types::jsonrpc::info::VmVersions;
+    use avalanche_types::{ids::node::Id as NodeId, jsonrpc::info::VmVersions};
+    use std::{
+        net::{IpAddr, Ipv4Addr},
+        str::FromStr,
+    };
 
     // Using avalanche-network-runner to run a test network
     const ASH_TEST_HTTP_HOST: IpAddr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
@@ -118,7 +120,7 @@ mod tests {
             ASH_TEST_HTTP_HOST, ASH_TEST_HTTP_PORT, AVAX_INFO_API_ENDPOINT
         );
         let node_id = get_node_id(&rpc_url).unwrap();
-        assert_eq!(node_id.to_string(), ASH_TEST_NODE_ID);
+        assert_eq!(node_id, NodeId::from_str(ASH_TEST_NODE_ID).unwrap());
     }
 
     #[test]

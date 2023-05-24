@@ -166,7 +166,7 @@ mod tests {
         local_network.update_blockchains().unwrap();
         let network_subnet = local_network.get_subnet(created_subnet.id).unwrap();
         let mut network_blockchain = network_subnet
-            .get_blockchain(&created_blockchain.id.to_string())
+            .get_blockchain(created_blockchain.id)
             .unwrap()
             .clone();
 

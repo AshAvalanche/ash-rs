@@ -90,7 +90,7 @@ impl AvalancheNetwork {
         // Error if the Primary Network is not found or if the P-Chain is not found
         let _ = avax_network
             .get_subnet(avax_network.primary_network_id)?
-            .get_blockchain(AVAX_PRIMARY_NETWORK_ID)?;
+            .get_blockchain(avax_network.primary_network_id)?;
 
         Ok(avax_network)
     }
@@ -99,7 +99,7 @@ impl AvalancheNetwork {
     pub fn get_pchain(&self) -> Result<&AvalancheBlockchain, AshError> {
         let pchain = self
             .get_subnet(self.primary_network_id)?
-            .get_blockchain(AVAX_PRIMARY_NETWORK_ID)?;
+            .get_blockchain(self.primary_network_id)?;
         Ok(pchain)
     }
 
@@ -435,9 +435,9 @@ mod tests {
             vm_type,
             ..
         } = &blockchains[1];
-        assert_eq!(id.to_string(), AVAX_FUJI_CCHAIN_ID);
+        assert_eq!(id, &Id::from_str(AVAX_FUJI_CCHAIN_ID).unwrap());
         assert_eq!(name, "C-Chain");
-        assert_eq!(vm_id.to_string(), AVAX_FUJI_EVM_ID);
+        assert_eq!(vm_id, &Id::from_str(AVAX_FUJI_EVM_ID).unwrap());
         assert_eq!(vm_type, &AvalancheVmType::Coreth);
 
         assert!(AvalancheNetwork::load("invalid", None).is_err());
@@ -470,10 +470,10 @@ mod tests {
         assert_eq!(pchain.id, fuji.primary_network_id);
         assert_eq!(pchain.name, "P-Chain");
 
-        assert_eq!(cchain.id.to_string(), AVAX_FUJI_CCHAIN_ID);
+        assert_eq!(cchain.id, Id::from_str(AVAX_FUJI_CCHAIN_ID).unwrap());
         assert_eq!(cchain.name, "C-Chain");
 
-        assert_eq!(xchain.id.to_string(), AVAX_FUJI_XCHAIN_ID);
+        assert_eq!(xchain.id, Id::from_str(AVAX_FUJI_XCHAIN_ID).unwrap());
         assert_eq!(xchain.name, "X-Chain");
     }
 
@@ -513,7 +513,10 @@ mod tests {
         let dfk_subnet = fuji
             .get_subnet(Id::from_str(AVAX_FUJI_DFK_SUBNET_ID).unwrap())
             .unwrap();
-        assert_eq!(dfk_subnet.id.to_string(), AVAX_FUJI_DFK_SUBNET_ID);
+        assert_eq!(
+            dfk_subnet.id,
+            Id::from_str(AVAX_FUJI_DFK_SUBNET_ID).unwrap()
+        );
     }
 
     #[test]
