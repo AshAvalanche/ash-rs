@@ -15,7 +15,6 @@ use avalanche_types::{
 };
 use serde::{Deserialize, Serialize};
 use serde_aux::prelude::*;
-use std::str::FromStr;
 
 /// Subnet with control keys as addresses
 /// This is done to avoid having to retransform the control keys to addresses later
@@ -102,13 +101,13 @@ pub fn get_network_blockchains(
 /// Get the current validators of a Subnet by querying the P-Chain API
 pub fn get_current_validators(
     rpc_url: &str,
-    subnet_id: &str,
+    subnet_id: Id,
 ) -> Result<Vec<AvalancheSubnetValidator>, RpcError> {
     let current_validators =
         get_json_rpc_req_result::<GetCurrentValidatorsResponse, GetCurrentValidatorsResult>(
             rpc_url,
             "platform.getCurrentValidators",
-            Some(ureq::json!({ "subnetID": subnet_id })),
+            Some(ureq::json!({ "subnetID": subnet_id.to_string() })),
         )?
         .validators
         .ok_or(RpcError::GetFailure {
@@ -118,13 +117,7 @@ pub fn get_current_validators(
             msg: "No validators found".to_string(),
         })?
         .iter()
-        .map(|validator| {
-            AvalancheSubnetValidator::from_api_primary_validator(
-                validator,
-                // Unwrap is safe because we checked for a response error above
-                Id::from_str(subnet_id).unwrap(),
-            )
-        })
+        .map(|validator| AvalancheSubnetValidator::from_api_primary_validator(validator, subnet_id))
         .collect();
 
     Ok(current_validators)
@@ -191,7 +184,7 @@ mod tests {
         let fuji = AvalancheNetwork::load("fuji-ankr", None).unwrap();
         let rpc_url = &fuji.get_pchain().unwrap().rpc_url;
 
-        let validators = get_current_validators(rpc_url, AVAX_PRIMARY_NETWORK_ID).unwrap();
+        let validators = get_current_validators(rpc_url, fuji.primary_network_id).unwrap();
 
         // Test that the node operated by Ava Labs is present
         // Should not fail if the node is present

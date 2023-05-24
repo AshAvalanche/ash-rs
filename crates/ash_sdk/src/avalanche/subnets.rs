@@ -221,7 +221,7 @@ impl From<ApiPrimaryDelegator> for AvalancheSubnetDelegator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::avalanche::{AvalancheNetwork, AVAX_PRIMARY_NETWORK_ID};
+    use crate::avalanche::AvalancheNetwork;
 
     const NETWORK_RUNNER_CCHAIN_ID: &str = "VctwH3nkmztWbkdNXbuo6eCYndsUuemtM9ZFmEUZ5QpA1Fu8G";
     const NETWORK_RUNNER_NODE_ID: &str = "NodeID-MFrZFVCXPv5iCn6M9K6XduxGTYp891xXZ";
@@ -237,7 +237,9 @@ mod tests {
     #[ignore]
     fn test_avalanche_subnet_get_blockchain() {
         let local_network = load_test_network();
-        let subnet = local_network.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+        let subnet = local_network
+            .get_subnet(local_network.primary_network_id)
+            .unwrap();
 
         let blockchain = subnet.get_blockchain(NETWORK_RUNNER_CCHAIN_ID).unwrap();
         assert_eq!(blockchain.name, "C-Chain");
@@ -247,7 +249,9 @@ mod tests {
     #[ignore]
     fn test_avalanche_subnet_get_blockchain_by_name() {
         let local_network = load_test_network();
-        let subnet = local_network.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+        let subnet = local_network
+            .get_subnet(local_network.primary_network_id)
+            .unwrap();
 
         let blockchain = subnet.get_blockchain_by_name("C-Chain").unwrap();
         assert_eq!(blockchain.id.to_string(), NETWORK_RUNNER_CCHAIN_ID);
@@ -258,10 +262,12 @@ mod tests {
     fn test_avalanche_subnet_get_validator() {
         let mut local_network = load_test_network();
         local_network
-            .update_subnet_validators(AVAX_PRIMARY_NETWORK_ID)
+            .update_subnet_validators(local_network.primary_network_id)
             .unwrap();
 
-        let subnet = local_network.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+        let subnet = local_network
+            .get_subnet(local_network.primary_network_id)
+            .unwrap();
 
         let validator = subnet.get_validator(NETWORK_RUNNER_NODE_ID).unwrap();
         assert_eq!(validator.node_id.to_string(), NETWORK_RUNNER_NODE_ID);
@@ -279,9 +285,7 @@ mod tests {
         let created_subnet = AvalancheSubnet::create(&wallet, true).await.unwrap();
 
         local_network.update_subnets().unwrap();
-        let network_subnet = local_network
-            .get_subnet(&created_subnet.id.to_string())
-            .unwrap();
+        let network_subnet = local_network.get_subnet(created_subnet.id).unwrap();
 
         assert_eq!(&created_subnet, network_subnet);
     }

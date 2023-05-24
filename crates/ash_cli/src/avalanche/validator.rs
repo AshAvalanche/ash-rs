@@ -58,7 +58,7 @@ fn list(
     update_subnet_validators(&mut network, subnet_id)?;
 
     let subnet = network
-        .get_subnet(subnet_id)
+        .get_subnet(parse_id(subnet_id)?)
         .map_err(|e| CliError::dataerr(format!("Error listing validators: {e}")))?;
 
     if json {
@@ -93,7 +93,7 @@ fn info(
     update_subnet_validators(&mut network, subnet_id)?;
 
     let subnet = network
-        .get_subnet(subnet_id)
+        .get_subnet(parse_id(subnet_id)?)
         .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {e}")))?;
 
     let validator = subnet

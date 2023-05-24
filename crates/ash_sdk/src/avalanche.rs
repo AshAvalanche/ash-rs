@@ -23,12 +23,13 @@ use crate::{
 };
 use async_std::task;
 use avalanche_types::{
-    ids::short::Id as ShortId,
+    ids::{short::Id as ShortId, Id},
     jsonrpc::{avm::GetBalanceResult, platformvm::ApiOwner},
     key::secp256k1::address::avax_address_to_short_bytes,
     txs::utxo,
 };
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 /// Avalanche Primary Network ID
 /// This Subnet contains the P-Chain that is used for all Subnet operations
@@ -48,39 +49,56 @@ fn address_to_short_id(address: &str, chain_alias: &str) -> Result<ShortId, AshE
 }
 
 /// Avalanche network
-#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheNetwork {
+    /// Network name
     pub name: String,
+    /// Primary Network ID
+    #[serde(skip)]
+    pub primary_network_id: Id,
     /// List of the network's Subnets
     pub subnets: Vec<AvalancheSubnet>,
+}
+
+impl Default for AvalancheNetwork {
+    fn default() -> Self {
+        Self {
+            name: "mainnet".to_string(),
+            primary_network_id: Id::from_str(AVAX_PRIMARY_NETWORK_ID).unwrap(),
+            subnets: vec![],
+        }
+    }
 }
 
 impl AvalancheNetwork {
     /// Load an AvalancheNetwork from the configuration
     pub fn load(network_name: &str, config: Option<&str>) -> Result<AvalancheNetwork, AshError> {
         let ash_config = AshConfig::load(config)?;
-        let avax_network = ash_config
+        let mut avax_network = ash_config
             .avalanche_networks
             .iter()
             .find(|&avax_network| avax_network.name == network_name)
             .ok_or(ConfigError::NotFound {
                 target_type: "network".to_string(),
                 target_value: network_name.to_string(),
-            })?;
+            })?
+            .clone();
+
+        avax_network.primary_network_id = Default::default();
 
         // Error if the Primary Network is not found or if the P-Chain is not found
         let _ = avax_network
-            .get_subnet(AVAX_PRIMARY_NETWORK_ID)?
+            .get_subnet(avax_network.primary_network_id)?
             .get_blockchain(AVAX_PRIMARY_NETWORK_ID)?;
 
-        Ok(avax_network.clone())
+        Ok(avax_network)
     }
 
     /// Get the P-Chain
     pub fn get_pchain(&self) -> Result<&AvalancheBlockchain, AshError> {
         let pchain = self
-            .get_subnet(AVAX_PRIMARY_NETWORK_ID)?
+            .get_subnet(self.primary_network_id)?
             .get_blockchain(AVAX_PRIMARY_NETWORK_ID)?;
         Ok(pchain)
     }
@@ -88,7 +106,7 @@ impl AvalancheNetwork {
     /// Get the C-Chain
     pub fn get_cchain(&self) -> Result<&AvalancheBlockchain, AshError> {
         let cchain = self
-            .get_subnet(AVAX_PRIMARY_NETWORK_ID)?
+            .get_subnet(self.primary_network_id)?
             .get_blockchain_by_name("C-Chain")?;
         Ok(cchain)
     }
@@ -96,7 +114,7 @@ impl AvalancheNetwork {
     /// Get the X-Chain
     pub fn get_xchain(&self) -> Result<&AvalancheBlockchain, AshError> {
         let xchain = self
-            .get_subnet(AVAX_PRIMARY_NETWORK_ID)?
+            .get_subnet(self.primary_network_id)?
             .get_blockchain_by_name("X-Chain")?;
         Ok(xchain)
     }
@@ -117,10 +135,10 @@ impl AvalancheNetwork {
         // Replace the Primary Network with the pre-configured one
         // This is done to ensure that the P-Chain is kept in the blockchains list
         // (it is not returned by the API)
-        let primary_network = self.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap().clone();
+        let primary_network = self.get_subnet(self.primary_network_id).unwrap().clone();
         let mut subnets = subnets
             .into_iter()
-            .filter(|subnet| subnet.id.to_string() != AVAX_PRIMARY_NETWORK_ID)
+            .filter(|subnet| subnet.id != self.primary_network_id)
             .collect::<Vec<_>>();
         subnets.push(primary_network);
 
@@ -129,18 +147,15 @@ impl AvalancheNetwork {
     }
 
     /// Get a Subnet of the network by its ID
-    pub fn get_subnet(&self, id: &str) -> Result<&AvalancheSubnet, AshError> {
-        self.subnets
-            .iter()
-            .find(|&subnet| subnet.id.to_string() == id)
-            .ok_or(
-                AvalancheNetworkError::NotFound {
-                    network: self.name.clone(),
-                    target_type: "Subnet".to_string(),
-                    target_value: id.to_string(),
-                }
-                .into(),
-            )
+    pub fn get_subnet(&self, id: Id) -> Result<&AvalancheSubnet, AshError> {
+        self.subnets.iter().find(|&subnet| subnet.id == id).ok_or(
+            AvalancheNetworkError::NotFound {
+                network: self.name.clone(),
+                target_type: "Subnet".to_string(),
+                target_value: id.to_string(),
+            }
+            .into(),
+        )
     }
 
     /// Update the AvalancheNetwork blockchains by querying an API endpoint
@@ -160,11 +175,11 @@ impl AvalancheNetwork {
 
         // For each Subnet, replace the blockchains with the ones returned by the API
         // Skip the Primary Network, as the P-Chain is not returned by the API
-        let mut primary_network = self.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap().clone();
+        let mut primary_network = self.get_subnet(self.primary_network_id).unwrap().clone();
         let mut subnets = self
             .subnets
             .iter()
-            .filter(|subnet| subnet.id.to_string() != AVAX_PRIMARY_NETWORK_ID)
+            .filter(|subnet| subnet.id != self.primary_network_id)
             .map(|subnet| {
                 let mut subnet = subnet.clone();
                 subnet.blockchains = blockchains
@@ -213,7 +228,7 @@ impl AvalancheNetwork {
     }
 
     /// Update the validators of a Subnet by querying an API endpoint
-    pub fn update_subnet_validators(&mut self, subnet_id: &str) -> Result<(), AshError> {
+    pub fn update_subnet_validators(&mut self, subnet_id: Id) -> Result<(), AshError> {
         let rpc_url = &self.get_pchain()?.rpc_url;
 
         let validators = platformvm::get_current_validators(rpc_url, subnet_id)?;
@@ -227,7 +242,7 @@ impl AvalancheNetwork {
         let subnet_index = self
             .subnets
             .iter()
-            .position(|subnet| subnet.id.to_string() == subnet_id)
+            .position(|subnet| subnet.id == subnet_id)
             .ok_or(AvalancheNetworkError::NotFound {
                 network: self.name.clone(),
                 target_type: "Subnet".to_string(),
@@ -408,7 +423,7 @@ mod tests {
             blockchains,
             ..
         } = &fuji.subnets[0];
-        assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
+        assert_eq!(id, &fuji.primary_network_id);
         assert_eq!(control_keys.len(), 0);
         assert_eq!(threshold, &0);
         assert_eq!(blockchains.len(), 3);
@@ -452,7 +467,7 @@ mod tests {
         let cchain = fuji.get_cchain().unwrap();
         let xchain = fuji.get_xchain().unwrap();
 
-        assert_eq!(pchain.id.to_string(), AVAX_PRIMARY_NETWORK_ID);
+        assert_eq!(pchain.id, fuji.primary_network_id);
         assert_eq!(pchain.name, "P-Chain");
 
         assert_eq!(cchain.id.to_string(), AVAX_FUJI_CCHAIN_ID);
@@ -466,12 +481,14 @@ mod tests {
     fn test_avalanche_network_get_subnet() {
         let fuji = load_test_network();
 
-        // Should never fail as AVAX_PRIMARY_NETWORK_ID should always be a valid key
-        let primary_network = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
-        assert_eq!(primary_network.id.to_string(), AVAX_PRIMARY_NETWORK_ID);
+        // Should never fail as self.primary_network_id should always be a valid key
+        let primary_network = fuji.get_subnet(fuji.primary_network_id).unwrap();
+        assert_eq!(primary_network.id, fuji.primary_network_id);
         assert_eq!(primary_network.blockchains.len(), 3);
 
-        assert!(fuji.get_subnet("invalid").is_err());
+        assert!(fuji
+            .get_subnet(Id::from_str("7F8HV64nQER6ZupFNJwsYAKGbADv1T7pQYmoRPm1uVbeLMs7N").unwrap())
+            .is_err());
     }
 
     #[test]
@@ -484,16 +501,18 @@ mod tests {
 
         // Test that the Primary Network is still present
         // and that the P-Chain is still present
-        let primary_network = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
-        assert_eq!(primary_network.id.to_string(), AVAX_PRIMARY_NETWORK_ID);
+        let primary_network = fuji.get_subnet(fuji.primary_network_id).unwrap();
+        assert_eq!(primary_network.id, fuji.primary_network_id);
         assert_eq!(primary_network.blockchains.len(), 3);
         assert!(primary_network
             .blockchains
             .iter()
-            .any(|blockchain| blockchain.id.to_string() == AVAX_PRIMARY_NETWORK_ID));
+            .any(|blockchain| blockchain.id == fuji.primary_network_id));
 
         // Test that the DFK Subnet is present
-        let dfk_subnet = fuji.get_subnet(AVAX_FUJI_DFK_SUBNET_ID).unwrap();
+        let dfk_subnet = fuji
+            .get_subnet(Id::from_str(AVAX_FUJI_DFK_SUBNET_ID).unwrap())
+            .unwrap();
         assert_eq!(dfk_subnet.id.to_string(), AVAX_FUJI_DFK_SUBNET_ID);
     }
 
@@ -507,10 +526,12 @@ mod tests {
         assert!(fuji
             .subnets
             .iter()
-            .any(|subnet| subnet.id.to_string() == AVAX_PRIMARY_NETWORK_ID));
+            .any(|subnet| subnet.id == fuji.primary_network_id));
 
         // Test that the DFK Subnet contains the DFK chain
-        let dfk_subnet = fuji.get_subnet(AVAX_FUJI_DFK_SUBNET_ID).unwrap();
+        let dfk_subnet = fuji
+            .get_subnet(Id::from_str(AVAX_FUJI_DFK_SUBNET_ID).unwrap())
+            .unwrap();
         assert!(dfk_subnet
             .blockchains
             .iter()
@@ -529,7 +550,9 @@ mod tests {
 
         // Test that the X-Chain and C-Chain are present
         // They are not defined in the local-light network and should be fetched from the API
-        let primary_network = local_network.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+        let primary_network = local_network
+            .get_subnet(local_network.primary_network_id)
+            .unwrap();
         assert!(primary_network
             .blockchains
             .iter()
@@ -546,17 +569,17 @@ mod tests {
         // Tempoary workaround: use Ankr public endpoint
         let mut fuji = AvalancheNetwork::load("fuji-ankr", None).unwrap();
         fuji.update_subnets().unwrap();
-        fuji.update_subnet_validators(AVAX_PRIMARY_NETWORK_ID)
+        fuji.update_subnet_validators(fuji.primary_network_id)
             .unwrap();
 
         // Test that the Primary Network is still present
         assert!(fuji
             .subnets
             .iter()
-            .any(|subnet| subnet.id.to_string() == AVAX_PRIMARY_NETWORK_ID));
+            .any(|subnet| subnet.id == fuji.primary_network_id));
 
         // Test that the Primary Network has validators
-        let primary_network = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+        let primary_network = fuji.get_subnet(fuji.primary_network_id).unwrap();
         assert!(primary_network.validators.len() > 0);
     }
 

@@ -65,7 +65,7 @@ fn info(network_name: &str, id: &str, config: Option<&str>, json: bool) -> Resul
     update_subnet_validators(&mut network, id)?;
 
     let subnet = network
-        .get_subnet(id)
+        .get_subnet(parse_id(id)?)
         .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {e}")))?;
 
     if json {

@@ -85,7 +85,7 @@ mod tests {
         // Check that the Subnet was created
         // The Subnet has the same ID as the transaction that created it
         local_network.update_subnets().unwrap();
-        let subnet = local_network.get_subnet(&tx_id.to_string()).unwrap();
+        let subnet = local_network.get_subnet(tx_id).unwrap();
 
         assert_eq!(subnet.threshold, 1);
         assert_eq!(subnet.control_keys.len(), 1);
@@ -120,7 +120,7 @@ mod tests {
         local_network.update_subnets().unwrap();
         local_network.update_blockchains().unwrap();
 
-        let subnet = local_network.get_subnet(&subnet_id.to_string()).unwrap();
+        let subnet = local_network.get_subnet(subnet_id).unwrap();
         let blockchain = subnet.get_blockchain(&tx_id.to_string()).unwrap();
 
         assert_eq!(blockchain.name, "testCreateBlockchain");
