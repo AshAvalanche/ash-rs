@@ -35,7 +35,6 @@ pub async fn transfer_avax(
 mod tests {
     use super::*;
     use crate::avalanche::{address_to_short_id, jsonrpc::avm::get_balance, AvalancheNetwork};
-    use async_std;
 
     const AVAX_EWOQ_PRIVATE_KEY: &str =
         "PrivateKey-ewoqjP7PxY4yr3iLTpLisriqt94hdyDFNgchSxGGztUrTXtNN";

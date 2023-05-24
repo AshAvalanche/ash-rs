@@ -5,11 +5,10 @@
 
 use crate::errors::*;
 use avalanche_types::subnet_evm::genesis::Genesis;
-use serde_json;
 
 /// Encode the genesis data (JSON) to bytes
-pub fn encode_json_genesis(genesis: &str) -> Result<Vec<u8>, AshError> {
-    let genesis: Genesis = serde_json::from_str(genesis)
+pub fn encode_genesis_data(genesis_json: &str) -> Result<Vec<u8>, AshError> {
+    let genesis: Genesis = serde_json::from_str(genesis_json)
         .map_err(|e| AvalancheVMError::GenesisEncoding(e.to_string()))?;
 
     let bytes = genesis
@@ -76,7 +75,7 @@ mod tests {
     fn test_encode_json_genesis() {
         let genesis_str = fs::read_to_string("tests/genesis/subnet-evm.json").unwrap();
 
-        let genesis_bytes = encode_json_genesis(&genesis_str).unwrap();
+        let genesis_bytes = encode_genesis_data(&genesis_str).unwrap();
 
         assert_eq!(genesis_bytes, SUBNET_EVM_GENESIS_BYTES);
     }

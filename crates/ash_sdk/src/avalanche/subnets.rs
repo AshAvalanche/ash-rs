@@ -222,7 +222,6 @@ impl From<ApiPrimaryDelegator> for AvalancheSubnetDelegator {
 mod tests {
     use super::*;
     use crate::avalanche::{AvalancheNetwork, AVAX_PRIMARY_NETWORK_ID};
-    use async_std;
 
     const NETWORK_RUNNER_CCHAIN_ID: &str = "VctwH3nkmztWbkdNXbuo6eCYndsUuemtM9ZFmEUZ5QpA1Fu8G";
     const NETWORK_RUNNER_NODE_ID: &str = "NodeID-MFrZFVCXPv5iCn6M9K6XduxGTYp891xXZ";

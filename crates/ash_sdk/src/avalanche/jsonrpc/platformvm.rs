@@ -16,7 +16,6 @@ use avalanche_types::{
 use serde::{Deserialize, Serialize};
 use serde_aux::prelude::*;
 use std::str::FromStr;
-use ureq;
 
 /// Subnet with control keys as addresses
 /// This is done to avoid having to retransform the control keys to addresses later

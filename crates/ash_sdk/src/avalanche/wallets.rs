@@ -148,7 +148,6 @@ pub fn generate_private_key() -> Result<PrivateKey, AshError> {
 mod tests {
     use super::*;
     use crate::avalanche::AvalancheNetwork;
-    use async_std;
 
     const AVAX_CB58_PRIVATE_KEY: &str =
         "PrivateKey-ewoqjP7PxY4yr3iLTpLisriqt94hdyDFNgchSxGGztUrTXtNN";
