@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, Ipv4Addr};
 
 /// Avalanche node
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheNode {
     pub id: Id,
@@ -151,7 +151,7 @@ impl AvalancheNode {
 }
 
 /// Avalanche node version
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheNodeVersions {
     pub avalanchego_version: String,
@@ -174,7 +174,7 @@ impl From<GetNodeVersionResult> for AvalancheNodeVersions {
 }
 
 /// Avalanche node uptime
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheNodeUptime {
     pub rewarding_stake_percentage: f64,

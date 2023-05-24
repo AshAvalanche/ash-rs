@@ -9,7 +9,7 @@ use ethers::providers::{Http, Provider};
 use serde::{Deserialize, Serialize};
 
 /// Avalanche blockchain
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheBlockchain {
     pub id: Id,

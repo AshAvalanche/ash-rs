@@ -47,6 +47,7 @@ mod tests {
     }
 
     #[async_std::test]
+    #[serial_test::serial]
     #[ignore]
     async fn test_transfer() {
         let local_network = load_test_network();
@@ -58,7 +59,7 @@ mod tests {
 
         transfer_avax(
             &local_wallet,
-            address_to_short_id(AVAX_LOCAL_XCHAIN_ADDR, "X"),
+            address_to_short_id(AVAX_LOCAL_XCHAIN_ADDR, "X").unwrap(),
             100000000,
             true,
         )

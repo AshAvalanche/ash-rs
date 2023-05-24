@@ -4,8 +4,8 @@
 // Module that contains code to interact with Avalanche Subnets and validators
 
 use crate::avalanche::{
-    blockchains::AvalancheBlockchain, jsonrpc::platformvm::SubnetStringControlKeys,
-    AvalancheOutputOwners, AVAX_PRIMARY_NETWORK_ID,
+    blockchains::AvalancheBlockchain, jsonrpc::platformvm::SubnetStringControlKeys, txs::p,
+    wallets::AvalancheWallet, AvalancheOutputOwners, AVAX_PRIMARY_NETWORK_ID,
 };
 use crate::errors::*;
 use avalanche_types::{
@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
 /// Avalanche Subnet types
-#[derive(Default, Debug, Display, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Display, Clone, Serialize, Deserialize, PartialEq)]
 pub enum AvalancheSubnetType {
     PrimaryNetwork,
     #[default]
@@ -26,7 +26,7 @@ pub enum AvalancheSubnetType {
 }
 
 /// Avalanche Subnet
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheSubnet {
     pub id: Id,
@@ -89,6 +89,24 @@ impl AvalancheSubnet {
                 .into(),
             )
     }
+
+    /// Create a new Subnet
+    /// TODO: Add control keys and threshold as parameters
+    /// See: https://github.com/ava-labs/avalanche-types-rs/pull/76
+    pub async fn create(
+        wallet: &AvalancheWallet,
+        check_acceptance: bool,
+    ) -> Result<Self, AshError> {
+        let tx_id = p::create_subnet(wallet, check_acceptance).await?;
+
+        Ok(Self {
+            id: tx_id,
+            control_keys: vec![wallet.pchain_wallet.p_address.clone()],
+            threshold: 1,
+            subnet_type: AvalancheSubnetType::Permissioned,
+            ..Default::default()
+        })
+    }
 }
 
 impl From<SubnetStringControlKeys> for AvalancheSubnet {
@@ -113,7 +131,7 @@ impl From<SubnetStringControlKeys> for AvalancheSubnet {
 }
 
 /// Avalanche Subnet validator
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheSubnetValidator {
     #[serde(rename = "txID")]
@@ -172,7 +190,7 @@ impl AvalancheSubnetValidator {
 }
 
 /// Avalanche Subnet delegator
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheSubnetDelegator {
     #[serde(rename = "txID")]
@@ -202,10 +220,14 @@ impl From<ApiPrimaryDelegator> for AvalancheSubnetDelegator {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::avalanche::{AvalancheNetwork, AVAX_PRIMARY_NETWORK_ID};
+    use async_std;
 
     const NETWORK_RUNNER_CCHAIN_ID: &str = "VctwH3nkmztWbkdNXbuo6eCYndsUuemtM9ZFmEUZ5QpA1Fu8G";
     const NETWORK_RUNNER_NODE_ID: &str = "NodeID-MFrZFVCXPv5iCn6M9K6XduxGTYp891xXZ";
+    const AVAX_EWOQ_PRIVATE_KEY: &str =
+        "PrivateKey-ewoqjP7PxY4yr3iLTpLisriqt94hdyDFNgchSxGGztUrTXtNN";
 
     // Load the test network using avalanche-network-runner
     fn load_test_network() -> AvalancheNetwork {
@@ -215,8 +237,8 @@ mod tests {
     #[test]
     #[ignore]
     fn test_avalanche_subnet_get_blockchain() {
-        let fuji = load_test_network();
-        let subnet = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+        let local_network = load_test_network();
+        let subnet = local_network.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
 
         let blockchain = subnet.get_blockchain(NETWORK_RUNNER_CCHAIN_ID).unwrap();
         assert_eq!(blockchain.name, "C-Chain");
@@ -225,8 +247,8 @@ mod tests {
     #[test]
     #[ignore]
     fn test_avalanche_subnet_get_blockchain_by_name() {
-        let fuji = load_test_network();
-        let subnet = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+        let local_network = load_test_network();
+        let subnet = local_network.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
 
         let blockchain = subnet.get_blockchain_by_name("C-Chain").unwrap();
         assert_eq!(blockchain.id.to_string(), NETWORK_RUNNER_CCHAIN_ID);
@@ -235,13 +257,33 @@ mod tests {
     #[test]
     #[ignore]
     fn test_avalanche_subnet_get_validator() {
-        let mut fuji = load_test_network();
-        fuji.update_subnet_validators(AVAX_PRIMARY_NETWORK_ID)
+        let mut local_network = load_test_network();
+        local_network
+            .update_subnet_validators(AVAX_PRIMARY_NETWORK_ID)
             .unwrap();
 
-        let subnet = fuji.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
+        let subnet = local_network.get_subnet(AVAX_PRIMARY_NETWORK_ID).unwrap();
 
         let validator = subnet.get_validator(NETWORK_RUNNER_NODE_ID).unwrap();
         assert_eq!(validator.node_id.to_string(), NETWORK_RUNNER_NODE_ID);
+    }
+
+    #[async_std::test]
+    #[serial_test::serial]
+    #[ignore]
+    async fn test_avalanche_subnet_create() {
+        let mut local_network = load_test_network();
+        let wallet = local_network
+            .create_wallet_from_cb58(AVAX_EWOQ_PRIVATE_KEY)
+            .unwrap();
+
+        let created_subnet = AvalancheSubnet::create(&wallet, true).await.unwrap();
+
+        local_network.update_subnets().unwrap();
+        let network_subnet = local_network
+            .get_subnet(&created_subnet.id.to_string())
+            .unwrap();
+
+        assert_eq!(&created_subnet, network_subnet);
     }
 }

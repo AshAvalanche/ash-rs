@@ -80,6 +80,8 @@ pub enum AvalancheNetworkError {
     },
     #[error("{operation} is not allowed on network '{network}'")]
     OperationNotAllowed { operation: String, network: String },
+    #[error("'{address}' is not a valid address: {msg}")]
+    InvalidAddress { address: String, msg: String },
 }
 
 #[derive(Error, Debug)]

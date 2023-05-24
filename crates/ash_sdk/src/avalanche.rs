@@ -35,13 +35,19 @@ use serde::{Deserialize, Serialize};
 pub const AVAX_PRIMARY_NETWORK_ID: &str = "11111111111111111111111111111111LpoYY";
 
 /// Convert a human readable address to a ShortId
-fn address_to_short_id(address: &str, chain_alias: &str) -> ShortId {
-    let (_, addr_bytes) = avax_address_to_short_bytes(chain_alias, address).unwrap();
-    ShortId::from_slice(&addr_bytes)
+fn address_to_short_id(address: &str, chain_alias: &str) -> Result<ShortId, AshError> {
+    let (_, addr_bytes) = avax_address_to_short_bytes(chain_alias, address).map_err(|e| {
+        AvalancheNetworkError::InvalidAddress {
+            address: address.to_string(),
+            msg: e.to_string(),
+        }
+    })?;
+
+    Ok(ShortId::from_slice(&addr_bytes))
 }
 
 /// Avalanche network
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheNetwork {
     pub name: String,
@@ -318,7 +324,7 @@ impl AvalancheNetwork {
 
 /// Avalanche output owners
 /// See https://docs.avax.network/specs/platform-transaction-serialization#secp256k1-output-owners-output
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheOutputOwners {
     pub locktime: u64,

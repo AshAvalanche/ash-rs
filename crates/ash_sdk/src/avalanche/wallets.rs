@@ -108,7 +108,7 @@ impl AvalancheWallet {
         amount: u64,
         check_acceptance: bool,
     ) -> Result<Id, AshError> {
-        let receiver = address_to_short_id(to, "X");
+        let receiver = address_to_short_id(to, "X")?;
         let tx_id = x::transfer_avax(self, receiver, amount, check_acceptance).await?;
 
         Ok(tx_id)
