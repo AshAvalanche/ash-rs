@@ -6,7 +6,7 @@
 use thiserror::Error;
 
 /// Ash library errors enum
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum AshError {
     #[error("Config error: {0}")]
     ConfigError(#[from] ConfigError),
@@ -20,11 +20,13 @@ pub enum AshError {
     AvalancheBlockchainError(#[from] AvalancheBlockchainError),
     #[error("AvalancheWallet error: {0}")]
     AvalancheWalletError(#[from] AvalancheWalletError),
+    #[error("Avalanche VM error: {0}")]
+    AvalancheVMError(#[from] AvalancheVMError),
     #[error("AshNode error: {0}")]
     AshNodeError(#[from] AshNodeError),
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum ConfigError {
     #[error("failed to build configuration: {0}")]
     BuildFailure(String),
@@ -45,7 +47,7 @@ pub enum ConfigError {
     },
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum RpcError {
     #[error("failed to get {data_type} for {target_type} '{target_value}': {msg}")]
     GetFailure {
@@ -70,7 +72,7 @@ pub enum RpcError {
     Unknown(String),
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum AvalancheNetworkError {
     #[error("{target_type} '{target_value}' not found in network '{network}'")]
     NotFound {
@@ -84,7 +86,7 @@ pub enum AvalancheNetworkError {
     InvalidAddress { address: String, msg: String },
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum AvalancheSubnetError {
     #[error("{target_type} '{target_value}' not found in Subnet '{subnet_id}'")]
     NotFound {
@@ -94,13 +96,13 @@ pub enum AvalancheSubnetError {
     },
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum AvalancheBlockchainError {
     #[error("failed to get ethers Provider for blockchain '{blockchain_id}': {msg}")]
     EthersProvider { blockchain_id: String, msg: String },
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum AvalancheWalletError {
     #[error("failed to generate private key: {0}")]
     PrivateKeyGenerationFailure(String),
@@ -116,7 +118,15 @@ pub enum AvalancheWalletError {
     },
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
+pub enum AvalancheVMError {
+    #[error("unsupported VM '{0}'")]
+    UnsupportedVM(String),
+    #[error("failed to encode genesis data: {0}")]
+    GenesisEncoding(String),
+}
+
+#[derive(Error, Debug, PartialEq)]
 pub enum AshNodeError {
     #[error("'{id}' is not a valid node ID: {msg}")]
     InvalidId { id: String, msg: String },

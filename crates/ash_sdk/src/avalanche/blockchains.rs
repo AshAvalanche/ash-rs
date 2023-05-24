@@ -3,7 +3,7 @@
 
 // Module that contains code to interact with Avalanche blockchains
 
-use crate::errors::*;
+use crate::{avalanche::vms::AvalancheVmType, errors::*};
 use avalanche_types::{ids::Id, jsonrpc::platformvm::Blockchain};
 use ethers::providers::{Http, Provider};
 use serde::{Deserialize, Serialize};
@@ -19,7 +19,7 @@ pub struct AvalancheBlockchain {
     #[serde(default)]
     pub vm_id: Id,
     #[serde(default)]
-    pub vm_type: String,
+    pub vm_type: AvalancheVmType,
     #[serde(default)]
     pub rpc_url: String,
 }
@@ -28,15 +28,12 @@ impl AvalancheBlockchain {
     /// Get an ethers Provider for this blockchain
     /// Only works for EVM blockchains
     pub fn get_ethers_provider(&self) -> Result<Provider<Http>, AshError> {
-        match self.vm_type.as_str() {
-            "EVM" => Ok(
-                Provider::<Http>::try_from(self.rpc_url.clone()).map_err(|e| {
-                    AvalancheBlockchainError::EthersProvider {
-                        blockchain_id: self.id.to_string(),
-                        msg: e.to_string(),
-                    }
-                })?,
-            ),
+        match self.vm_type {
+            AvalancheVmType::Coreth => Ok(Provider::<Http>::try_from(self.rpc_url.clone())
+                .map_err(|e| AvalancheBlockchainError::EthersProvider {
+                    blockchain_id: self.id.to_string(),
+                    msg: e.to_string(),
+                })?),
             _ => Err(AvalancheBlockchainError::EthersProvider {
                 blockchain_id: self.id.to_string(),
                 msg: format!(

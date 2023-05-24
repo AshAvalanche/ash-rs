@@ -38,7 +38,7 @@ avalancheNetworks:
         blockchains:
           - id: yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp
             name: C-Chain
-            vmType: EVM
+            vmType: Coreth
             rpcUrl: https://localhost:9650/ext/bc/C/rpc
 ```
 

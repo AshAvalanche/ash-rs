@@ -10,15 +10,15 @@ avalancheNetworks:
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain
-            vmType: PVM
+            vmType: PlatformVM
             rpcUrl: https://${ASH_QUICKNODE_FUJI_ENDPOINT}.discover.quiknode.pro/${ASH_QUICKNODE_FUJI_TOKEN}/ext/bc/P
           - id: yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp
             name: C-Chain
             vmId: mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
-            vmType: EVM
+            vmType: Coreth
             rpcUrl: https://${ASH_QUICKNODE_FUJI_ENDPOINT}.discover.quiknode.pro/${ASH_QUICKNODE_FUJI_TOKEN}/ext/bc/C/rpc
           - id: 2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm
             name: X-Chain
             vmId: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
-            vmType: AVM
+            vmType: AvalancheVM
             rpcUrl: https://${ASH_QUICKNODE_FUJI_ENDPOINT}.discover.quiknode.pro/${ASH_QUICKNODE_FUJI_TOKEN}/ext/bc/X

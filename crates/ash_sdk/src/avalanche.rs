@@ -6,6 +6,7 @@ pub mod jsonrpc;
 pub mod nodes;
 pub mod subnets;
 pub mod txs;
+pub mod vms;
 pub mod wallets;
 
 // Module that contains code to interact with Avalanche networks
@@ -362,7 +363,7 @@ impl From<GetBalanceResult> for AvalancheXChainBalance {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::avalanche::blockchains::AvalancheBlockchain;
+    use crate::avalanche::{blockchains::AvalancheBlockchain, vms::AvalancheVmType};
     use std::env;
 
     const AVAX_FUJI_CCHAIN_ID: &str = "yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp";
@@ -422,7 +423,7 @@ mod tests {
         assert_eq!(id.to_string(), AVAX_FUJI_CCHAIN_ID);
         assert_eq!(name, "C-Chain");
         assert_eq!(vm_id.to_string(), AVAX_FUJI_EVM_ID);
-        assert_eq!(vm_type, "EVM");
+        assert_eq!(vm_type, &AvalancheVmType::Coreth);
 
         assert!(AvalancheNetwork::load("invalid", None).is_err());
     }
