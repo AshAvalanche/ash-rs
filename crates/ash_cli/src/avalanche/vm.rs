@@ -1,0 +1,65 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023, E36 Knots
+
+// Module that contains the vm subcommand parser
+
+use crate::utils::{error::CliError, templating::*};
+use ash_sdk::avalanche::vms::{encode_genesis_data, AvalancheVmType};
+use clap::{Parser, Subcommand};
+
+/// Interact with Avalanche VMs
+#[derive(Parser)]
+#[command()]
+pub(crate) struct VmCommand {
+    #[command(subcommand)]
+    command: VmSubcommands,
+}
+
+#[derive(Subcommand)]
+enum VmSubcommands {
+    /// Encode a VM genesis (in JSON) to bytes
+    #[command()]
+    EncodeGenesis {
+        /// Path to the genesis JSON file
+        genesis_file: String,
+        /// VM type
+        #[arg(long, short = 't', default_value = "SubnetEVM")]
+        vm_type: AvalancheVmType,
+    },
+}
+
+fn encode_genesis(
+    genesis_file: &str,
+    vm_type: AvalancheVmType,
+    json: bool,
+) -> Result<(), CliError> {
+    let genesis_json = std::fs::read_to_string(genesis_file).map_err(|e| {
+        CliError::dataerr(format!("Error reading genesis file {genesis_file}: {e}"))
+    })?;
+
+    let genesis_bytes = encode_genesis_data(vm_type, &genesis_json).map_err(|e| {
+        CliError::dataerr(format!("Error encoding genesis file {genesis_file}: {e}"))
+    })?;
+
+    if json {
+        println!(
+            "{}",
+            serde_json::json!({ "genesisBytes": format!("0x{}", hex::encode(genesis_bytes)) })
+        );
+        return Ok(());
+    }
+
+    println!("{}", template_genesis_encoded(genesis_bytes, 0));
+
+    Ok(())
+}
+
+// Parse vm subcommand
+pub(crate) fn parse(x: VmCommand, json: bool) -> Result<(), CliError> {
+    match x.command {
+        VmSubcommands::EncodeGenesis {
+            genesis_file,
+            vm_type,
+        } => encode_genesis(&genesis_file, vm_type, json),
+    }
+}

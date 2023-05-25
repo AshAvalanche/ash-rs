@@ -308,6 +308,26 @@ pub(crate) fn template_subnet_info(subnet: &AvalancheSubnet, list: bool, indent:
     indent::indent_all_by(indent.into(), info_str)
 }
 
+pub(crate) fn template_subnet_creation(subnet: &AvalancheSubnet, wait: bool) -> String {
+    if wait {
+        formatdoc!(
+            "
+            Subnet created! (Tx ID: '{}')
+            {}",
+            type_colorize(&subnet.id),
+            template_subnet_info(subnet, false, 0)
+        )
+    } else {
+        formatdoc!(
+            "
+            Initiated subnet creation! (Tx ID: '{}')
+            {}",
+            type_colorize(&subnet.id),
+            template_subnet_info(subnet, false, 0)
+        )
+    }
+}
+
 pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> String {
     let mut info_str = String::new();
 
@@ -433,8 +453,8 @@ pub(crate) fn template_xchain_transfer(
 ) -> String {
     let mut transfer_str = String::new();
 
-    match wait {
-        true => transfer_str.push_str(&formatdoc!(
+    if wait {
+        transfer_str.push_str(&formatdoc!(
             "
             Transfered {} of asset '{}' to '{}'!
             Transaction ID: {}",
@@ -442,8 +462,9 @@ pub(crate) fn template_xchain_transfer(
             type_colorize(&asset_id),
             type_colorize(&to),
             type_colorize(&tx_id),
-        )),
-        false => transfer_str.push_str(&formatdoc!(
+        ));
+    } else {
+        transfer_str.push_str(&formatdoc!(
             "
             Initiated transfering {} of asset '{}' to '{}'!
             Transaction ID: {}",
@@ -451,8 +472,21 @@ pub(crate) fn template_xchain_transfer(
             type_colorize(&asset_id),
             type_colorize(&to),
             type_colorize(&tx_id),
-        )),
+        ));
     }
 
     indent::indent_all_by(indent.into(), transfer_str)
+}
+
+pub(crate) fn template_genesis_encoded(genesis_bytes: Vec<u8>, indent: u8) -> String {
+    let mut genesis_str = String::new();
+
+    genesis_str.push_str(&formatdoc!(
+        "
+        Genesis bytes:
+          {}",
+        type_colorize(&format!("0x{}", hex::encode(genesis_bytes))),
+    ));
+
+    indent::indent_all_by(indent.into(), genesis_str)
 }

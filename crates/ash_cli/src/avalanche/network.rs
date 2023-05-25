@@ -3,7 +3,7 @@
 
 // Module that contains the network subcommand parser
 
-use crate::utils::{error::CliError, templating::type_colorize};
+use crate::utils::{error::CliError, templating::*};
 use ash_sdk::conf::AshConfig;
 use clap::{Parser, Subcommand};
 

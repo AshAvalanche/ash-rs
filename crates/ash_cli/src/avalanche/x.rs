@@ -3,13 +3,14 @@
 
 // Module that contains the x subcommand parser
 
-use crate::utils::error::CliError;
-use crate::utils::templating::template_xchain_transfer;
-use crate::{avalanche::wallet::*, avalanche::*, utils::templating::template_xchain_balance};
+use crate::{
+    avalanche::{wallet::*, *},
+    utils::templating::template_xchain_balance,
+    utils::{error::CliError, templating::*},
+};
 use async_std::task;
 use clap::{Parser, Subcommand};
-use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
-use rust_decimal::Decimal;
+use rust_decimal::prelude::{Decimal, FromPrimitive, ToPrimitive};
 
 /// Interact with Avalanche X-Chain
 #[derive(Parser)]

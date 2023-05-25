@@ -3,8 +3,10 @@
 
 // Module that contains the validator subcommand parser
 
-use crate::avalanche::*;
-use crate::utils::{error::CliError, templating::*};
+use crate::{
+    avalanche::*,
+    utils::{error::CliError, templating::*},
+};
 use ash_sdk::avalanche::AVAX_PRIMARY_NETWORK_ID;
 use clap::{Parser, Subcommand};
 
