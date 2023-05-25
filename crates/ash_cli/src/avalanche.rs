@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023, E36 Knots
 
+mod blockchain;
 mod network;
 mod node;
 mod subnet;
@@ -28,6 +29,7 @@ pub(crate) struct AvalancheCommand {
 
 #[derive(Subcommand)]
 enum AvalancheSubcommands {
+    Blockchain(blockchain::BlockchainCommand),
     Network(network::NetworkCommand),
     Node(node::NodeCommand),
     Subnet(subnet::SubnetCommand),
@@ -86,6 +88,7 @@ pub(crate) fn parse(
     json: bool,
 ) -> Result<(), CliError> {
     match avalanche.command {
+        AvalancheSubcommands::Blockchain(blockchain) => blockchain::parse(blockchain, config, json),
         AvalancheSubcommands::Network(network) => network::parse(network, config, json),
         AvalancheSubcommands::Node(node) => node::parse(node, json),
         AvalancheSubcommands::Subnet(subnet) => subnet::parse(subnet, config, json),

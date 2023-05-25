@@ -42,6 +42,7 @@ enum SubnetSubcommands {
     /// Create a new Subnet
     #[command()]
     Create {
+        /// Private key to sign the transaction with
         #[arg(long, short = 'p', env = "AVALANCHE_PRIVATE_KEY")]
         private_key: String,
         /// Private key format

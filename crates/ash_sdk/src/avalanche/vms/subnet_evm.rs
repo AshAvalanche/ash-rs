@@ -6,6 +6,9 @@
 use crate::errors::*;
 use avalanche_types::subnet_evm::genesis::Genesis;
 
+/// Known ID for the Subnet EVM
+pub const AVAX_SUBNET_EVM_ID: &str = "spePNvBxaWSYL2tB5e2xMmMNBQkXMN8z2XEbz1ML2Aahatwoc";
+
 /// Encode the genesis data (JSON) to bytes
 pub fn encode_genesis_data(genesis_json: &str) -> Result<Vec<u8>, AshError> {
     let genesis: Genesis = serde_json::from_str(genesis_json)

@@ -328,6 +328,26 @@ pub(crate) fn template_subnet_creation(subnet: &AvalancheSubnet, wait: bool) -> 
     }
 }
 
+pub(crate) fn template_blockchain_creation(blockchain: &AvalancheBlockchain, wait: bool) -> String {
+    if wait {
+        formatdoc!(
+            "
+            Blockchain created! (Tx ID: '{}')
+            {}",
+            type_colorize(&blockchain.id),
+            template_blockchain_info(blockchain, false, 0)
+        )
+    } else {
+        formatdoc!(
+            "
+            Initiated blockchain creation! (Tx ID: '{}')
+            {}",
+            type_colorize(&blockchain.id),
+            template_blockchain_info(blockchain, false, 0)
+        )
+    }
+}
+
 pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> String {
     let mut info_str = String::new();
 
