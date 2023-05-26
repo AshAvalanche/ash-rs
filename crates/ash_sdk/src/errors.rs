@@ -92,6 +92,12 @@ pub enum AvalancheSubnetError {
         target_type: String,
         target_value: String,
     },
+    #[error("{operation} is not allowed on {subnet_type} Subnet '{subnet_id}'")]
+    OperationNotAllowed {
+        operation: String,
+        subnet_id: String,
+        subnet_type: String,
+    },
 }
 
 #[derive(Error, Debug, PartialEq)]

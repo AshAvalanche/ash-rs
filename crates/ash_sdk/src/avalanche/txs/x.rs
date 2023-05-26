@@ -17,7 +17,7 @@ pub async fn transfer_avax(
     check_acceptance: bool,
 ) -> Result<Id, AshError> {
     let tx_id = transfer::Tx::new(&wallet.xchain_wallet.x())
-        .receiver(receiver)
+        .receiver(receiver.clone())
         .amount(amount)
         .check_acceptance(check_acceptance)
         .issue()
@@ -25,7 +25,7 @@ pub async fn transfer_avax(
         .map_err(|e| AvalancheWalletError::IssueTx {
             blockchain_name: "X-Chain".to_string(),
             tx_type: "transfer".to_string(),
-            msg: e.to_string(),
+            msg: format!("failed to transfer {amount} AVAX to '{receiver}': {e}"),
         })?;
 
     Ok(tx_id)
