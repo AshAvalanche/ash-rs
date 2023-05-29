@@ -12,13 +12,9 @@ mod x;
 
 // Module that contains the avalanche subcommand parser
 
-use crate::utils::error::CliError;
-use ash_sdk::{
-    avalanche::AvalancheNetwork,
-    ids::{node::Id as NodeId, Id},
-};
+use crate::utils::{error::CliError, parsing::*};
+use ash_sdk::avalanche::AvalancheNetwork;
 use clap::{Parser, Subcommand};
-use std::str::FromStr;
 
 #[derive(Parser)]
 #[command(about = "Interact with Avalanche Subnets, blockchains and nodes")]
@@ -37,19 +33,6 @@ enum AvalancheSubcommands {
     Vm(vm::VmCommand),
     Wallet(wallet::WalletCommand),
     X(x::XCommand),
-}
-
-// Parse an ID from a string
-fn parse_id(id: &str) -> Result<Id, CliError> {
-    let id = Id::from_str(id).map_err(|e| CliError::dataerr(format!("Error parsing ID: {e}")))?;
-    Ok(id)
-}
-
-// Parse a node ID from a string
-fn parse_node_id(id: &str) -> Result<NodeId, CliError> {
-    let id = NodeId::from_str(id)
-        .map_err(|e| CliError::dataerr(format!("Error parsing NodeID: {e}")))?;
-    Ok(id)
 }
 
 // Load the network configuation

@@ -84,7 +84,7 @@ pub async fn add_permissioned_subnet_validator(
 
     // Check if the validator was successfully added
     // If the validator is already a validator, tx_id is empty and success false
-    return match success {
+    match success {
         true => Ok(tx_id),
         false => {
             if Id::is_empty(&tx_id) {
@@ -106,7 +106,7 @@ pub async fn add_permissioned_subnet_validator(
                 .into())
             }
         }
-    };
+    }
 }
 
 /// Add a validator to a permissioned Subnet
@@ -137,7 +137,7 @@ pub async fn add_avalanche_validator(
 
     // Check if the validator was successfully added
     // If the validator is already a validator, tx_id is empty and success false
-    return match success {
+    match success {
         true => Ok(tx_id),
         false => {
             if Id::is_empty(&tx_id) {
@@ -157,7 +157,7 @@ pub async fn add_avalanche_validator(
                 .into())
             }
         }
-    };
+    }
 }
 
 #[cfg(test)]

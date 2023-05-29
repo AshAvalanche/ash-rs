@@ -2,4 +2,5 @@
 // Copyright (c) 2023, E36 Knots
 
 pub(crate) mod error;
+pub(crate) mod parsing;
 pub(crate) mod templating;

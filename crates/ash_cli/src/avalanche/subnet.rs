@@ -5,7 +5,7 @@
 
 use crate::{
     avalanche::{wallet::*, *},
-    utils::{error::CliError, templating::*},
+    utils::{error::CliError, parsing::*, templating::*},
 };
 use ash_sdk::avalanche::subnets::AvalancheSubnet;
 use async_std::task;
@@ -38,6 +38,9 @@ enum SubnetSubcommands {
     Info {
         /// Subnet ID
         id: String,
+        /// Whether to show extended information (here about validators)
+        #[arg(long, short = 'e')]
+        extended: bool,
     },
     /// Create a new Subnet
     #[command()]
@@ -75,13 +78,19 @@ fn list(network_name: &str, config: Option<&str>, json: bool) -> Result<(), CliE
         type_colorize(&network.name)
     );
     for subnet in network.subnets.iter() {
-        println!("{}", template_subnet_info(subnet, true, 0));
+        println!("{}", template_subnet_info(subnet, true, false, 0));
     }
 
     Ok(())
 }
 
-fn info(network_name: &str, id: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
+fn info(
+    network_name: &str,
+    id: &str,
+    extended: bool,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
     let mut network = load_network(network_name, config)?;
     update_network_subnets(&mut network)?;
     update_subnet_validators(&mut network, id)?;
@@ -95,7 +104,7 @@ fn info(network_name: &str, id: &str, config: Option<&str>, json: bool) -> Resul
         return Ok(());
     }
 
-    println!("{}", template_subnet_info(subnet, false, 0));
+    println!("{}", template_subnet_info(subnet, false, extended, 0));
 
     Ok(())
 }
@@ -135,7 +144,9 @@ pub(crate) fn parse(
     json: bool,
 ) -> Result<(), CliError> {
     match subnet.command {
-        SubnetSubcommands::Info { id } => info(&subnet.network, &id, config, json),
+        SubnetSubcommands::Info { id, extended } => {
+            info(&subnet.network, &id, extended, config, json)
+        }
         SubnetSubcommands::List => list(&subnet.network, config, json),
         SubnetSubcommands::Create {
             private_key,

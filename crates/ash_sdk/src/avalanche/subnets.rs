@@ -112,7 +112,7 @@ impl AvalancheSubnet {
     /// Add a validator to the Primary Network
     /// Fail if the Subnet is not the Primary Network
     pub async fn add_avalanche_validator(
-        &mut self,
+        &self,
         wallet: &AvalancheWallet,
         node_id: NodeId,
         stake_amount: u64,
@@ -155,18 +155,23 @@ impl AvalancheSubnet {
                 threshold: 1,
                 addresses: vec![wallet.pchain_wallet.p_address.clone()],
             }),
+            delegation_reward_owner: Some(AvalancheOutputOwners {
+                locktime: 0,
+                threshold: 1,
+                addresses: vec![wallet.pchain_wallet.p_address.clone()],
+            }),
             ..Default::default()
         })
     }
 
     /// Add a validator to a permissioned Subnet
     pub async fn add_validator_permissioned(
-        &mut self,
+        &self,
         wallet: &AvalancheWallet,
         node_id: NodeId,
+        weight: u64,
         start_time: DateTime<Utc>,
         end_time: DateTime<Utc>,
-        weight: u64,
         check_acceptance: bool,
     ) -> Result<AvalancheSubnetValidator, AshError> {
         // Check if the Subnet is permissioned
@@ -233,6 +238,7 @@ pub struct AvalancheSubnetValidator {
     pub node_id: NodeId,
     #[serde(skip)]
     pub subnet_id: Id,
+    // TODO: Store as DateTime::<Utc>?
     pub start_time: u64,
     pub end_time: u64,
     pub stake_amount: Option<u64>,
@@ -405,7 +411,7 @@ mod tests {
 
         // Only test if adding a validator to the Primary Network fails
         // because adding a validator to a Subnet is too long and already tested
-        let mut primary_network = local_network
+        let primary_network = local_network
             .get_subnet(local_network.primary_network_id)
             .unwrap()
             .clone();
@@ -414,9 +420,9 @@ mod tests {
             .add_validator_permissioned(
                 &wallet,
                 NodeId::from_str(NETWORK_RUNNER_NODE_ID).unwrap(),
+                100,
                 DateTime::<Utc>::from_str("2025-01-01T00:00:00.000Z").unwrap(),
                 DateTime::<Utc>::from_str("2025-02-01T00:00:00.000Z").unwrap(),
-                100,
                 false
             )
             .await

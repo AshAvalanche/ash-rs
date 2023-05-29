@@ -5,7 +5,7 @@
 
 use crate::{
     avalanche::{wallet::*, *},
-    utils::{error::CliError, templating::*},
+    utils::{error::CliError, parsing::*, templating::*},
 };
 use ash_sdk::avalanche::{
     blockchains::AvalancheBlockchain,
@@ -49,20 +49,10 @@ enum BlockchainSubcommands {
         )]
         vm_id: String,
         /// Blockchain genesis data string (hex encoded)
-        #[arg(
-            long,
-            short = 'g',
-            required_unless_present = "genesis_file",
-            conflicts_with = "genesis_file"
-        )]
+        #[arg(long, short = 'g', group = "genesis")]
         genesis_str: Option<String>,
         /// Path to a JSON file containing the blockchain genesis data (generated with `ash avalanche vm encode-genesis`)
-        #[arg(
-            long,
-            short = 'f',
-            required_unless_present = "genesis_str",
-            conflicts_with = "genesis_str"
-        )]
+        #[arg(long, short = 'f', group = "genesis")]
         genesis_file: Option<String>,
         /// Subnet ID to create the blockchain on
         #[arg(long, short = 's')]
@@ -127,7 +117,7 @@ fn create(
             Some(data) => data,
             None => {
                 return Err(CliError::dataerr(
-                    "Either genesis data or a genesis file must be provided".to_string(),
+                    "Error when parsing arguments: either 'genesis-str' or a 'genesis-file' must be provided".to_string(),
                 ))
             }
         },
