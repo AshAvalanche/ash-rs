@@ -10,14 +10,14 @@ use avalanche_types::{
 };
 
 /// Transfer AVAX from a wallet to the receiver
-pub async fn transfer(
+pub async fn transfer_avax(
     wallet: &AvalancheWallet,
     receiver: ShortId,
     amount: u64,
     check_acceptance: bool,
 ) -> Result<Id, AshError> {
     let tx_id = transfer::Tx::new(&wallet.xchain_wallet.x())
-        .receiver(receiver)
+        .receiver(receiver.clone())
         .amount(amount)
         .check_acceptance(check_acceptance)
         .issue()
@@ -25,7 +25,7 @@ pub async fn transfer(
         .map_err(|e| AvalancheWalletError::IssueTx {
             blockchain_name: "X-Chain".to_string(),
             tx_type: "transfer".to_string(),
-            msg: e.to_string(),
+            msg: format!("failed to transfer {amount} AVAX to '{receiver}': {e}"),
         })?;
 
     Ok(tx_id)
@@ -35,7 +35,6 @@ pub async fn transfer(
 mod tests {
     use super::*;
     use crate::avalanche::{address_to_short_id, jsonrpc::avm::get_balance, AvalancheNetwork};
-    use async_std;
 
     const AVAX_EWOQ_PRIVATE_KEY: &str =
         "PrivateKey-ewoqjP7PxY4yr3iLTpLisriqt94hdyDFNgchSxGGztUrTXtNN";
@@ -47,6 +46,7 @@ mod tests {
     }
 
     #[async_std::test]
+    #[serial_test::serial]
     #[ignore]
     async fn test_transfer() {
         let local_network = load_test_network();
@@ -56,9 +56,9 @@ mod tests {
         let rpc_url = &local_network.get_xchain().unwrap().rpc_url;
         let init_balance = get_balance(rpc_url, AVAX_LOCAL_XCHAIN_ADDR, "AVAX").unwrap();
 
-        transfer(
+        transfer_avax(
             &local_wallet,
-            address_to_short_id(AVAX_LOCAL_XCHAIN_ADDR, "X"),
+            address_to_short_id(AVAX_LOCAL_XCHAIN_ADDR, "X").unwrap(),
             100000000,
             true,
         )

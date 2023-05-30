@@ -70,8 +70,11 @@ impl AshConfig {
 mod tests {
     use super::*;
     use crate::avalanche::{
-        blockchains::AvalancheBlockchain, subnets::AvalancheSubnet, AVAX_PRIMARY_NETWORK_ID,
+        blockchains::AvalancheBlockchain, subnets::AvalancheSubnet, vms::AvalancheVmType,
+        AVAX_PRIMARY_NETWORK_ID,
     };
+    use avalanche_types::ids::Id;
+    use std::str::FromStr;
 
     const AVAX_PCHAIN_ID: &str = AVAX_PRIMARY_NETWORK_ID;
     const AVAX_MAINNET_CCHAIN_ID: &str = "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5";
@@ -101,7 +104,7 @@ mod tests {
             blockchains,
             ..
         } = &mainnet.subnets[0];
-        assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
+        assert_eq!(id, &mainnet.primary_network_id);
         assert_eq!(control_keys.len(), 0);
         assert_eq!(threshold, &0);
         assert_eq!(blockchains.len(), 3);
@@ -114,10 +117,10 @@ mod tests {
             rpc_url,
             ..
         } = &blockchains[1];
-        assert_eq!(id.to_string(), AVAX_MAINNET_CCHAIN_ID);
+        assert_eq!(id, &Id::from_str(AVAX_MAINNET_CCHAIN_ID).unwrap());
         assert_eq!(name, "C-Chain");
-        assert_eq!(vm_id.to_string(), AVAX_MAINNET_EVM_ID);
-        assert_eq!(vm_type, "EVM");
+        assert_eq!(vm_id, &Id::from_str(AVAX_MAINNET_EVM_ID).unwrap());
+        assert_eq!(vm_type, &AvalancheVmType::Coreth);
         assert_eq!(rpc_url, AVAX_MAINNET_CCHAIN_RPC);
     }
 
@@ -145,7 +148,7 @@ mod tests {
             blockchains,
             ..
         } = &custom.subnets[0];
-        assert_eq!(id.to_string(), AVAX_PRIMARY_NETWORK_ID);
+        assert_eq!(id, &custom.primary_network_id);
         assert_eq!(control_keys.len(), 0);
         assert_eq!(threshold, &0);
         assert_eq!(blockchains.len(), 3);
@@ -157,9 +160,9 @@ mod tests {
             rpc_url,
             ..
         } = &blockchains[0];
-        assert_eq!(id.to_string(), AVAX_PCHAIN_ID);
+        assert_eq!(id, &Id::from_str(AVAX_PCHAIN_ID).unwrap());
         assert_eq!(name, "P-Chain");
-        assert_eq!(vm_type, "PVM");
+        assert_eq!(vm_type, &AvalancheVmType::PlatformVM);
         assert_eq!(rpc_url, "https://api.ash.center/ext/bc/P");
     }
 

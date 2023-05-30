@@ -1,4 +1,4 @@
-# ash_sdk
+# `ash_sdk` Crate
 
 `ash-rs` is a Rust SDK for [Avalanche](https://avax.network) and [Ash](https://ash.center) tools.
 
@@ -66,17 +66,17 @@ avalancheNetworks:
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain
-            vmType: PVM
+            vmType: PlatformVM
             rpcUrl: https://api.avax.network/ext/bc/P
           - id: 2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5
             name: C-Chain
             vmId: mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
-            vmType: EVM
+            vmType: Coreth
             rpcUrl: https://api.avax.network/ext/bc/C/rpc
           - id: 2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM
             name: X-Chain
             vmId: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
-            vmType: AVM
+            vmType: AvalancheVM
             rpcUrl: https://api.avax.network/ext/bc/X
 ```
 
@@ -88,9 +88,4 @@ One can check out the [CLI code](https://github.com/AshAvalanche/ash-rs/tree/mai
 
 ## Modules
 
-- `conf`: Interact with the library configuration in YAML
-- `errors`: Generate errors for the library
-- `avalanche`: Interact with Avalanche networks, Subnets and blockchains
-  - `avalanche::subnets`: Interact with Avalanche Subnets and validators
-  - `avalanche::blockchains`: Interact with Avalanche blockchains
-  - `avalanche::jsonrpc`: Interact with Avalanche VMs JSON RPC endpoints
+See the [docs.rs documentation](https://docs.rs/ash_sdk) for more details.

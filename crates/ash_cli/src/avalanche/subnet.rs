@@ -3,8 +3,12 @@
 
 // Module that contains the subnet subcommand parser
 
-use crate::avalanche::*;
-use crate::utils::{error::CliError, templating::*};
+use crate::{
+    avalanche::{wallet::*, *},
+    utils::{error::CliError, parsing::*, templating::*},
+};
+use ash_sdk::avalanche::subnets::AvalancheSubnet;
+use async_std::task;
 use clap::{Parser, Subcommand};
 
 /// Interact with Avalanche Subnets
@@ -34,6 +38,27 @@ enum SubnetSubcommands {
     Info {
         /// Subnet ID
         id: String,
+        /// Whether to show extended information (here about validators)
+        #[arg(long, short = 'e')]
+        extended: bool,
+    },
+    /// Create a new Subnet
+    #[command()]
+    Create {
+        /// Private key to sign the transaction with
+        #[arg(long, short = 'p', env = "AVALANCHE_PRIVATE_KEY")]
+        private_key: String,
+        /// Private key format
+        #[arg(
+            long,
+            short = 'e',
+            default_value = "cb58",
+            env = "AVALANCHE_KEY_ENCODING"
+        )]
+        key_encoding: PrivateKeyEncoding,
+        /// Whether to wait for transaction acceptance
+        #[arg(long, short = 'w')]
+        wait: bool,
     },
 }
 
@@ -53,19 +78,25 @@ fn list(network_name: &str, config: Option<&str>, json: bool) -> Result<(), CliE
         type_colorize(&network.name)
     );
     for subnet in network.subnets.iter() {
-        println!("{}", template_subnet_info(subnet, true, 0));
+        println!("{}", template_subnet_info(subnet, true, false, 0));
     }
 
     Ok(())
 }
 
-fn info(network_name: &str, id: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
+fn info(
+    network_name: &str,
+    id: &str,
+    extended: bool,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
     let mut network = load_network(network_name, config)?;
     update_network_subnets(&mut network)?;
     update_subnet_validators(&mut network, id)?;
 
     let subnet = network
-        .get_subnet(id)
+        .get_subnet(parse_id(id)?)
         .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {e}")))?;
 
     if json {
@@ -73,7 +104,35 @@ fn info(network_name: &str, id: &str, config: Option<&str>, json: bool) -> Resul
         return Ok(());
     }
 
-    println!("{}", template_subnet_info(subnet, false, 0));
+    println!("{}", template_subnet_info(subnet, false, extended, 0));
+
+    Ok(())
+}
+
+fn create(
+    network_name: &str,
+    private_key: &str,
+    key_encoding: PrivateKeyEncoding,
+    wait: bool,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
+    let network = load_network(network_name, config)?;
+    let wallet = create_wallet(&network, private_key, key_encoding)?;
+
+    if wait {
+        eprintln!("Waiting for transaction to be accepted...");
+    }
+
+    let subnet = task::block_on(async { AvalancheSubnet::create(&wallet, wait).await })
+        .map_err(|e| CliError::dataerr(format!("Error creating Subnet: {e}")))?;
+
+    if json {
+        println!("{}", serde_json::to_string(&subnet).unwrap());
+        return Ok(());
+    }
+
+    println!("{}", template_subnet_creation(&subnet, wait));
 
     Ok(())
 }
@@ -85,7 +144,21 @@ pub(crate) fn parse(
     json: bool,
 ) -> Result<(), CliError> {
     match subnet.command {
-        SubnetSubcommands::Info { id } => info(&subnet.network, &id, config, json),
+        SubnetSubcommands::Info { id, extended } => {
+            info(&subnet.network, &id, extended, config, json)
+        }
         SubnetSubcommands::List => list(&subnet.network, config, json),
+        SubnetSubcommands::Create {
+            private_key,
+            key_encoding,
+            wait,
+        } => create(
+            &subnet.network,
+            &private_key,
+            key_encoding,
+            wait,
+            config,
+            json,
+        ),
     }
 }

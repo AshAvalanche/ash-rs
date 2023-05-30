@@ -10,7 +10,7 @@ avalancheNetworks:
         blockchains:
           - id: 2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm
             name: MyChain
-            vmType: EVM
+            vmType: Coreth
             rpcUrl: https://api.ash.center/ext/bc/mychain/rpc
   - name: no-pchain
     subnets:
@@ -19,5 +19,5 @@ avalancheNetworks:
         blockchains:
           - id: yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp
             name: C-Chain
-            vmType: EVM
+            vmType: Coreth
             rpcUrl: https://api.ash.center/ext/bc/C/rpc

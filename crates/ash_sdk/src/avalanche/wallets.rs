@@ -108,8 +108,8 @@ impl AvalancheWallet {
         amount: u64,
         check_acceptance: bool,
     ) -> Result<Id, AshError> {
-        let receiver = address_to_short_id(to, "X");
-        let tx_id = x::transfer(self, receiver, amount, check_acceptance).await?;
+        let receiver = address_to_short_id(to, "X")?;
+        let tx_id = x::transfer_avax(self, receiver, amount, check_acceptance).await?;
 
         Ok(tx_id)
     }
@@ -148,7 +148,6 @@ pub fn generate_private_key() -> Result<PrivateKey, AshError> {
 mod tests {
     use super::*;
     use crate::avalanche::AvalancheNetwork;
-    use async_std;
 
     const AVAX_CB58_PRIVATE_KEY: &str =
         "PrivateKey-ewoqjP7PxY4yr3iLTpLisriqt94hdyDFNgchSxGGztUrTXtNN";

@@ -8,6 +8,7 @@ use ash_sdk::avalanche::{
     wallets::AvalancheWalletInfo,
     AvalancheXChainBalance,
 };
+use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::{ColoredString, Colorize};
 use indoc::formatdoc;
 
@@ -33,6 +34,15 @@ where
         "Id" => var.to_string().green(),
         _ => var.to_string().bright_white(),
     }
+}
+
+pub(crate) fn human_readable_timestamp(timestamp: u64) -> String {
+    DateTime::<Utc>::from_utc(
+        NaiveDateTime::from_timestamp_opt(timestamp as i64, 0).unwrap(),
+        Utc,
+    )
+    .format("%Y-%m-%d %H:%M:%S")
+    .to_string()
 }
 
 pub(crate) fn template_horizontal_rule(character: char, length: usize) -> String {
@@ -79,8 +89,8 @@ pub(crate) fn template_validator_info(
     validator: &AvalancheSubnetValidator,
     subnet: &AvalancheSubnet,
     list: bool,
-    indent: u8,
     extended: bool,
+    indent: u8,
 ) -> String {
     let mut info_str = String::new();
 
@@ -91,8 +101,8 @@ pub(crate) fn template_validator_info(
         End time:         {}
         ",
         type_colorize(&validator.tx_id),
-        type_colorize(&validator.start_time),
-        type_colorize(&validator.end_time),
+        type_colorize(&human_readable_timestamp(validator.start_time)),
+        type_colorize(&human_readable_timestamp(validator.end_time)),
     );
 
     let permissioned_subnet_info = &formatdoc!(
@@ -224,7 +234,12 @@ pub(crate) fn template_validator_info(
     indent::indent_all_by(indent.into(), info_str)
 }
 
-pub(crate) fn template_subnet_info(subnet: &AvalancheSubnet, list: bool, indent: u8) -> String {
+pub(crate) fn template_subnet_info(
+    subnet: &AvalancheSubnet,
+    list: bool,
+    extended: bool,
+    indent: u8,
+) -> String {
     let mut info_str = String::new();
 
     let subindent = match list {
@@ -244,7 +259,7 @@ pub(crate) fn template_subnet_info(subnet: &AvalancheSubnet, list: bool, indent:
     for validator in subnet.validators.iter() {
         validators_info.push_str(&format!(
             "\n{}",
-            template_validator_info(validator, subnet, true, subindent, false)
+            template_validator_info(validator, subnet, true, extended, subindent)
         ));
     }
 
@@ -306,6 +321,70 @@ pub(crate) fn template_subnet_info(subnet: &AvalancheSubnet, list: bool, indent:
     }
 
     indent::indent_all_by(indent.into(), info_str)
+}
+
+pub(crate) fn template_subnet_creation(subnet: &AvalancheSubnet, wait: bool) -> String {
+    if wait {
+        formatdoc!(
+            "
+            Subnet created! (Tx ID: '{}')
+            {}",
+            type_colorize(&subnet.id),
+            template_subnet_info(subnet, false, false, 0)
+        )
+    } else {
+        formatdoc!(
+            "
+            Initiated subnet creation! (Tx ID: '{}')
+            {}",
+            type_colorize(&subnet.id),
+            template_subnet_info(subnet, false, false, 0)
+        )
+    }
+}
+
+pub(crate) fn template_blockchain_creation(blockchain: &AvalancheBlockchain, wait: bool) -> String {
+    if wait {
+        formatdoc!(
+            "
+            Blockchain created! (Tx ID: '{}')
+            {}",
+            type_colorize(&blockchain.id),
+            template_blockchain_info(blockchain, false, 0)
+        )
+    } else {
+        formatdoc!(
+            "
+            Initiated blockchain creation! (Tx ID: '{}')
+            {}",
+            type_colorize(&blockchain.id),
+            template_blockchain_info(blockchain, false, 0)
+        )
+    }
+}
+
+pub(crate) fn template_validator_add(
+    validator: &AvalancheSubnetValidator,
+    subnet: &AvalancheSubnet,
+    wait: bool,
+) -> String {
+    if wait {
+        formatdoc!(
+            "
+            Validator added to Subnet! (Tx ID: '{}')
+            {}",
+            type_colorize(&validator.node_id),
+            template_validator_info(validator, &subnet, false, true, 0)
+        )
+    } else {
+        formatdoc!(
+            "
+            Initiated validator addition to Subnet! (Tx ID: '{}')
+            {}",
+            type_colorize(&validator.node_id),
+            template_validator_info(validator, &subnet, false, true, 0)
+        )
+    }
 }
 
 pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> String {
@@ -433,8 +512,8 @@ pub(crate) fn template_xchain_transfer(
 ) -> String {
     let mut transfer_str = String::new();
 
-    match wait {
-        true => transfer_str.push_str(&formatdoc!(
+    if wait {
+        transfer_str.push_str(&formatdoc!(
             "
             Transfered {} of asset '{}' to '{}'!
             Transaction ID: {}",
@@ -442,8 +521,9 @@ pub(crate) fn template_xchain_transfer(
             type_colorize(&asset_id),
             type_colorize(&to),
             type_colorize(&tx_id),
-        )),
-        false => transfer_str.push_str(&formatdoc!(
+        ));
+    } else {
+        transfer_str.push_str(&formatdoc!(
             "
             Initiated transfering {} of asset '{}' to '{}'!
             Transaction ID: {}",
@@ -451,8 +531,21 @@ pub(crate) fn template_xchain_transfer(
             type_colorize(&asset_id),
             type_colorize(&to),
             type_colorize(&tx_id),
-        )),
+        ));
     }
 
     indent::indent_all_by(indent.into(), transfer_str)
+}
+
+pub(crate) fn template_genesis_encoded(genesis_bytes: Vec<u8>, indent: u8) -> String {
+    let mut genesis_str = String::new();
+
+    genesis_str.push_str(&formatdoc!(
+        "
+        Genesis bytes:
+          {}",
+        type_colorize(&format!("0x{}", hex::encode(genesis_bytes))),
+    ));
+
+    indent::indent_all_by(indent.into(), genesis_str)
 }

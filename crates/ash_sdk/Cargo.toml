@@ -18,6 +18,7 @@ keywords.workspace = true
 avalanche-types = { version = "0.0.386", features = [
 	"jsonrpc_client",
 	"wallet",
+	"subnet_evm",
 ] }
 config = { version = "0.13.3", features = ["yaml"] }
 ethers = { version = "1.0.2", features = ["rustls"] }
@@ -33,6 +34,10 @@ async-std = { version = "1.10.0", features = ["attributes", "tokio1"] }
 # We need to enable the rustls-tls-native-roots feature to support self-signed certificates
 reqwest = { version = "0.11.14", features = ["rustls-tls-native-roots"] }
 enum-display-derive = "0.1.1"
+serde_json = "1.0.96"
+strum = { version = "0.24", features = ["derive"] }
+chrono = { version = "0.4.24", features = ["clock"] }
 
 [dev-dependencies]
+serial_test = "2.0.0"
 tempfile = "3.3.0"

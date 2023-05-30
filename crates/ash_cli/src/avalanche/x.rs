@@ -3,13 +3,14 @@
 
 // Module that contains the x subcommand parser
 
-use crate::utils::error::CliError;
-use crate::utils::templating::template_xchain_transfer;
-use crate::{avalanche::wallet::*, avalanche::*, utils::templating::template_xchain_balance};
+use crate::{
+    avalanche::{wallet::*, *},
+    utils::templating::template_xchain_balance,
+    utils::{error::CliError, templating::*},
+};
 use async_std::task;
 use clap::{Parser, Subcommand};
-use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
-use rust_decimal::Decimal;
+use rust_decimal::prelude::{Decimal, FromPrimitive, ToPrimitive};
 
 /// Interact with Avalanche X-Chain
 #[derive(Parser)]
@@ -103,6 +104,13 @@ fn transfer(
     config: Option<&str>,
     json: bool,
 ) -> Result<(), CliError> {
+    // For now, only AVAX transfers are supported
+    if asset_id != "AVAX" {
+        return Err(CliError::dataerr(
+            "Error: only AVAX transfers are supported at this time".to_string(),
+        ));
+    }
+
     let network = load_network(network_name, config)?;
 
     let wallet = create_wallet(&network, private_key, key_encoding)?;

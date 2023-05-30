@@ -7,40 +7,19 @@ This project provides Rust crates to interact with:
 
 ## Crates
 
-- [ash_sdk](crates/ash_sdk): Ash Rust SDK
-- [ash_cli](crates/ash_cli): Ash CLI
+- [ash_sdk](crates/ash_sdk): Ash Rust SDK  
+  [<img alt="crates.io" src="https://img.shields.io/crates/v/ash_sdk.svg?style=flat&color=fc8d62&logo=rust">](https://crates.io/crates/ash_sdk)
+  [<img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-ash_sdk-green?style=flat&labelColor=555555&logo=docs.rs">](https://docs.rs/ash_sdk)
+- [ash_cli](crates/ash_cli): Ash CLI  
+  [<img alt="crates.io" src="https://img.shields.io/crates/v/ash_cli.svg?style=flat&color=fc8d62&logo=rust">](https://crates.io/crates/ash_cli)
 
 ## Ash CLI Installation
 
-```sh
-git clone https://github.com/AshAvalanche/ash-rs.git
-cd ash-rs
-
-cargo install --path crates/ash_cli
-
-# The CLI is then available globally
-ash --help
-```
-
-See [Available commands](crates/ash_cli/README.md#available-commands).
+See the [Installation](https://ash.center/docs/toolkit/ash-cli/installation) section of the documentation.
 
 ## Configuration
 
-A YAML configuration file can be generated using the `ash conf init` command, enriched and then reused in commands with the `--config` flag.
-
-This allows to query custom networks with the CLI:
-
-```yaml
-avalancheNetworks:
-  - name: local
-    subnets:
-      - id: 11111111111111111111111111111111LpoYY
-        blockchains:
-          - id: yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp
-            name: C-Chain
-            vmType: EVM
-            rpcUrl: https://localhost:9650/ext/bc/C/rpc
-```
+See the [Custom Configuration tutorial](https://ash.center/docs/toolkit/ash-cli/tutorials/custom-configuration) section of the documentation.
 
 ## Development
 
@@ -108,6 +87,6 @@ ASH_TEST_AVAX_CONFIG="$PWD/target/ash-test-avax-conf.yml" cargo test
 - [x] Get Subnets and blockchains information from the Avalanche P-Chain
 - [x] Get nodes information from the Avalanche P-Chain
 - [x] Get Subnet validators information from the Avalanche P-Chain
-- [ ] Subnet creation
-- [ ] Blockchain creation
+- [x] Subnet creation
+- [x] Blockchain creation
 - [ ] WASM integration (to allow the library to be used from JavaScript)

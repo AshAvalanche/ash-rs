@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, Ipv4Addr};
 
 /// Avalanche node
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheNode {
     pub id: Id,
@@ -151,7 +151,7 @@ impl AvalancheNode {
 }
 
 /// Avalanche node version
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheNodeVersions {
     pub avalanchego_version: String,
@@ -174,7 +174,7 @@ impl From<GetNodeVersionResult> for AvalancheNodeVersions {
 }
 
 /// Avalanche node uptime
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheNodeUptime {
     pub rewarding_stake_percentage: f64,
@@ -193,6 +193,7 @@ impl From<UptimeResult> for AvalancheNodeUptime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr;
 
     // Using avalanche-network-runner to run a test network
     const ASH_TEST_HTTP_PORT: u16 = 9650;
@@ -217,7 +218,7 @@ mod tests {
         node.update_info().unwrap();
 
         // Test the node ID, network, public_ip and stacking_port
-        assert_eq!(node.id.to_string(), ASH_TEST_NODE_ID);
+        assert_eq!(node.id, Id::from_str(ASH_TEST_NODE_ID).unwrap());
         assert_eq!(node.network, ASH_TEST_NETWORK_NAME);
         assert_eq!(node.public_ip, ASH_TEST_HTTP_HOST);
         assert_eq!(node.staking_port, ASH_TEST_STACKING_PORT);

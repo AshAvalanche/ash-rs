@@ -9,7 +9,6 @@ pub mod platformvm;
 
 use crate::errors::*;
 use avalanche_types::jsonrpc::ResponseError;
-use ureq;
 
 /// Trait that defines the methods to get the result and error of a JSON RPC response
 /// This is used to avoid code duplication when posting JSON RPC requests

@@ -3,9 +3,10 @@
 
 // Module that contains the wallet subcommand parser
 
-use crate::utils::error::CliError;
-use crate::utils::templating::template_wallet_info;
-use crate::{avalanche::*, utils::templating::template_generate_private_key};
+use crate::{
+    avalanche::*,
+    utils::{error::CliError, templating::*},
+};
 use ash_sdk::avalanche::wallets::{generate_private_key, AvalancheWallet, AvalancheWalletInfo};
 use clap::{Parser, Subcommand, ValueEnum};
 use std::fmt::Display;
