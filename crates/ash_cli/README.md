@@ -11,19 +11,42 @@ ash avalanche subnet list --network mainnet
 
 # Show detailed information about one of the mainnet Subnets
 # The output can be set to JSON and piped to jq for maximum flexibility
-ash avalanche subnet info --id Vn3aX6hNRstj5VHHm63TCgPNaeGnRSqCYXQqemSqDd2TQH4qJ --json | jq '.blockchains'
+ash avalanche subnet info Vn3aX6hNRstj5VHHm63TCgPNaeGnRSqCYXQqemSqDd2TQH4qJ --json | jq '.blockchains'
 
 # Show detailed information about a validator of the mainnet Subnet
-ash avalanche validator info --network fuji --id NodeID-FhFWdWodxktJYq884nrJjWD8faLTk9jmp
+ash avalanche validator info --network fuji NodeID-FhFWdWodxktJYq884nrJjWD8faLTk9jmp
 ```
 
 ## Available commands
 
-- `ash conf`: Manipulate the Ash lib configuration
-- `ash avalanche network`: Interact with Avalanche networks
-- `ash avalanche node`: Interact with Avalanche nodes
-- `ash avalanche subnet`: Interact with Avalanche Subnets
-- `ash avalanche validator`: Interact with Avalanche validators
+- `ash conf`
+
+  ```bash
+  Interact with Ash configuration files
+
+  Usage: ash conf [OPTIONS] <COMMAND>
+
+  Commands:
+    init  Initialize an Ash config file
+  ```
+
+- `ash avalanche`
+
+  ```bash
+  Interact with Avalanche Subnets, blockchains and nodes
+
+  Usage: ash avalanche [OPTIONS] <COMMAND>
+
+  Commands:
+    blockchain  Interact with Avalanche blockchains
+    network     Interact with Avalanche networks
+    node        Interact with Avalanche nodes
+    subnet      Interact with Avalanche Subnets
+    validator   Interact with Avalanche validators
+    vm          Interact with Avalanche VMs
+    wallet      Interact with Avalanche wallets
+    x           Interact with Avalanche X-Chain
+  ```
 
 ## Tutorials
 

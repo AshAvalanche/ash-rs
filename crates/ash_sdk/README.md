@@ -1,4 +1,4 @@
-# ash_sdk
+# `ash_sdk` Crate
 
 `ash-rs` is a Rust SDK for [Avalanche](https://avax.network) and [Ash](https://ash.center) tools.
 
@@ -88,9 +88,4 @@ One can check out the [CLI code](https://github.com/AshAvalanche/ash-rs/tree/mai
 
 ## Modules
 
-- `conf`: Interact with the library configuration in YAML
-- `errors`: Generate errors for the library
-- `avalanche`: Interact with Avalanche networks, Subnets and blockchains
-  - `avalanche::subnets`: Interact with Avalanche Subnets and validators
-  - `avalanche::blockchains`: Interact with Avalanche blockchains
-  - `avalanche::jsonrpc`: Interact with Avalanche VMs JSON RPC endpoints
+See the [docs.rs documentation](https://docs.rs/ash_sdk) for more details.
