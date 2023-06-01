@@ -60,25 +60,51 @@ pub(crate) fn template_blockchain_info(
         info_str.push_str(&formatdoc!(
             "
             - {}:
-               ID:      {}
-               VM type: {}
-               RPC URL: {}",
+              ID:      {}
+              VM ID:   {}
+              VM type: {}{}",
             type_colorize(&blockchain.name),
             type_colorize(&blockchain.id),
+            type_colorize(&blockchain.vm_id),
             type_colorize(&blockchain.vm_type),
-            type_colorize(&blockchain.rpc_url),
+            if !blockchain.rpc_url.is_empty() {
+                indent::indent_all_by(
+                    2,
+                    formatdoc!(
+                        "
+
+                    RPC URL: {}",
+                        type_colorize(&blockchain.rpc_url)
+                    ),
+                )
+            } else {
+                "".to_string()
+            }
         ));
     } else {
         info_str.push_str(&formatdoc!(
             "
             Blockchain '{}':
               ID:      {}
-              VM type: {}
-              RPC URL: {}",
+              VM ID:   {}
+              VM type: {}{}",
             type_colorize(&blockchain.name),
             type_colorize(&blockchain.id),
+            type_colorize(&blockchain.vm_id),
             type_colorize(&blockchain.vm_type),
-            type_colorize(&blockchain.rpc_url),
+            if !blockchain.rpc_url.is_empty() {
+                indent::indent_all_by(
+                    2,
+                    formatdoc!(
+                        "
+
+                    RPC URL: {}",
+                        type_colorize(&blockchain.rpc_url)
+                    ),
+                )
+            } else {
+                "".to_string()
+            }
         ));
     }
 
@@ -97,8 +123,8 @@ pub(crate) fn template_validator_info(
     let common_info = &formatdoc!(
         "
         Tx ID:            {}
-        Start time:       {}
-        End time:         {}
+        Start time (UTC): {}
+        End time (UTC):   {}
         ",
         type_colorize(&validator.tx_id),
         type_colorize(&human_readable_timestamp(validator.start_time)),
