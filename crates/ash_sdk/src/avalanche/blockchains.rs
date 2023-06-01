@@ -15,15 +15,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheBlockchain {
+    #[serde(default)]
     pub id: Id,
     pub name: String,
     #[serde(skip)]
     pub subnet_id: Id,
-    #[serde(default)]
+    #[serde(default, rename = "vmID")]
     pub vm_id: Id,
-    #[serde(default)]
     pub vm_type: AvalancheVmType,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub rpc_url: String,
 }
 

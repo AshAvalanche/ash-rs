@@ -15,7 +15,7 @@ use crate::{
     avalanche::{
         blockchains::AvalancheBlockchain,
         jsonrpc::{avm, platformvm},
-        subnets::AvalancheSubnet,
+        subnets::{AvalancheSubnet, AvalancheSubnetType},
         wallets::AvalancheWallet,
     },
     conf::AshConfig,
@@ -175,7 +175,6 @@ impl AvalancheNetwork {
 
         // For each Subnet, replace the blockchains with the ones returned by the API
         // Skip the Primary Network, as the P-Chain is not returned by the API
-        let mut primary_network = self.get_subnet(self.primary_network_id).unwrap().clone();
         let mut subnets = self
             .subnets
             .iter()
@@ -191,8 +190,8 @@ impl AvalancheNetwork {
             })
             .collect::<Vec<_>>();
 
-        // For the Primary Network, update the X-Chain and C-Chain blockchains if they don't exist
-        // This is done to ensure that the X-Chain and C-Chain are in the blockchains list
+        // For the Primary Network, update the X-Chain and C-Chain IDs and vmIDs
+        // This information may not be up to date in the configuration file
         let xchain = blockchains
             .iter()
             .find(|blockchain| blockchain.name == "X-Chain")
@@ -206,24 +205,36 @@ impl AvalancheNetwork {
             // Unwrappping is safe, as the C-Chain is always present in the blockchains list
             .unwrap();
 
-        if !primary_network
-            .blockchains
-            .iter()
-            .any(|blockchain| blockchain.name == "X-Chain")
-        {
-            primary_network.blockchains.push(xchain);
-        }
-        if !primary_network
-            .blockchains
-            .iter()
-            .any(|blockchain| blockchain.name == "C-Chain")
-        {
-            primary_network.blockchains.push(cchain);
-        }
+        let current_xchain = match self.get_xchain() {
+            Ok(chain) => {
+                let mut chain = chain.clone();
+                chain.id = xchain.id;
+                chain.vm_id = xchain.vm_id;
+                chain
+            }
+            Err(_) => xchain,
+        };
+        let current_cchain = match self.get_cchain() {
+            Ok(chain) => {
+                let mut chain = chain.clone();
+                chain.id = cchain.id;
+                chain.vm_id = cchain.vm_id;
+                chain
+            }
+            Err(_) => cchain,
+        };
 
-        subnets.push(primary_network);
+        let current_pchain = self.get_pchain()?.clone();
+
+        subnets.push(AvalancheSubnet {
+            id: self.primary_network_id,
+            subnet_type: AvalancheSubnetType::PrimaryNetwork,
+            blockchains: vec![current_pchain, current_cchain, current_xchain],
+            ..Default::default()
+        });
 
         self.subnets = subnets;
+
         Ok(())
     }
 

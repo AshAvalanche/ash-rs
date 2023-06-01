@@ -10,16 +10,17 @@ avalancheNetworks:
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain
+            vmID: 11111111111111111111111111111111LpoYY
             vmType: PlatformVM
             rpcUrl: https://api.avax.network/ext/bc/P
           - id: 2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5
             name: C-Chain
-            vmId: mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+            vmID: mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
             vmType: Coreth
             rpcUrl: https://api.avax.network/ext/bc/C/rpc
           - id: 2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM
             name: X-Chain
-            vmId: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
+            vmID: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
             vmType: AvalancheVM
             rpcUrl: https://api.avax.network/ext/bc/X
   - name: fuji
@@ -29,16 +30,17 @@ avalancheNetworks:
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain
+            vmID: 11111111111111111111111111111111LpoYY
             vmType: PlatformVM
             rpcUrl: https://api.avax-test.network/ext/bc/P
           - id: yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp
             name: C-Chain
-            vmId: mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+            vmID: mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
             vmType: Coreth
             rpcUrl: https://api.avax-test.network/ext/bc/C/rpc
           - id: 2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm
             name: X-Chain
-            vmId: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
+            vmID: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
             vmType: AvalancheVM
             rpcUrl: https://api.avax-test.network/ext/bc/X
   - name: mainnet-ankr
@@ -48,16 +50,17 @@ avalancheNetworks:
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain
+            vmID: 11111111111111111111111111111111LpoYY
             vmType: PlatformVM
             rpcUrl: https://rpc.ankr.com/avalanche-p
           - id: 2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5
             name: C-Chain
-            vmId: mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+            vmID: mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
             vmType: Coreth
             rpcUrl: https://rpc.ankr.com/avalanche-c
           - id: 2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM
             name: X-Chain
-            vmId: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
+            vmID: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
             vmType: AvalancheVM
             rpcUrl: https://rpc.ankr.com/avalanche-x
   - name: fuji-ankr
@@ -67,16 +70,17 @@ avalancheNetworks:
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain
+            vmID: 11111111111111111111111111111111LpoYY
             vmType: PlatformVM
             rpcUrl: https://rpc.ankr.com/avalanche_fuji-p
           - id: yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp
             name: C-Chain
-            vmId: mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+            vmID: mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
             vmType: Coreth
             rpcUrl: https://rpc.ankr.com/avalanche_fuji-c
           - id: 2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm
             name: X-Chain
-            vmId: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
+            vmID: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
             vmType: AvalancheVM
             rpcUrl: https://rpc.ankr.com/avalanche_fuji-x
   - name: mainnet-blast
@@ -86,16 +90,17 @@ avalancheNetworks:
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain
+            vmID: 11111111111111111111111111111111LpoYY
             vmType: PlatformVM
             rpcUrl: https://ava-mainnet.public.blastapi.io/ext/bc/P
           - id: 2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5
             name: C-Chain
-            vmId: mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+            vmID: mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
             vmType: Coreth
             rpcUrl: https://ava-mainnet.public.blastapi.io/ext/bc/C/rpc
           - id: 2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM
             name: X-Chain
-            vmId: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
+            vmID: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
             vmType: AvalancheVM
             rpcUrl: https://ava-mainnet.public.blastapi.io/ext/bc/X
   - name: fuji-blast
@@ -105,15 +110,16 @@ avalancheNetworks:
         blockchains:
           - id: 11111111111111111111111111111111LpoYY
             name: P-Chain
+            vmID: 11111111111111111111111111111111LpoYY
             vmType: PlatformVM
             rpcUrl: https://ava-testnet.public.blastapi.io/ext/bc/P
           - id: 2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5
             name: C-Chain
-            vmId: mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
+            vmID: mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
             vmType: Coreth
             rpcUrl: https://ava-testnet.public.blastapi.io/ext/bc/C/rpc
           - id: 2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM
             name: X-Chain
-            vmId: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
+            vmID: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
             vmType: AvalancheVM
             rpcUrl: https://ava-testnet.public.blastapi.io/ext/bc/X
