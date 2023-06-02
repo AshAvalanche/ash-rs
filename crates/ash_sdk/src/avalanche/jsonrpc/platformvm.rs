@@ -6,7 +6,7 @@
 use crate::avalanche::{
     blockchains::AvalancheBlockchain,
     jsonrpc::{get_json_rpc_req_result, JsonRpcResponse},
-    subnets::{AvalancheSubnet, AvalancheSubnetValidator},
+    subnets::{AvalancheSubnet, AvalancheSubnetDelegator, AvalancheSubnetValidator},
 };
 use crate::{errors::*, impl_json_rpc_response};
 use avalanche_types::{
@@ -51,6 +51,7 @@ impl_json_rpc_response!(
 );
 impl_json_rpc_response!(GetBlockchainsResponse, GetBlockchainsResult);
 impl_json_rpc_response!(GetCurrentValidatorsResponse, GetCurrentValidatorsResult);
+impl_json_rpc_response!(GetPendingValidatorsResponse, GetPendingValidatorsResult);
 
 /// Get the Subnets of the network by querying the P-Chain API
 pub fn get_network_subnets(
@@ -121,6 +122,47 @@ pub fn get_current_validators(
         .collect();
 
     Ok(current_validators)
+}
+
+/// Get the pending validators of a Subnet by querying the P-Chain API
+pub fn get_pending_validators(
+    rpc_url: &str,
+    subnet_id: Id,
+) -> Result<Vec<AvalancheSubnetValidator>, RpcError> {
+    let pending_validators_result: GetPendingValidatorsResult =
+        get_json_rpc_req_result::<GetPendingValidatorsResponse, GetPendingValidatorsResult>(
+            rpc_url,
+            "platform.getPendingValidators",
+            Some(ureq::json!({ "subnetID": subnet_id.to_string() })),
+        )?;
+
+    let mut pending_validators: Vec<AvalancheSubnetValidator> = pending_validators_result
+        .validators
+        .iter()
+        .map(|validator| AvalancheSubnetValidator::from_api_primary_validator(validator, subnet_id))
+        .collect();
+    let pending_validators_iter = pending_validators.clone();
+
+    // For each pending validator, add related delegators
+    for pending_validator in pending_validators_iter.iter() {
+        let delegators: Vec<AvalancheSubnetDelegator> = pending_validators_result
+            .delegators
+            .iter()
+            .filter(|delegator| delegator.node_id == pending_validator.node_id)
+            .cloned()
+            .map(Into::into)
+            .collect();
+
+        if !delegators.is_empty() {
+            pending_validators
+                .iter_mut()
+                .find(|validator| validator.node_id == pending_validator.node_id)
+                .unwrap()
+                .delegators = Some(delegators);
+        }
+    }
+
+    Ok(pending_validators)
 }
 
 #[cfg(test)]

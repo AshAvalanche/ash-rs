@@ -64,6 +64,17 @@ fn update_subnet_validators(
     Ok(())
 }
 
+// Update a Subnet's pending validators
+fn update_subnet_pending_validators(
+    network: &mut AvalancheNetwork,
+    subnet_id: &str,
+) -> Result<(), CliError> {
+    network
+        .update_subnet_pending_validators(parse_id(subnet_id)?)
+        .map_err(|e| CliError::dataerr(format!("Error updating pending validators: {e}")))?;
+    Ok(())
+}
+
 // Parse avalanche subcommand
 pub(crate) fn parse(
     avalanche: AvalancheCommand,
