@@ -158,8 +158,7 @@ pub struct AvalancheNodeVersions {
     pub database_version: String,
     pub git_commit: String,
     pub vm_versions: VmVersions,
-    // Not yet implemented in avalanche_types
-    // pub rpc_protocol_version: String,
+    pub rpc_protocol_version: String,
 }
 
 impl From<GetNodeVersionResult> for AvalancheNodeVersions {
@@ -169,6 +168,7 @@ impl From<GetNodeVersionResult> for AvalancheNodeVersions {
             database_version: node_version.database_version,
             git_commit: node_version.git_commit,
             vm_versions: node_version.vm_versions,
+            rpc_protocol_version: node_version.rpc_protocol_version,
         }
     }
 }
@@ -228,6 +228,7 @@ mod tests {
         assert!(!node.versions.database_version.is_empty());
         assert!(!node.versions.git_commit.is_empty());
         assert!(node.versions.vm_versions != VmVersions::default());
+        assert!(!node.versions.rpc_protocol_version.is_empty());
 
         // Test that the node uptime is not equal to 0
         assert_ne!(node.uptime.rewarding_stake_percentage, 0.0);

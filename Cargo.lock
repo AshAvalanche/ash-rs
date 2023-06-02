@@ -410,14 +410,13 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "avalanche-types"
-version = "0.0.386"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5898e85a263bd0df936c7c432c35c0b013dfb564c0dd6ac216a8ebd9ce10fae8"
+version = "0.0.393"
+source = "git+https://github.com/AshAvalanche/avalanche-types-rs?branch=70-vm-versions-hashmap#f0409a69857c372b8647d63e44f00d138a637bbe"
 dependencies = [
  "async-trait",
  "bech32 0.9.1",
  "blst",
- "bs58",
+ "bs58 0.5.0",
  "bytes",
  "cert-manager",
  "chrono",
@@ -688,6 +687,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
 
 [[package]]
+name = "bs58"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f5353f36341f7451062466f0b755b96ac3a9547e4d7f6b70d603fc721a7d7896"
+dependencies = [
+ "sha2 0.10.6",
+ "tinyvec",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -907,7 +916,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "634c509653de24b439672164bbf56f5f582a2ab0e313d3b0f6af0b7345cf2560"
 dependencies = [
  "bincode",
- "bs58",
+ "bs58 0.4.0",
  "coins-core",
  "digest 0.10.7",
  "getrandom",
@@ -3570,7 +3579,7 @@ version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2557c07161d4d805cd7e711d0648b292be9e727d9678d078bab052278cd1b71"
 dependencies = [
- "bs58",
+ "bs58 0.4.0",
  "lazy_static",
  "primitive-types",
  "rand",
