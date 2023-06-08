@@ -107,7 +107,7 @@ fn list(
             validators = subnet.pending_validators.clone();
             first_line = format!(
                 "Found {} pending validator(s) on Subnet '{}':",
-                type_colorize(&subnet.validators.len()),
+                type_colorize(&subnet.pending_validators.len()),
                 type_colorize(&subnet_id)
             )
         }

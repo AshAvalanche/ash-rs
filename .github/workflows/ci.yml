@@ -27,7 +27,7 @@ jobs:
 
       - name: Install avalanche-cli
         run: |
-          curl -sSfL https://raw.githubusercontent.com/ava-labs/avalanche-cli/main/scripts/install.sh | sh -s
+          curl -sSfL https://raw.githubusercontent.com/ava-labs/avalanche-cli/main/scripts/install.sh | sh -s -- v1.2.1
 
       - name: Start a local Avalanche network
         run: ~/bin/avalanche network start
