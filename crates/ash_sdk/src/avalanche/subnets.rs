@@ -41,8 +41,10 @@ pub struct AvalancheSubnet {
     /// List of the Subnet's blockchains
     pub blockchains: Vec<AvalancheBlockchain>,
     /// List of the Subnet's validators
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub validators: Vec<AvalancheSubnetValidator>,
+    #[serde(default)]
+    pub pending_validators: Vec<AvalancheSubnetValidator>,
 }
 
 impl AvalancheSubnet {
@@ -241,16 +243,26 @@ pub struct AvalancheSubnetValidator {
     // TODO: Store as DateTime::<Utc>?
     pub start_time: u64,
     pub end_time: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub stake_amount: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub weight: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub potential_reward: Option<u64>,
     pub connected: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub uptime: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub validation_reward_owner: Option<AvalancheOutputOwners>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub delegator_count: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub delegator_weight: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub delegators: Option<Vec<AvalancheSubnetDelegator>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub delegation_fee: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub delegation_reward_owner: Option<AvalancheOutputOwners>,
 }
 
@@ -299,7 +311,9 @@ pub struct AvalancheSubnetDelegator {
     pub start_time: u64,
     pub end_time: u64,
     pub stake_amount: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub potential_reward: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reward_owner: Option<AvalancheOutputOwners>,
 }
 

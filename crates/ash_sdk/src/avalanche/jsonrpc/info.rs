@@ -100,7 +100,7 @@ pub fn is_bootstrapped(rpc_url: &str, chain: &str) -> Result<bool, RpcError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use avalanche_types::{ids::node::Id as NodeId, jsonrpc::info::VmVersions};
+    use avalanche_types::ids::node::Id as NodeId;
     use std::{
         net::{IpAddr, Ipv4Addr},
         str::FromStr,

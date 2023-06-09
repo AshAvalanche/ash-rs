@@ -117,6 +117,7 @@ impl AvalancheWallet {
 
 /// Avalanche wallet information
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AvalancheWalletInfo {
     /// X-Chain address
     pub xchain_address: String,

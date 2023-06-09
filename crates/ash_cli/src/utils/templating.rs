@@ -60,25 +60,51 @@ pub(crate) fn template_blockchain_info(
         info_str.push_str(&formatdoc!(
             "
             - {}:
-               ID:      {}
-               VM type: {}
-               RPC URL: {}",
+              ID:      {}
+              VM ID:   {}
+              VM type: {}{}",
             type_colorize(&blockchain.name),
             type_colorize(&blockchain.id),
+            type_colorize(&blockchain.vm_id),
             type_colorize(&blockchain.vm_type),
-            type_colorize(&blockchain.rpc_url),
+            if !blockchain.rpc_url.is_empty() {
+                indent::indent_all_by(
+                    2,
+                    formatdoc!(
+                        "
+
+                    RPC URL: {}",
+                        type_colorize(&blockchain.rpc_url)
+                    ),
+                )
+            } else {
+                "".to_string()
+            }
         ));
     } else {
         info_str.push_str(&formatdoc!(
             "
             Blockchain '{}':
               ID:      {}
-              VM type: {}
-              RPC URL: {}",
+              VM ID:   {}
+              VM type: {}{}",
             type_colorize(&blockchain.name),
             type_colorize(&blockchain.id),
+            type_colorize(&blockchain.vm_id),
             type_colorize(&blockchain.vm_type),
-            type_colorize(&blockchain.rpc_url),
+            if !blockchain.rpc_url.is_empty() {
+                indent::indent_all_by(
+                    2,
+                    formatdoc!(
+                        "
+
+                    RPC URL: {}",
+                        type_colorize(&blockchain.rpc_url)
+                    ),
+                )
+            } else {
+                "".to_string()
+            }
         ));
     }
 
@@ -97,8 +123,8 @@ pub(crate) fn template_validator_info(
     let common_info = &formatdoc!(
         "
         Tx ID:            {}
-        Start time:       {}
-        End time:         {}
+        Start time (UTC): {}
+        End time (UTC):   {}
         ",
         type_colorize(&validator.tx_id),
         type_colorize(&human_readable_timestamp(validator.start_time)),
@@ -390,6 +416,15 @@ pub(crate) fn template_validator_add(
 pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> String {
     let mut info_str = String::new();
 
+    let mut subnet_vm_versions = String::new();
+    for (vm, version) in node.versions.vm_versions.subnets.iter() {
+        subnet_vm_versions.push_str(&format!(
+            "\n{}: {}",
+            type_colorize(vm),
+            type_colorize(version),
+        ));
+    }
+
     info_str.push_str(&formatdoc!(
         "
         Node '{}:{}':
@@ -398,13 +433,15 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> 
           Public IP:     {}
           Staking port:  {}
           Versions:
-            AvalancheGo: {}
-            Database:    {}
-            Git commit:  {}
+            AvalancheGo:  {}
+            Database:     {}
+            RPC Protocol: {}
+            Git commit:   {}
             VMs:
-              AVM:        {}
-              EVM:        {}
-              PlatformVM: {}
+              AvalancheVM: {}
+              Coreth:      {}
+              PlatformVM:  {}
+              Subnet VMs:{}
           Uptime:
             Rewarding stake:  {}%
             Weighted average: {}%",
@@ -416,10 +453,15 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> 
         type_colorize(&node.staking_port),
         type_colorize(&node.versions.avalanchego_version),
         type_colorize(&node.versions.database_version),
+        type_colorize(&node.versions.rpc_protocol_version),
         type_colorize(&node.versions.git_commit),
         type_colorize(&node.versions.vm_versions.avm),
         type_colorize(&node.versions.vm_versions.evm),
         type_colorize(&node.versions.vm_versions.platform),
+        match subnet_vm_versions.is_empty() {
+            true => String::from("  []"),
+            false => indent::indent_all_by(8, subnet_vm_versions),
+        },
         type_colorize(&node.uptime.rewarding_stake_percentage),
         type_colorize(&node.uptime.weighted_average_percentage),
     ));
