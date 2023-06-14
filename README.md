@@ -30,14 +30,27 @@ cd ash-rs
 # Run the library tests
 cargo test
 
-# Build a release
-cargo build --release
-
 # Run the CLI
 ## Debug mode
 cargo run -- --help
 ## Release mode
 cargo run --release -- --help
+```
+
+### Releasing
+
+Use the `build*.sh` scripts to build the CLI binary. The binary will be archived to `ash-${PLATFORM}-${ARCH}-v${VERSION}.tar.gz` where `PLATFORM` is `linux` or `macos`, `ARCH` is `amd64` or `arm64`, and `VERSION` is the version of the crate. A SHA512 checksum file will also be generated.
+
+For MacOS builds, [osxcross](https://github.com/tpoechtrager/osxcross) is used to cross-compile the binary. See [scripts/osxcross_setup.sh](./scripts/osxcross_setup.sh) for the setup script.
+
+```sh
+# Build a release for Linux only
+./scripts/build_linux.sh --release
+# Build a release for Mac only
+./scripts/build_macos.sh --release
+# Build a release for both Mac and Linux
+# Requires osxcross to be installed. See ./scripts/osxcross_setup.sh
+./sripts/build.sh --release
 ```
 
 ### Advanced testing
