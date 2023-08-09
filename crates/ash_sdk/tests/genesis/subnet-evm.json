@@ -25,13 +25,13 @@
   },
   "alloc": {
     "8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC": {
-      "balance": "0x295BE96E64066972000000"
+      "balance": "0x295be96e64066972000000"
     }
   },
   "nonce": "0x0",
   "timestamp": "0x0",
   "extraData": "0x00",
-  "gasLimit": "0x7A1200",
+  "gasLimit": "0x7a1200",
   "difficulty": "0x0",
   "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "coinbase": "0x0000000000000000000000000000000000000000",
