@@ -4,7 +4,7 @@
 // Module that contains the vm subcommand parser
 
 use crate::utils::{error::CliError, templating::*};
-use ash_sdk::avalanche::vms::{encode_genesis_data, AvalancheVmType};
+use ash_sdk::avalanche::vms::{encode_genesis_data, generate_vm_id, AvalancheVmType};
 use clap::{Parser, Subcommand};
 
 /// Interact with Avalanche VMs
@@ -25,6 +25,12 @@ enum VmSubcommands {
         /// VM type
         #[arg(long, short = 't', default_value = "SubnetEVM")]
         vm_type: AvalancheVmType,
+    },
+    /// Generate the VM ID from the VM name
+    #[command()]
+    GenerateId {
+        /// VM name
+        vm_name: String,
     },
 }
 
@@ -54,6 +60,19 @@ fn encode_genesis(
     Ok(())
 }
 
+fn generate_id(vm_name: &str, json: bool) -> Result<(), CliError> {
+    let vm_id = generate_vm_id(vm_name);
+
+    if json {
+        println!("{}", serde_json::json!({ "vmID": vm_id.to_string() }));
+        return Ok(());
+    }
+
+    println!("VM ID: {}", type_colorize(&vm_id.to_string()));
+
+    Ok(())
+}
+
 // Parse vm subcommand
 pub(crate) fn parse(x: VmCommand, json: bool) -> Result<(), CliError> {
     match x.command {
@@ -61,5 +80,6 @@ pub(crate) fn parse(x: VmCommand, json: bool) -> Result<(), CliError> {
             genesis_file,
             vm_type,
         } => encode_genesis(&genesis_file, vm_type, json),
+        VmSubcommands::GenerateId { vm_name } => generate_id(&vm_name, json),
     }
 }
