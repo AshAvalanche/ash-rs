@@ -27,10 +27,13 @@ jobs:
 
       - name: Install avalanche-cli
         run: |
-          curl -sSfL https://raw.githubusercontent.com/ava-labs/avalanche-cli/main/scripts/install.sh | sh -s -- v1.2.1
+          curl -sSfL https://raw.githubusercontent.com/ava-labs/avalanche-cli/main/scripts/install.sh | sh -s
 
       - name: Start a local Avalanche network
-        run: ~/bin/avalanche network start
+        run: |
+          # Workaround for avoiding metrics collection prompt
+          echo "" | ~/bin/avalanche config metrics disable
+          ~/bin/avalanche network start
 
       - name: Setup cache for Rust
         uses: Swatinem/rust-cache@v2
