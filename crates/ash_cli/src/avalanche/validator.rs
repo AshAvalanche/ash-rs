@@ -96,16 +96,15 @@ fn list(
     update_network_subnets(&mut network)?;
     let subnet;
     let validators;
-    let first_line;
 
-    match pending {
+    let first_line = match pending {
         true => {
             update_subnet_pending_validators(&mut network, subnet_id)?;
             subnet = network
                 .get_subnet(parse_id(subnet_id)?)
                 .map_err(|e| CliError::dataerr(format!("Error listing validators: {e}")))?;
             validators = subnet.pending_validators.clone();
-            first_line = format!(
+            format!(
                 "Found {} pending validator(s) on Subnet '{}':",
                 type_colorize(&subnet.pending_validators.len()),
                 type_colorize(&subnet_id)
@@ -117,13 +116,13 @@ fn list(
                 .get_subnet(parse_id(subnet_id)?)
                 .map_err(|e| CliError::dataerr(format!("Error listing validators: {e}")))?;
             validators = subnet.validators.clone();
-            first_line = format!(
+            format!(
                 "Found {} validator(s) on Subnet '{}':",
                 type_colorize(&subnet.validators.len()),
                 type_colorize(&subnet_id)
             )
         }
-    }
+    };
 
     if json {
         println!("{}", serde_json::to_string(&validators).unwrap());

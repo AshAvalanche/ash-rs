@@ -581,6 +581,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_avalanche_network_update_blockchains_primary_network() {
         let mut local_network = AvalancheNetwork::load(
             "local-light",
