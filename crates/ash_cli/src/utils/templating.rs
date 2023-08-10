@@ -400,7 +400,7 @@ pub(crate) fn template_validator_add(
             Validator added to Subnet! (Tx ID: '{}')
             {}",
             type_colorize(&validator.node_id),
-            template_validator_info(validator, &subnet, false, true, 0)
+            template_validator_info(validator, subnet, false, true, 0)
         )
     } else {
         formatdoc!(
@@ -408,7 +408,7 @@ pub(crate) fn template_validator_add(
             Initiated validator addition to Subnet! (Tx ID: '{}')
             {}",
             type_colorize(&validator.node_id),
-            template_validator_info(validator, &subnet, false, true, 0)
+            template_validator_info(validator, subnet, false, true, 0)
         )
     }
 }
