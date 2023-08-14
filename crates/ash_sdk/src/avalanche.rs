@@ -15,7 +15,7 @@ use crate::{
     avalanche::{
         blockchains::AvalancheBlockchain,
         jsonrpc::{avm, platformvm},
-        subnets::{AvalancheSubnet, AvalancheSubnetType},
+        subnets::AvalancheSubnet,
         wallets::AvalancheWallet,
     },
     conf::AshConfig,
@@ -123,7 +123,7 @@ impl AvalancheNetwork {
     pub fn update_subnets(&mut self) -> Result<(), AshError> {
         let rpc_url = &self.get_pchain()?.rpc_url;
 
-        let subnets = platformvm::get_network_subnets(rpc_url, &self.name).map_err(|e| {
+        let api_subnets = platformvm::get_network_subnets(rpc_url, &self.name).map_err(|e| {
             RpcError::GetFailure {
                 data_type: "Subnets".to_string(),
                 target_type: "network".to_string(),
@@ -132,17 +132,29 @@ impl AvalancheNetwork {
             }
         })?;
 
-        // Replace the Primary Network with the pre-configured one
-        // This is done to ensure that the P-Chain is kept in the blockchains list
-        // (it is not returned by the API)
-        let primary_network = self.get_subnet(self.primary_network_id).unwrap().clone();
-        let mut subnets = subnets
-            .into_iter()
-            .filter(|subnet| subnet.id != self.primary_network_id)
+        // Update the Subnets with the ones returned by the API
+        // If a Subnet is already present in the network (loaded from configuration),
+        // update its control keys, threshold and type, but keep the blockchains unchanged
+        // If the Subnet is not present in the network, add it
+        self.subnets = api_subnets
+            .iter()
+            .map(|updated_subnet| {
+                if let Some(existing_subnet) = self
+                    .subnets
+                    .iter()
+                    .find(|existing_subnet| existing_subnet.id == updated_subnet.id)
+                {
+                    let mut subnet = existing_subnet.clone();
+                    subnet.control_keys = updated_subnet.control_keys.clone();
+                    subnet.threshold = updated_subnet.threshold;
+                    subnet.subnet_type = updated_subnet.subnet_type.clone();
+                    subnet
+                } else {
+                    updated_subnet.clone()
+                }
+            })
             .collect::<Vec<_>>();
-        subnets.push(primary_network);
 
-        self.subnets = subnets;
         Ok(())
     }
 
@@ -163,7 +175,7 @@ impl AvalancheNetwork {
     pub fn update_blockchains(&mut self) -> Result<(), AshError> {
         let rpc_url = &self.get_pchain()?.rpc_url;
 
-        let blockchains =
+        let api_blockchains =
             platformvm::get_network_blockchains(rpc_url, &self.name).map_err(|e| {
                 RpcError::GetFailure {
                     data_type: "blockchains".to_string(),
@@ -173,69 +185,84 @@ impl AvalancheNetwork {
                 }
             })?;
 
-        // For each Subnet, replace the blockchains with the ones returned by the API
-        // Skip the Primary Network, as the P-Chain is not returned by the API
-        let mut subnets = self
+        // For each Subnet, update the blockchains with the ones returned by the API
+        // If a blockchain is already present in the Subnet (loaded from configuration),
+        // update its ID and VM ID, but keep the RPC URL and VM type unchanged
+        // If the blockchain is not present in the Subnet, add it
+        self.subnets = self
             .subnets
             .iter()
-            .filter(|subnet| subnet.id != self.primary_network_id)
             .map(|subnet| {
-                let mut subnet = subnet.clone();
-                subnet.blockchains = blockchains
+                let mut updated_subnet = subnet.clone();
+                // Get the blockchains of the Subnet returned by the API
+                let updated_chains = api_blockchains
                     .iter()
-                    .filter(|blockchain| blockchain.subnet_id == subnet.id)
+                    .filter(|chain| chain.subnet_id == updated_subnet.id)
                     .cloned()
-                    .collect();
-                subnet
+                    .collect::<Vec<_>>();
+                // For existing blockchains in the Subnet, update the ID and VM ID
+                updated_subnet.blockchains = updated_subnet
+                    .blockchains
+                    .iter()
+                    .map(|existing_chain| {
+                        if let Some(updated_chain) = updated_chains
+                            .iter()
+                            .find(|updated_chain| updated_chain.name == existing_chain.name)
+                        {
+                            let mut blockchain = existing_chain.clone();
+                            blockchain.id = updated_chain.id;
+                            blockchain.vm_id = updated_chain.vm_id;
+                            blockchain
+                        } else {
+                            existing_chain.clone()
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                // Add the new blockchains to the Subnet
+                let new_chains = updated_chains
+                    .iter()
+                    .filter(|updated_chain| {
+                        !updated_subnet
+                            .blockchains
+                            .iter()
+                            .any(|chain| chain.name == updated_chain.name)
+                    })
+                    .cloned()
+                    .collect::<Vec<_>>();
+                updated_subnet.blockchains.extend(new_chains);
+                updated_subnet
             })
             .collect::<Vec<_>>();
 
-        // For the Primary Network, update the X-Chain and C-Chain IDs and vmIDs
-        // This information may not be up to date in the configuration file
-        let xchain = blockchains
-            .iter()
-            .find(|blockchain| blockchain.name == "X-Chain")
-            .cloned()
-            // Unwrappping is safe, as the X-Chain is always present in the blockchains list
-            .unwrap();
-        let cchain = blockchains
-            .iter()
-            .find(|blockchain| blockchain.name == "C-Chain")
-            .cloned()
-            // Unwrappping is safe, as the C-Chain is always present in the blockchains list
-            .unwrap();
-
-        let current_xchain = match self.get_xchain() {
-            Ok(chain) => {
-                let mut chain = chain.clone();
-                chain.id = xchain.id;
-                chain.vm_id = xchain.vm_id;
-                chain
-            }
-            Err(_) => xchain,
-        };
-        let current_cchain = match self.get_cchain() {
-            Ok(chain) => {
-                let mut chain = chain.clone();
-                chain.id = cchain.id;
-                chain.vm_id = cchain.vm_id;
-                chain
-            }
-            Err(_) => cchain,
-        };
-
-        let current_pchain = self.get_pchain()?.clone();
-
-        subnets.push(AvalancheSubnet {
-            id: self.primary_network_id,
-            subnet_type: AvalancheSubnetType::PrimaryNetwork,
-            blockchains: vec![current_pchain, current_cchain, current_xchain],
-            ..Default::default()
-        });
-
-        self.subnets = subnets;
-
         Ok(())
+    }
+
+    /// Get a Blockchain of the network by its ID
+    /// This function will search in all Subnets
+    pub fn get_blockchain(&self, id: Id) -> Result<&AvalancheBlockchain, AshError> {
+        self.subnets
+            .iter()
+            .find(|&subnet| subnet.get_blockchain(id).is_ok())
+            .ok_or(AvalancheNetworkError::NotFound {
+                network: self.name.clone(),
+                target_type: "blockchain".to_string(),
+                target_value: id.to_string(),
+            })?
+            .get_blockchain(id)
+    }
+
+    /// Get a Blockchain of the network by its name
+    /// This function will search in all Subnets
+    pub fn get_blockchain_by_name(&self, name: &str) -> Result<&AvalancheBlockchain, AshError> {
+        self.subnets
+            .iter()
+            .find(|&subnet| subnet.get_blockchain_by_name(name).is_ok())
+            .ok_or(AvalancheNetworkError::NotFound {
+                network: self.name.clone(),
+                target_type: "blockchain".to_string(),
+                target_value: name.to_string(),
+            })?
+            .get_blockchain_by_name(name)
     }
 
     /// Update the validators of a Subnet by querying an API endpoint
