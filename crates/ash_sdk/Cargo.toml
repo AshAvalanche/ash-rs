@@ -21,7 +21,7 @@ avalanche-types = { version = "0.0.400", features = [
 	"subnet_evm",
 ] }
 config = { version = "0.13.3", features = ["yaml"] }
-ethers = { version = "1.0.2", features = ["rustls"] }
+ethers = { version = "2.0.7", features = ["rustls"] }
 hex = "0.4.3"
 regex = "1.7.1"
 serde = "1.0.152"
@@ -39,10 +39,14 @@ strum = { version = "0.24", features = ["derive"] }
 chrono = { version = "0.4.24", features = ["clock"] }
 rustls = "0.21.7"
 rustls-pemfile = "1.0.3"
+sha2 = "0.10.7"
 
 [dev-dependencies]
 serial_test = "2.0.0"
 tempfile = "3.3.0"
+
+[build-dependencies]
+ethers = "2.0.7"
 
 [target.aarch64-unknown-linux-gnu.dependencies]
 openssl = { version = "0.10.54", features = ["vendored"] }
