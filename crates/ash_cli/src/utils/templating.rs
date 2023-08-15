@@ -6,6 +6,7 @@ use ash_sdk::avalanche::{
     nodes::AvalancheNode,
     subnets::{AvalancheSubnet, AvalancheSubnetType, AvalancheSubnetValidator},
     wallets::AvalancheWalletInfo,
+    warp::WarpMessage,
     AvalancheXChainBalance,
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
@@ -59,7 +60,7 @@ pub(crate) fn template_blockchain_info(
     if list {
         info_str.push_str(&formatdoc!(
             "
-            - {}:
+            - '{}':
               ID:      {}
               VM ID:   {}
               VM type: {}{}",
@@ -212,7 +213,7 @@ pub(crate) fn template_validator_info(
         if extended {
             info_str.push_str(&formatdoc!(
                 "
-                - {}:
+                - '{}':
                 ",
                 type_colorize(&validator.node_id),
             ));
@@ -302,7 +303,7 @@ pub(crate) fn template_subnet_info(
         info_str.push_str(&formatdoc!(
             "
             {}
-            - {}:
+            - '{}':
               Type: {}
             {}  Blockchains list ({}): {}",
             template_horizontal_rule('-', format!("- '{}':", subnet.id).len()),
@@ -419,7 +420,7 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> 
     let mut subnet_vm_versions = String::new();
     for (vm, version) in node.versions.vm_versions.subnets.iter() {
         subnet_vm_versions.push_str(&format!(
-            "\n{}: {}",
+            "\n'{}': {}",
             type_colorize(vm),
             type_colorize(version),
         ));
@@ -590,4 +591,63 @@ pub(crate) fn template_genesis_encoded(genesis_bytes: Vec<u8>, indent: u8) -> St
     ));
 
     indent::indent_all_by(indent.into(), genesis_str)
+}
+
+pub(crate) fn template_warp_message(
+    message: &WarpMessage,
+    blockchain_name: &str,
+    list: bool,
+    indent: u8,
+) -> String {
+    let mut message_str = String::new();
+    let sub_indent = match list {
+        true => 2,
+        false => 0,
+    };
+
+    let unsigned_message_str = indent::indent_all_by(
+        sub_indent,
+        formatdoc!(
+            "
+            Unsigned message:
+              ID:            {}
+              NetworkID:     {}
+              SourceChainID: {}
+              Payload:
+            {}",
+            type_colorize(&message.unsigned_message.id),
+            type_colorize(&message.unsigned_message.network_id),
+            type_colorize(&message.unsigned_message.source_chain_id),
+            type_colorize(&indent::indent_all_by(
+                sub_indent,
+                serde_json::to_string_pretty(&message.unsigned_message.payload).unwrap()
+            )),
+        ),
+    );
+
+    if list {
+        message_str.push_str(&formatdoc!(
+            "
+            - Message '{}' from '{}':
+            {}
+              Verified message:
+            {}",
+            type_colorize(&message.unsigned_message.id),
+            type_colorize(&blockchain_name),
+            unsigned_message_str,
+            type_colorize(&indent::indent_all_by(
+                sub_indent,
+                serde_json::to_string_pretty(&message.verified_message).unwrap()
+            )),
+        ));
+    } else {
+        message_str.push_str(&formatdoc!(
+            "
+            Message '{}' from blockchain '{}':",
+            type_colorize(&message.unsigned_message.id),
+            type_colorize(&message.unsigned_message.source_chain_id),
+        ));
+    }
+
+    indent::indent_all_by(indent.into(), message_str)
 }

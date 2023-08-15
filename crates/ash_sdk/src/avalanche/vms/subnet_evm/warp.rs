@@ -7,7 +7,6 @@ use crate::{
     avalanche::warp::{WarpMessagePayload, WarpUnsignedMessage},
     errors::*,
 };
-use avalanche_types::ids::Id;
 use ethers::types::{Address, Bytes, Log, H256};
 use serde::{Deserialize, Serialize};
 
@@ -17,10 +16,10 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct SubnetEVMWarpMessage {
     #[serde(rename = "originChainID")]
-    origin_chain_id: Id,
+    origin_chain_id: H256,
     origin_sender_address: Address,
     #[serde(rename = "destinationChainID")]
-    destination_chain_id: Id,
+    destination_chain_id: H256,
     destination_address: Address,
     payload: Option<Bytes>,
 }
@@ -34,10 +33,11 @@ impl From<Log> for SubnetEVMWarpMessage {
                     Ok(WarpUnsignedMessage::from(&log.data.to_vec()[..]))
                 })
                 .unwrap();
+
         Self {
-            origin_chain_id: warp_unsigned_message.source_chain_id,
+            origin_chain_id: H256::from_slice(&warp_unsigned_message.source_chain_id.to_vec()),
             origin_sender_address: Address::from_slice(&log.topics[3].as_fixed_bytes()[12..]),
-            destination_chain_id: Id::from_slice(log.topics[1].as_fixed_bytes()),
+            destination_chain_id: H256::from_slice(log.topics[1].as_fixed_bytes()),
             destination_address: Address::from_slice(&log.topics[2].as_fixed_bytes()[12..]),
             payload: match warp_unsigned_message.payload {
                 WarpMessagePayload::SubnetEVMAddressedPayload(addressed_payload) => {

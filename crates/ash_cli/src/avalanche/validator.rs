@@ -105,7 +105,7 @@ fn list(
                 .map_err(|e| CliError::dataerr(format!("Error listing validators: {e}")))?;
             validators = subnet.pending_validators.clone();
             format!(
-                "Found {} pending validator(s) on Subnet '{}':",
+                "Found {} pending validators on Subnet '{}':",
                 type_colorize(&subnet.pending_validators.len()),
                 type_colorize(&subnet_id)
             )
@@ -117,7 +117,7 @@ fn list(
                 .map_err(|e| CliError::dataerr(format!("Error listing validators: {e}")))?;
             validators = subnet.validators.clone();
             format!(
-                "Found {} validator(s) on Subnet '{}':",
+                "Found {} validators on Subnet '{}':",
                 type_colorize(&subnet.validators.len()),
                 type_colorize(&subnet_id)
             )
