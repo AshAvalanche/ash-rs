@@ -8,6 +8,7 @@ mod subnet;
 mod validator;
 mod vm;
 mod wallet;
+mod warp;
 mod x;
 
 // Module that contains the avalanche subcommand parser
@@ -32,6 +33,7 @@ enum AvalancheSubcommands {
     Validator(validator::ValidatorCommand),
     Vm(vm::VmCommand),
     Wallet(wallet::WalletCommand),
+    Warp(warp::WarpCommand),
     X(x::XCommand),
 }
 
@@ -88,7 +90,8 @@ pub(crate) fn parse(
         AvalancheSubcommands::Subnet(subnet) => subnet::parse(subnet, config, json),
         AvalancheSubcommands::Validator(validator) => validator::parse(validator, config, json),
         AvalancheSubcommands::Vm(vm) => vm::parse(vm, json),
-        AvalancheSubcommands::X(x) => x::parse(x, config, json),
         AvalancheSubcommands::Wallet(wallet) => wallet::parse(wallet, config, json),
+        AvalancheSubcommands::Warp(warp) => warp::parse(warp, config, json),
+        AvalancheSubcommands::X(x) => x::parse(x, config, json),
     }
 }
