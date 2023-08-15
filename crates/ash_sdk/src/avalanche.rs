@@ -8,6 +8,7 @@ pub mod subnets;
 pub mod txs;
 pub mod vms;
 pub mod wallets;
+pub mod warp;
 
 // Module that contains code to interact with Avalanche networks
 

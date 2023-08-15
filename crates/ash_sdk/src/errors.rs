@@ -22,6 +22,8 @@ pub enum AshError {
     AvalancheWalletError(#[from] AvalancheWalletError),
     #[error("Avalanche VM error: {0}")]
     AvalancheVMError(#[from] AvalancheVMError),
+    #[error("Avalanche Warp Messaging error: {0}")]
+    AvalancheWarpMessagingError(#[from] AvalancheWarpMessagingError),
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -66,6 +68,8 @@ pub enum RpcError {
         function_name: String,
         msg: String,
     },
+    #[error("failed to query event logs on '{contract_addr}': {msg}")]
+    EthLogsFailure { contract_addr: String, msg: String },
     #[error("unknown RPC error: {0}")]
     Unknown(String),
 }
@@ -102,8 +106,16 @@ pub enum AvalancheSubnetError {
 
 #[derive(Error, Debug, PartialEq)]
 pub enum AvalancheBlockchainError {
+    #[error("operation '{operation}' is not allowed on '{vm_type}' blockchain '{blockchain_id}'")]
+    OperationNotAllowed {
+        blockchain_id: String,
+        vm_type: String,
+        operation: String,
+    },
     #[error("failed to get ethers Provider for blockchain '{blockchain_id}': {msg}")]
     EthersProvider { blockchain_id: String, msg: String },
+    #[error("failed to parse block number from '{block_number}': {msg}")]
+    BlockNumberParseFailure { block_number: String, msg: String },
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -128,4 +140,10 @@ pub enum AvalancheVMError {
     UnsupportedVM(String),
     #[error("failed to encode genesis data: {0}")]
     GenesisEncoding(String),
+}
+
+#[derive(Error, Debug, PartialEq)]
+pub enum AvalancheWarpMessagingError {
+    #[error("failed to parse {property} of message: {msg}")]
+    ParseFailure { property: String, msg: String },
 }

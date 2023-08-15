@@ -20,7 +20,7 @@ pub enum AvalancheVmType {
     PlatformVM,
     /// Avalanche VM (Avalanche X-Chain)
     AvalancheVM,
-    /// Subnet EVM
+    /// Subnet-EVM
     #[default]
     SubnetEVM,
     /// Any other custom VM

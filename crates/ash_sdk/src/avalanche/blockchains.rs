@@ -4,8 +4,17 @@
 // Module that contains code to interact with Avalanche blockchains
 
 use crate::{
-    avalanche::{txs::p, vms::AvalancheVmType, wallets::AvalancheWallet},
+    avalanche::{
+        txs::p,
+        vms::{
+            subnet_evm::{precompiles::WarpMessengerHttp, warp::SubnetEVMWarpMessage},
+            AvalancheVmType,
+        },
+        wallets::AvalancheWallet,
+        warp::*,
+    },
     errors::*,
+    utils::*,
 };
 use avalanche_types::{ids::Id, jsonrpc::platformvm::Blockchain};
 use ethers::providers::{Http, Provider};
@@ -28,26 +37,6 @@ pub struct AvalancheBlockchain {
 }
 
 impl AvalancheBlockchain {
-    /// Get an ethers Provider for this blockchain
-    /// Only works for EVM blockchains
-    pub fn get_ethers_provider(&self) -> Result<Provider<Http>, AshError> {
-        match self.vm_type {
-            AvalancheVmType::Coreth => Ok(Provider::<Http>::try_from(self.rpc_url.clone())
-                .map_err(|e| AvalancheBlockchainError::EthersProvider {
-                    blockchain_id: self.id.to_string(),
-                    msg: e.to_string(),
-                })?),
-            _ => Err(AvalancheBlockchainError::EthersProvider {
-                blockchain_id: self.id.to_string(),
-                msg: format!(
-                    "cannot create an ethers Provider for '{}' type blockchain",
-                    self.vm_type
-                ),
-            }
-            .into()),
-        }
-    }
-
     /// Create a new blockchain
     pub async fn create(
         wallet: &AvalancheWallet,
@@ -76,6 +65,91 @@ impl AvalancheBlockchain {
             vm_type: vm_type.clone(),
             ..Default::default()
         })
+    }
+
+    /// Get an ethers Provider for this blockchain
+    /// Only works for EVM blockchains
+    pub fn get_ethers_provider(&self) -> Result<Provider<Http>, AshError> {
+        match self.vm_type {
+            AvalancheVmType::Coreth | AvalancheVmType::SubnetEVM => Ok(Provider::<Http>::try_from(
+                self.rpc_url.clone(),
+            )
+            .map_err(|e| AvalancheBlockchainError::EthersProvider {
+                blockchain_id: self.id.to_string(),
+                msg: e.to_string(),
+            })?),
+            _ => Err(AvalancheBlockchainError::EthersProvider {
+                blockchain_id: self.id.to_string(),
+                msg: format!(
+                    "cannot create an ethers Provider for '{}' type blockchain",
+                    self.vm_type
+                ),
+            }
+            .into()),
+        }
+    }
+
+    /// Get the blockchain ID as seen by the Warp Messenger
+    pub async fn get_warp_blockchain_id(&self) -> Result<String, AshError> {
+        let warp_blockchain_id = match self.vm_type {
+            AvalancheVmType::SubnetEVM => {
+                let warp_messenger = WarpMessengerHttp::new(self)?;
+                warp_messenger.get_blockchain_id().await?
+            }
+            _ => Err(AvalancheBlockchainError::OperationNotAllowed {
+                blockchain_id: self.id.to_string(),
+                vm_type: self.vm_type.to_string(),
+                operation: "get Warp blockchain ID".to_string(),
+            })?,
+        };
+
+        Ok(format!("0x{}", hex::encode(warp_blockchain_id)))
+    }
+
+    /// Get the Warp messages sent from this blockchain between 2 blocks
+    pub async fn get_warp_messages(
+        &self,
+        from_block: &str,
+        to_block: &str,
+    ) -> Result<Vec<WarpMessage>, AshError> {
+        let warp_messages = match self.vm_type {
+            AvalancheVmType::SubnetEVM => {
+                let parsed_from_block = parse_evm_block_number(from_block)?;
+                let parsed_to_block = parse_evm_block_number(to_block)?;
+                let warp_messenger = WarpMessengerHttp::new(self)?;
+                warp_messenger
+                    .get_send_warp_message_logs(
+                        parsed_from_block,
+                        parsed_to_block,
+                        None,
+                        None,
+                        None,
+                    )
+                    .await?
+                    .into_iter()
+                    .map(|log| WarpMessage {
+                        unsigned_message: WarpUnsignedMessage::try_from_subnet_evm_log_data(
+                            &log.data.to_vec()[..],
+                        )
+                        .or_else::<Result<WarpUnsignedMessage, AshError>, _>(|_| {
+                            Ok(WarpUnsignedMessage::from(&log.data.to_vec()[..]))
+                        })
+                        .unwrap(),
+                        verified_message: VerifiedWarpMessage::SubnetEVM(
+                            SubnetEVMWarpMessage::from(log),
+                        ),
+                        ..Default::default()
+                    })
+                    .collect::<Vec<_>>()
+            }
+            _ => Err(AvalancheBlockchainError::OperationNotAllowed {
+                blockchain_id: self.id.to_string(),
+                vm_type: self.vm_type.to_string(),
+                operation: "get Warp messages".to_string(),
+            })?,
+        };
+
+        Ok(warp_messages)
     }
 }
 
