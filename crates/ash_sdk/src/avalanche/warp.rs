@@ -15,16 +15,16 @@ pub const WARP_ANYCAST_ID: &str = "2wkBET2rRgE8pahuaczxKbmv7ciehqsne57F9gtzf1PVc
 
 /// Unsigned Warp message
 /// See https://github.com/ava-labs/avalanchego/blob/e70a17d9d988b5067f3ef5c4a057f15ae1271ac4/vms/platformvm/warp/unsigned_message.go#L14
-#[derive(Default, Clone, Debug, Serialize, Deserialize)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct WarpUnsignedMessage {
-    #[serde(skip)]
-    pub bytes: Vec<u8>,
     pub id: Id,
     #[serde(rename = "networkID")]
     pub network_id: u32,
     #[serde(rename = "sourceChainID")]
     pub source_chain_id: Id,
     pub payload: WarpMessagePayload,
+    #[serde(skip)]
+    pub bytes: Vec<u8>,
 }
 
 impl WarpUnsignedMessage {
@@ -70,7 +70,7 @@ impl From<&[u8]> for WarpUnsignedMessage {
 }
 
 /// Warp message payload
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum WarpMessagePayload {
     /// Unknown Warp Message payload
     /// This is used to parse Warp messages that are not supported by the current version of the library
@@ -86,7 +86,7 @@ impl Default for WarpMessagePayload {
 }
 
 /// Warp message status
-#[derive(Default, Clone, Debug, Serialize, Deserialize)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum WarpMessageStatus {
     #[default]
     Sent,
@@ -95,7 +95,7 @@ pub enum WarpMessageStatus {
 
 /// Verified Warp message
 /// Pre-verified Warp message as it will be parsed on the destination chain
-#[derive(Default, Clone, Debug, Serialize, Deserialize)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum VerifiedWarpMessage {
     /// Unknown Warp Message
     /// This is used to parse Warp messages that are not supported by the current version of the library
@@ -106,10 +106,62 @@ pub enum VerifiedWarpMessage {
 }
 
 /// Warp message
-#[derive(Default, Clone, Debug, Serialize, Deserialize)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct WarpMessage {
     pub unsigned_message: WarpUnsignedMessage,
     pub verified_message: VerifiedWarpMessage,
     pub status: WarpMessageStatus,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use ethers::types::{Address, Bytes, H256};
+    use std::str::FromStr;
+
+    const WARP_MESSAGE_HEX: &str = "00000000303976dccb39c21a43aad4ffa98d4dd86a9ca29f5038a13b87658ef856bc161dbb470000005e0000000000008db97c7cece249c2b98bdc0226cc4c2a57bf52fcffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8db97c7cece249c2b98bdc0226cc4c2a57bf52fc0000000c48656c6c6f20776f726c6421";
+
+    #[test]
+    fn test_warp_message_from_bytes() {
+        let warp_message =
+            WarpUnsignedMessage::from(hex::decode(WARP_MESSAGE_HEX).unwrap().as_slice());
+
+        assert_eq!(warp_message.network_id, 12345);
+        assert_eq!(
+            warp_message.source_chain_id,
+            Id::from_str("uMBaf3Nb62N2xajmxo9ZL5VcSw87tuB3snQEJb8nsyxyLq68f").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_warp_message_try_from_subnet_evm_log_data() {
+        let warp_message = WarpUnsignedMessage::try_from_subnet_evm_log_data(
+            hex::decode(WARP_MESSAGE_HEX).unwrap().as_slice(),
+        )
+        .unwrap();
+
+        assert_eq!(warp_message.network_id, 12345);
+        assert_eq!(
+            warp_message.source_chain_id,
+            Id::from_str("uMBaf3Nb62N2xajmxo9ZL5VcSw87tuB3snQEJb8nsyxyLq68f").unwrap()
+        );
+        assert_eq!(
+            warp_message.payload,
+            WarpMessagePayload::SubnetEVMAddressedPayload(AddressedPayload {
+                source_address: Address::from_str("0x8db97c7cece249c2b98bdc0226cc4c2a57bf52fc")
+                    .unwrap(),
+                destination_chain_id: H256::from_str(
+                    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                )
+                .unwrap(),
+                destination_address: Address::from_str(
+                    "0x8db97c7cece249c2b98bdc0226cc4c2a57bf52fc"
+                )
+                .unwrap(),
+                payload: Bytes::from_str("0x0000000c48656c6c6f20776f726c6421").unwrap(),
+            })
+        )
+    }
 }

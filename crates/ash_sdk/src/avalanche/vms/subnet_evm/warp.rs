@@ -12,16 +12,16 @@ use serde::{Deserialize, Serialize};
 
 /// Subnet-EVM Warp message
 /// See https://github.com/ava-labs/subnet-evm/blob/309daad20ba17346ae3712c96c2db594e011b29c/x/warp/contract.go#L57
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SubnetEVMWarpMessage {
     #[serde(rename = "originChainID")]
-    origin_chain_id: H256,
-    origin_sender_address: Address,
+    pub origin_chain_id: H256,
+    pub origin_sender_address: Address,
     #[serde(rename = "destinationChainID")]
-    destination_chain_id: H256,
-    destination_address: Address,
-    payload: Option<Bytes>,
+    pub destination_chain_id: H256,
+    pub destination_address: Address,
+    pub payload: Option<Bytes>,
 }
 
 impl From<Log> for SubnetEVMWarpMessage {
@@ -65,14 +65,14 @@ impl SubnetEVMWarpMessage {
 
 /// AddressedPayload defines the format for delivering a point to point message across VMs
 /// See https://github.com/ava-labs/subnet-evm/blob/309daad20ba17346ae3712c96c2db594e011b29c/warp/payload/payload.go#L14C31-L14C31
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AddressedPayload {
-    source_address: Address,
+    pub source_address: Address,
     #[serde(rename = "destinationChainID")]
-    destination_chain_id: H256,
-    destination_address: Address,
-    payload: Bytes,
+    pub destination_chain_id: H256,
+    pub destination_address: Address,
+    pub payload: Bytes,
 }
 
 impl TryFrom<Vec<u8>> for AddressedPayload {
@@ -113,5 +113,79 @@ impl TryFrom<Vec<u8>> for AddressedPayload {
             destination_address: Address::from_slice(&payload[62..82]),
             payload: Bytes::from(payload[82..].to_vec()),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::str::FromStr;
+
+    const ADDRESSED_PAYLOAD_HEX: &str = "0000005e0000000000008db97c7cece249c2b98bdc0226cc4c2a57bf52fcffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8db97c7cece249c2b98bdc0226cc4c2a57bf52fc0000000c48656c6c6f20776f726c6421";
+
+    fn warp_message_log() -> Log {
+        Log {
+            address: Address::from_str("0x0200000000000000000000000000000000000005").unwrap(),
+            topics: vec![
+                H256::from_str("0x3e6ad4991eb8370644656486297eb0bf6a7792ef369dfd9eda2c51ec82b67b59").unwrap(),
+                H256::from_str("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").unwrap(),
+                H256::from_str("0x0000000000000000000000008db97c7cece249c2b98bdc0226cc4c2a57bf52fc").unwrap(),
+                H256::from_str("0x0000000000000000000000008db97c7cece249c2b98bdc0226cc4c2a57bf52fc").unwrap(),
+            ],
+            data: Bytes::from_str("0x00000000303976dccb39c21a43aad4ffa98d4dd86a9ca29f5038a13b87658ef856bc161dbb470000005e0000000000008db97c7cece249c2b98bdc0226cc4c2a57bf52fcffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8db97c7cece249c2b98bdc0226cc4c2a57bf52fc0000000c48656c6c6f20776f726c6421").unwrap(),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn test_subnet_evm_warp_message_from_log() {
+        let warp_message = SubnetEVMWarpMessage::from(warp_message_log());
+
+        assert_eq!(
+            warp_message,
+            SubnetEVMWarpMessage {
+                origin_chain_id: H256::from_str(
+                    "0x76dccb39c21a43aad4ffa98d4dd86a9ca29f5038a13b87658ef856bc161dbb47"
+                )
+                .unwrap(),
+                origin_sender_address: Address::from_str(
+                    "0x8db97c7cece249c2b98bdc0226cc4c2a57bf52fc"
+                )
+                .unwrap(),
+                destination_chain_id: H256::from_str(
+                    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                )
+                .unwrap(),
+                destination_address: Address::from_str(
+                    "0x8db97c7cece249c2b98bdc0226cc4c2a57bf52fc"
+                )
+                .unwrap(),
+                payload: Some(Bytes::from_str("0x0000000c48656c6c6f20776f726c6421").unwrap()),
+            }
+        );
+    }
+
+    #[test]
+    fn test_addressed_payload_from_bytes() {
+        let addressed_payload =
+            AddressedPayload::try_from(hex::decode(ADDRESSED_PAYLOAD_HEX).unwrap()).unwrap();
+
+        assert_eq!(
+            addressed_payload,
+            AddressedPayload {
+                source_address: Address::from_str("0x8db97c7cece249c2b98bdc0226cc4c2a57bf52fc")
+                    .unwrap(),
+                destination_chain_id: H256::from_str(
+                    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                )
+                .unwrap(),
+                destination_address: Address::from_str(
+                    "0x8db97c7cece249c2b98bdc0226cc4c2a57bf52fc"
+                )
+                .unwrap(),
+                payload: Bytes::from_str("0x0000000c48656c6c6f20776f726c6421").unwrap(),
+            }
+        );
     }
 }
