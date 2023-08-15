@@ -195,7 +195,7 @@ fn add(
     let subnet = network
         .get_subnet(parse_id(subnet_id)?)
         .map_err(|e| CliError::dataerr(format!("Error loading Subnet info: {e}")))?;
-    let wallet = create_wallet(&network, &private_key, key_encoding)?;
+    let wallet = create_wallet(&network, private_key, key_encoding)?;
 
     if wait {
         eprintln!("Waiting for transaction to be accepted...");
