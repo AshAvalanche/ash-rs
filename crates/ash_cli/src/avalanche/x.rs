@@ -6,7 +6,7 @@
 use crate::{
     avalanche::{wallet::*, *},
     utils::templating::template_xchain_balance,
-    utils::{error::CliError, templating::*},
+    utils::{error::CliError, templating::*, version_tx_cmd},
 };
 use async_std::task;
 use clap::{Parser, Subcommand};
@@ -32,7 +32,7 @@ pub(crate) struct XCommand {
 #[derive(Subcommand)]
 enum XSubcommands {
     /// Get the balance of an address for a given asset
-    #[command()]
+    #[command(version = version_tx_cmd(false))]
     Balance {
         /// Address to get the balance of
         address: String,
@@ -41,7 +41,7 @@ enum XSubcommands {
         asset_id: String,
     },
     /// Transfer any amount of a given asset to an address
-    #[command()]
+    #[command(version = version_tx_cmd(true))]
     Transfer {
         /// Amount of asset to send (in AVAX equivalent, 1 AVAX = 10^9 nAVAX)
         amount: f64,

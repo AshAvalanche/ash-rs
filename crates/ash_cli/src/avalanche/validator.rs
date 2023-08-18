@@ -5,7 +5,7 @@
 
 use crate::{
     avalanche::{wallet::*, *},
-    utils::{error::CliError, parsing::*, templating::*},
+    utils::{error::CliError, parsing::*, templating::*, version_tx_cmd},
 };
 use ash_sdk::avalanche::{subnets::AvalancheSubnetType, AVAX_PRIMARY_NETWORK_ID};
 use async_std::task;
@@ -39,7 +39,7 @@ pub(crate) struct ValidatorCommand {
 #[derive(Subcommand)]
 enum ValidatorSubcommands {
     /// Add a validator to a Subnet
-    #[command()]
+    #[command(version = version_tx_cmd(true))]
     Add {
         /// Validator NodeID
         id: String,
@@ -70,14 +70,14 @@ enum ValidatorSubcommands {
         wait: bool,
     },
     /// List the Subnet's validators
-    #[command()]
+    #[command(version = version_tx_cmd(false))]
     List {
         /// List pending validators
         #[arg(long, short = 'p')]
         pending: bool,
     },
     /// Show validator information
-    #[command()]
+    #[command(version = version_tx_cmd(false))]
     Info {
         /// Validator NodeID
         id: String,
@@ -179,7 +179,7 @@ fn add(
     start_time: String,
     end_time: String,
     delegation_fee: u32,
-    private_key: String,
+    private_key: &str,
     key_encoding: PrivateKeyEncoding,
     wait: bool,
     config: Option<&str>,
@@ -270,7 +270,7 @@ pub(crate) fn parse(
             start_time,
             end_time,
             delegation_fee,
-            private_key,
+            &private_key,
             key_encoding,
             wait,
             config,

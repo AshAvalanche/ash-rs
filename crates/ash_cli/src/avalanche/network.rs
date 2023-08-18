@@ -3,7 +3,7 @@
 
 // Module that contains the network subcommand parser
 
-use crate::utils::{error::CliError, templating::*};
+use crate::utils::{error::CliError, templating::*, version_tx_cmd};
 use ash_sdk::conf::AshConfig;
 use clap::{Parser, Subcommand};
 
@@ -18,7 +18,7 @@ pub(crate) struct NetworkCommand {
 #[derive(Subcommand)]
 enum NetworkSubcommands {
     /// List known Avalanche networks
-    #[command()]
+    #[command(version = version_tx_cmd(false))]
     List,
 }
 

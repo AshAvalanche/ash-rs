@@ -5,7 +5,7 @@
 
 use crate::{
     avalanche::*,
-    utils::{error::CliError, templating::*},
+    utils::{error::CliError, templating::*, version_tx_cmd},
 };
 use ash_sdk::avalanche::wallets::{generate_private_key, AvalancheWallet, AvalancheWalletInfo};
 use clap::{Parser, Subcommand, ValueEnum};
@@ -31,7 +31,7 @@ pub(crate) struct WalletCommand {
 #[derive(Subcommand)]
 enum WalletSubcommands {
     /// Get information about a wallet (linked to a private key)
-    #[command()]
+    #[command(version = version_tx_cmd(false))]
     Info {
         /// Private key of the wallet
         #[arg(env = "AVALANCHE_PRIVATE_KEY")]
@@ -41,7 +41,7 @@ enum WalletSubcommands {
         key_encoding: PrivateKeyEncoding,
     },
     /// Randomly generate a private key (giving access to a wallet)
-    #[command()]
+    #[command(version = version_tx_cmd(false))]
     Generate,
 }
 

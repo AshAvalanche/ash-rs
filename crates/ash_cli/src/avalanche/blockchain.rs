@@ -5,7 +5,7 @@
 
 use crate::{
     avalanche::{wallet::*, *},
-    utils::{error::CliError, parsing::*, templating::*},
+    utils::{error::CliError, parsing::*, templating::*, version_tx_cmd},
 };
 use ash_sdk::avalanche::{
     blockchains::AvalancheBlockchain,
@@ -34,7 +34,7 @@ pub(crate) struct BlockchainCommand {
 #[derive(Subcommand)]
 enum BlockchainSubcommands {
     /// Create a new blockchain
-    #[command()]
+    #[command(version = version_tx_cmd(true))]
     Create {
         /// Blockchain name
         name: String,

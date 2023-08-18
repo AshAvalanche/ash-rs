@@ -16,7 +16,7 @@ keywords.workspace = true
 
 [dependencies]
 ash_sdk = { path = "../ash_sdk", version = "0.2.2" }
-clap = { version = "4.0.32", features = ["derive", "env"] }
+clap = { version = "4.0.32", features = ["derive", "env", "cargo", "string"] }
 colored = "2.0.0"
 exitcode = "1.1.2"
 indent = "0.1.1"

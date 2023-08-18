@@ -5,7 +5,7 @@
 
 use crate::{
     avalanche::{wallet::*, *},
-    utils::{error::CliError, parsing::*, templating::*},
+    utils::{error::CliError, parsing::*, templating::*, version_tx_cmd},
 };
 use ash_sdk::avalanche::subnets::AvalancheSubnet;
 use async_std::task;
@@ -31,10 +31,10 @@ pub(crate) struct SubnetCommand {
 #[derive(Subcommand)]
 enum SubnetSubcommands {
     /// List the network's Subnets
-    #[command()]
+    #[command(version = version_tx_cmd(false))]
     List,
     /// Show Subnet information
-    #[command()]
+    #[command(version = version_tx_cmd(false))]
     Info {
         /// Subnet ID
         id: String,
@@ -43,7 +43,7 @@ enum SubnetSubcommands {
         extended: bool,
     },
     /// Create a new Subnet
-    #[command()]
+    #[command(version = version_tx_cmd(true))]
     Create {
         /// Private key to sign the transaction with
         #[arg(long, short = 'p', env = "AVALANCHE_PRIVATE_KEY")]

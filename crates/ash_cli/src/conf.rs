@@ -3,12 +3,13 @@
 
 // Module that contains the conf subcommand parser
 
-use crate::utils::error::CliError;
+use crate::utils::{error::CliError, version_tx_cmd};
 use ash_sdk::conf::AshConfig;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(about = "Interact with Ash configuration files")]
+/// Interact with Ash configuration files
+#[command()]
 pub(crate) struct ConfCommand {
     #[command(subcommand)]
     command: ConfSubcommands,
@@ -16,11 +17,13 @@ pub(crate) struct ConfCommand {
 
 #[derive(Subcommand)]
 enum ConfSubcommands {
-    #[command(about = "Initialize an Ash config file")]
+    /// Initialize an Ash config file
+    #[command(version = version_tx_cmd(false))]
     Init {
         #[arg(from_global)]
         config: String,
-        #[arg(long, help = "Overwrite existing config file")]
+        /// Overwrite existing config file
+        #[arg(long)]
         force: bool,
     },
 }
