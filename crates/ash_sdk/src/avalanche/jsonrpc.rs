@@ -4,6 +4,7 @@
 pub mod avm;
 pub mod info;
 pub mod platformvm;
+pub mod subnet_evm;
 
 // Module that contains code to interact with the Avalanche JSON RPC endpoints
 
