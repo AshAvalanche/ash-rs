@@ -51,6 +51,8 @@ pub enum ConfigError {
 
 #[derive(Error, Debug, PartialEq)]
 pub enum RpcError {
+    #[error("failed to parse RPC URL '{rpc_url}': {msg}")]
+    UrlParseFailure { rpc_url: String, msg: String },
     #[error("failed to get {data_type} for {target_type} '{target_value}': {msg}")]
     GetFailure {
         data_type: String,
@@ -154,4 +156,6 @@ pub enum AvalancheNodeError {
 pub enum AvalancheWarpMessagingError {
     #[error("failed to parse {property} of message: {msg}")]
     ParseFailure { property: String, msg: String },
+    #[error("invalid message signature: {0}")]
+    InvalidSignature(String),
 }

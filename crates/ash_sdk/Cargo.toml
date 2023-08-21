@@ -22,7 +22,7 @@ avalanche-types = { version = "0.0.400", features = [
 ] }
 config = { version = "0.13.3", features = ["yaml"] }
 ethers = { version = "2.0.7", features = ["rustls"] }
-hex = "0.4.3"
+hex = { version = "0.4.3", features = ["serde"] }
 regex = "1.7.1"
 serde = "1.0.152"
 serde-aux = "4.1.2"

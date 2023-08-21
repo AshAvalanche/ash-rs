@@ -38,7 +38,7 @@ impl WarpMessengerHttp {
     }
 
     /// Get the blockchain ID as seen by the WarpMessenger precompile
-    pub async fn get_blockchain_id(&self) -> Result<[u8; 32], AshError> {
+    pub async fn get_blockchain_id(&self) -> Result<H256, AshError> {
         let blockchain_id = self
             .contract
             .get_blockchain_id()
@@ -50,7 +50,7 @@ impl WarpMessengerHttp {
                 msg: e.to_string(),
             })?;
 
-        Ok(blockchain_id)
+        Ok(H256::from_slice(&blockchain_id))
     }
 
     /// Get SendWarpMessage event logs emitted between 2 blocks
@@ -60,7 +60,7 @@ impl WarpMessengerHttp {
         &self,
         from_block: BlockNumber,
         to_block: BlockNumber,
-        destination_chain_id: Option<[u8; 32]>,
+        destination_chain_id: Option<H256>,
         destination_address: Option<Address>,
         sender: Option<Address>,
     ) -> Result<Vec<Log>, AshError> {
@@ -77,7 +77,7 @@ impl WarpMessengerHttp {
             .to_block(to_block);
 
         event_filter = match destination_chain_id {
-            Some(chain_id) => event_filter.topic1(H256::from(chain_id)),
+            Some(chain_id) => event_filter.topic1(chain_id),
             None => event_filter,
         };
         event_filter = match destination_address {
