@@ -7,7 +7,7 @@ use crate::{
     avalanche::vms::subnet_evm::warp::{AddressedPayload, SubnetEVMWarpMessage},
     errors::*,
 };
-use avalanche_types::ids::Id;
+use avalanche_types::ids::{node::Id as NodeId, Id};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -90,7 +90,7 @@ impl Default for WarpMessagePayload {
 pub enum WarpMessageStatus {
     #[default]
     Sent,
-    Signed(u64),
+    Signed(u16),
 }
 
 /// Verified Warp message
@@ -112,6 +112,48 @@ pub struct WarpMessage {
     pub unsigned_message: WarpUnsignedMessage,
     pub verified_message: VerifiedWarpMessage,
     pub status: WarpMessageStatus,
+    pub node_signatures: Vec<WarpMessageNodeSignature>,
+}
+
+impl WarpMessage {
+    /// Add a node signature to the Warp message
+    pub fn add_node_signature(&mut self, node_signature: WarpMessageNodeSignature) {
+        // Only add the signature if it is not already present
+        if !self
+            .node_signatures
+            .iter()
+            .any(|sig| sig.node_id == node_signature.node_id)
+        {
+            self.node_signatures.push(node_signature);
+        }
+
+        // Update the status of the Warp message
+        if self.node_signatures.len() >= 1 {
+            self.status = WarpMessageStatus::Signed(self.node_signatures.len() as u16);
+        } else {
+            self.status = WarpMessageStatus::Sent;
+        }
+    }
+}
+
+/// Warp message signature from a validator node
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct WarpMessageNodeSignature {
+    pub node_id: NodeId,
+    #[serde(
+        serialize_with = "ethers::types::serialize_bytes",
+        deserialize_with = "hex::deserialize"
+    )]
+    pub signature: [u8; 96],
+}
+
+impl Default for WarpMessageNodeSignature {
+    fn default() -> Self {
+        Self {
+            node_id: NodeId::default(),
+            signature: [0; 96],
+        }
+    }
 }
 
 #[cfg(test)]

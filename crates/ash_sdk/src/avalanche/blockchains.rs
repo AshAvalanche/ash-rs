@@ -17,7 +17,10 @@ use crate::{
     utils::*,
 };
 use avalanche_types::{ids::Id, jsonrpc::platformvm::Blockchain};
-use ethers::providers::{Http, Provider};
+use ethers::{
+    providers::{Http, Provider},
+    types::H256,
+};
 use serde::{Deserialize, Serialize};
 
 /// Avalanche blockchain
@@ -27,7 +30,7 @@ pub struct AvalancheBlockchain {
     #[serde(default)]
     pub id: Id,
     pub name: String,
-    #[serde(skip)]
+    #[serde(default, rename = "subnetID")]
     pub subnet_id: Id,
     #[serde(default, rename = "vmID")]
     pub vm_id: Id,
@@ -90,7 +93,7 @@ impl AvalancheBlockchain {
     }
 
     /// Get the blockchain ID as seen by the Warp Messenger
-    pub async fn get_warp_blockchain_id(&self) -> Result<String, AshError> {
+    pub async fn get_warp_blockchain_id(&self) -> Result<H256, AshError> {
         let warp_blockchain_id = match self.vm_type {
             AvalancheVmType::SubnetEVM => {
                 let warp_messenger = WarpMessengerHttp::new(self)?;
@@ -103,7 +106,7 @@ impl AvalancheBlockchain {
             })?,
         };
 
-        Ok(format!("0x{}", hex::encode(warp_blockchain_id)))
+        Ok(warp_blockchain_id)
     }
 
     /// Get the Warp messages sent from this blockchain between 2 blocks

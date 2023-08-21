@@ -409,8 +409,7 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 [[package]]
 name = "avalanche-types"
 version = "0.0.400"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b52dfbe155ffa94f21bdeb376e081e99d47e1d915cc860a365151f12cb88a85"
+source = "git+https://github.com/AshAvalanche/avalanche-types-rs?branch=jsonrpc-info-missing-error-field#0b33ea76564f5ce285f99bf93c7a569a53374ea4"
 dependencies = [
  "async-trait",
  "bech32 0.9.1",
@@ -2084,6 +2083,9 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "hmac"
