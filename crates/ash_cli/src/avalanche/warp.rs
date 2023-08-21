@@ -41,6 +41,10 @@ enum WarpSubcommands {
         /// Block at which to stop monitoring
         #[arg(long, short = 't', default_value = "latest")]
         to_block: String,
+        /// Show extended information (notably signatures)
+        /// This option is only available in non-JSON mode
+        #[arg(long, short = 'e')]
+        extended: bool,
     },
 }
 
@@ -49,6 +53,7 @@ fn navigate(
     source_chain: &str,
     from_block: &str,
     to_block: &str,
+    extended: bool,
     config: Option<&str>,
     json: bool,
 ) -> Result<(), CliError> {
@@ -72,11 +77,29 @@ fn navigate(
         Err(_) => network
             .get_blockchain_by_name(source_chain)
             .map_err(|e| CliError::dataerr(format!("Error loading blockchain info: {e}")))?,
-    };
+    }
+    .clone();
+    update_subnet_validators(&mut network, &blockchain.subnet_id.to_string())?;
+
+    let subnet = network
+        .get_subnet(blockchain.subnet_id)
+        .map_err(|e| CliError::dataerr(format!("Error loading subnet info: {e}")))?;
 
     let warp_messages =
         task::block_on(async { blockchain.get_warp_messages(from_block, to_block).await })
-            .map_err(|e| CliError::dataerr(format!("Error reading warp messages: {e}")))?;
+            .map_err(|e| CliError::dataerr(format!("Error reading warp messages: {e}")))?
+            .iter()
+            .map(|warp_message| {
+                let mut signed_warp_message = warp_message.clone();
+                let signatures = subnet
+                    .get_warp_message_node_signatures(warp_message, None)
+                    .unwrap_or(vec![]);
+                for sig in signatures {
+                    signed_warp_message.add_node_signature(sig);
+                }
+                signed_warp_message
+            })
+            .collect::<Vec<_>>();
 
     if json {
         println!("{}", serde_json::to_string(&warp_messages).unwrap());
@@ -84,11 +107,10 @@ fn navigate(
     }
 
     println!("Found {} Warp messages:", warp_messages.len());
-
     for warp_message in warp_messages {
         println!(
             "{}",
-            template_warp_message(&warp_message, &blockchain.name, true, 0)
+            template_warp_message(&warp_message, &blockchain.name, extended, true, 0)
         );
     }
 
@@ -102,11 +124,13 @@ pub(crate) fn parse(warp: WarpCommand, config: Option<&str>, json: bool) -> Resu
             source_chain,
             from_block,
             to_block,
+            extended,
         } => navigate(
             &warp.network,
             &source_chain,
             &from_block,
             &to_block,
+            extended,
             config,
             json,
         ),
