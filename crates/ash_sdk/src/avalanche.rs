@@ -201,7 +201,7 @@ impl AvalancheNetwork {
                     .filter(|chain| chain.subnet_id == updated_subnet.id)
                     .cloned()
                     .collect::<Vec<_>>();
-                // For existing blockchains in the Subnet, update the ID and VM ID
+                // For existing blockchains in the Subnet, update the ID, VM ID, and Subnet ID
                 updated_subnet.blockchains = updated_subnet
                     .blockchains
                     .iter()
@@ -213,6 +213,7 @@ impl AvalancheNetwork {
                             let mut blockchain = existing_chain.clone();
                             blockchain.id = updated_chain.id;
                             blockchain.vm_id = updated_chain.vm_id;
+                            blockchain.subnet_id = updated_chain.subnet_id;
                             blockchain
                         } else {
                             existing_chain.clone()
