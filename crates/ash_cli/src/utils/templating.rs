@@ -113,7 +113,7 @@ pub(crate) fn template_blockchain_info(
         ));
     }
 
-    indent::indent_all_by(indent.into(), info_str)
+    indent::indent_all_by(indent, info_str)
 }
 
 pub(crate) fn template_validator_info(
@@ -262,7 +262,7 @@ pub(crate) fn template_validator_info(
         }
     }
 
-    indent::indent_all_by(indent.into(), info_str)
+    indent::indent_all_by(indent, info_str)
 }
 
 pub(crate) fn template_subnet_info(
@@ -315,7 +315,7 @@ pub(crate) fn template_subnet_info(
             type_colorize(&subnet.subnet_type.to_string()),
             match subnet.subnet_type {
                 AvalancheSubnetType::Permissioned =>
-                    indent::indent_all_by(subindent.into(), permissioned_subnet_info),
+                    indent::indent_all_by(subindent, permissioned_subnet_info),
                 _ => "".to_string(),
             },
             type_colorize(&subnet.blockchains.len()),
@@ -351,7 +351,7 @@ pub(crate) fn template_subnet_info(
         ));
     }
 
-    indent::indent_all_by(indent.into(), info_str)
+    indent::indent_all_by(indent, info_str)
 }
 
 pub(crate) fn template_subnet_creation(subnet: &AvalancheSubnet, wait: bool) -> String {
@@ -471,7 +471,7 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: usize) 
         type_colorize(&node.uptime.weighted_average_percentage),
     ));
 
-    indent::indent_all_by(indent.into(), info_str)
+    indent::indent_all_by(indent, info_str)
 }
 
 pub(crate) fn template_chain_is_bootstrapped(
@@ -493,7 +493,7 @@ pub(crate) fn template_chain_is_bootstrapped(
         }
     ));
 
-    indent::indent_all_by(indent.into(), bootstrapped_str)
+    indent::indent_all_by(indent, bootstrapped_str)
 }
 
 pub(crate) fn template_generate_private_key(
@@ -511,7 +511,7 @@ pub(crate) fn template_generate_private_key(
         type_colorize(&private_key_hex),
     ));
 
-    indent::indent_all_by(indent.into(), private_key_str)
+    indent::indent_all_by(indent, private_key_str)
 }
 
 pub(crate) fn template_wallet_info(wallet_info: &AvalancheWalletInfo, indent: usize) -> String {
@@ -528,7 +528,7 @@ pub(crate) fn template_wallet_info(wallet_info: &AvalancheWalletInfo, indent: us
         type_colorize(&wallet_info.evm_address),
     ));
 
-    indent::indent_all_by(indent.into(), info_str)
+    indent::indent_all_by(indent, info_str)
 }
 
 pub(crate) fn template_xchain_balance(
@@ -546,7 +546,7 @@ pub(crate) fn template_xchain_balance(
         type_colorize(&(balance.balance as f64 / 1_000_000_000.0)),
     ));
 
-    indent::indent_all_by(indent.into(), balance_str)
+    indent::indent_all_by(indent, balance_str)
 }
 
 pub(crate) fn template_xchain_transfer(
@@ -581,7 +581,7 @@ pub(crate) fn template_xchain_transfer(
         ));
     }
 
-    indent::indent_all_by(indent.into(), transfer_str)
+    indent::indent_all_by(indent, transfer_str)
 }
 
 pub(crate) fn template_genesis_encoded(genesis_bytes: Vec<u8>, indent: usize) -> String {
@@ -594,7 +594,7 @@ pub(crate) fn template_genesis_encoded(genesis_bytes: Vec<u8>, indent: usize) ->
         type_colorize(&format!("0x{}", hex::encode(genesis_bytes))),
     ));
 
-    indent::indent_all_by(indent.into(), genesis_str)
+    indent::indent_all_by(indent, genesis_str)
 }
 
 pub(crate) fn template_warp_message(
@@ -624,7 +624,7 @@ pub(crate) fn template_warp_message(
             type_colorize(&message.unsigned_message.source_chain_id),
             match &message.unsigned_message.payload {
                 WarpMessagePayload::SubnetEVMAddressedPayload(addressed_payload) =>
-                    template_warp_addressed_payload(&addressed_payload, 2),
+                    template_warp_addressed_payload(addressed_payload, 2),
                 WarpMessagePayload::Unknown(payload) => format!(
                     "Payload (Unknown): {}",
                     type_colorize(&indent::indent_all_by(
@@ -656,7 +656,7 @@ pub(crate) fn template_warp_message(
         unsigned_message_str,
         match &message.verified_message {
             VerifiedWarpMessage::SubnetEVM(verified_message) =>
-                template_warp_subnet_evm_message(&verified_message, 2),
+                template_warp_subnet_evm_message(verified_message, 2),
             VerifiedWarpMessage::Unknown => "".to_string(),
         },
         match extended {
@@ -665,7 +665,7 @@ pub(crate) fn template_warp_message(
         }
     ));
 
-    indent::indent_all_by(indent.into(), message_str)
+    indent::indent_all_by(indent, message_str)
 }
 
 pub(crate) fn template_warp_addressed_payload(payload: &AddressedPayload, indent: usize) -> String {
@@ -685,7 +685,7 @@ pub(crate) fn template_warp_addressed_payload(payload: &AddressedPayload, indent
         type_colorize(&payload.payload),
     ));
 
-    indent::indent_all_by(indent.into(), payload_str)
+    indent::indent_all_by(indent, payload_str)
 }
 
 pub(crate) fn template_warp_subnet_evm_message(
@@ -713,7 +713,7 @@ pub(crate) fn template_warp_subnet_evm_message(
         }
     ));
 
-    indent::indent_all_by(indent.into(), message_str)
+    indent::indent_all_by(indent, message_str)
 }
 
 pub(crate) fn template_warp_node_signatures(
@@ -739,5 +739,5 @@ pub(crate) fn template_warp_node_signatures(
         ))
     }
 
-    indent::indent_all_by(indent.into(), signatures_str)
+    indent::indent_all_by(indent, signatures_str)
 }
