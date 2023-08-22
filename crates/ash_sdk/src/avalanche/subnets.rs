@@ -248,10 +248,7 @@ impl AvalancheSubnet {
         let mut endpoint_node = AvalancheNode {
             http_host: endpoint_host.clone(),
             http_port: endpoint_port,
-            https_enabled: match endpoint_scheme.as_str() {
-                "https" => true,
-                _ => false,
-            },
+            https_enabled: matches!(endpoint_scheme.as_str(), "https"),
             ..Default::default()
         };
         endpoint_node.update_info()?;
@@ -260,7 +257,7 @@ impl AvalancheSubnet {
         let info_rpc_url = format!(
             "{}/{}",
             endpoint_node.get_http_endpoint(),
-            info::AVAX_INFO_API_ENDPOINT.to_string()
+            info::AVAX_INFO_API_ENDPOINT
         );
 
         // Get the peers information from the info.peers endpoint (notably the nodes public IP addresses)

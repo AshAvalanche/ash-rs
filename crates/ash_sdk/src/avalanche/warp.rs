@@ -128,7 +128,7 @@ impl WarpMessage {
         }
 
         // Update the status of the Warp message
-        if self.node_signatures.len() >= 1 {
+        if !self.node_signatures.is_empty() {
             self.status = WarpMessageStatus::Signed(self.node_signatures.len() as u16);
         } else {
             self.status = WarpMessageStatus::Sent;
