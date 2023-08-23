@@ -3,7 +3,7 @@
 
 // Module that contains the node subcommand parser
 
-use crate::utils::{error::CliError, templating::*};
+use crate::utils::{error::CliError, templating::*, version_tx_cmd};
 use ash_sdk::avalanche::nodes::AvalancheNode;
 use clap::{Parser, Subcommand};
 
@@ -27,10 +27,10 @@ pub(crate) struct NodeCommand {
 #[derive(Subcommand)]
 enum NodeSubcommands {
     /// Show node information
-    #[command()]
+    #[command(version = version_tx_cmd(false))]
     Info,
     /// Check if a chain is done bootstrapping on the node
-    #[command()]
+    #[command(version = version_tx_cmd(false))]
     IsBootstrapped {
         /// Chain ID or alias
         chain: String,

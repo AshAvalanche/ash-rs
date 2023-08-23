@@ -15,8 +15,8 @@ use colored::Colorize;
 use std::process::exit;
 
 #[derive(Parser)]
+/// Ash CLI. More information at https://ash.center/docs/toolkit/ash-cli/introduction
 #[command(author, version)]
-#[command(about = "Ash CLI")]
 struct Cli {
     #[command(subcommand)]
     command: CliCommands,
@@ -30,7 +30,6 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum CliCommands {
-    #[command(visible_alias = "avax")]
     Avalanche(avalanche::AvalancheCommand),
     Conf(conf::ConfCommand),
 }

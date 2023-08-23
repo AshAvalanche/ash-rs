@@ -3,7 +3,7 @@
 
 // Module that contains the vm subcommand parser
 
-use crate::utils::{error::CliError, templating::*};
+use crate::utils::{error::CliError, templating::*, version_tx_cmd};
 use ash_sdk::avalanche::vms::{encode_genesis_data, generate_vm_id, AvalancheVmType};
 use clap::{Parser, Subcommand};
 
@@ -18,7 +18,7 @@ pub(crate) struct VmCommand {
 #[derive(Subcommand)]
 enum VmSubcommands {
     /// Encode a VM genesis (in JSON) to bytes
-    #[command()]
+    #[command(version = version_tx_cmd(false))]
     EncodeGenesis {
         /// Path to the genesis JSON file
         genesis_file: String,
@@ -27,7 +27,7 @@ enum VmSubcommands {
         vm_type: AvalancheVmType,
     },
     /// Generate the VM ID from the VM name
-    #[command()]
+    #[command(version = version_tx_cmd(false))]
     GenerateId {
         /// VM name
         vm_name: String,

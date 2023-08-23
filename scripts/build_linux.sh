@@ -10,7 +10,7 @@ echo "Building Ash CLI for Linux..."
 cargo build "$@"
 
 # Get current version
-PACKAGE_VERSION=$(grep '^version =' Cargo.toml | grep -oP '\d+\.\d+\.\d+')
+PACKAGE_VERSION=$(grep '^version =' Cargo.toml | grep -oP '\d+\.\d+\.\d+-?(alpha|beta)?(.\d+)?')
 
 # If any argument passed is '--release', binaries are in 'target/release'
 # Otherwise, binaries are in 'target/debug'

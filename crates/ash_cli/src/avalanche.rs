@@ -17,7 +17,8 @@ use ash_sdk::avalanche::AvalancheNetwork;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(about = "Interact with Avalanche Subnets, blockchains and nodes")]
+/// Interact with Avalanche Subnets, blockchains and nodes
+#[command(visible_alias = "avax")]
 pub(crate) struct AvalancheCommand {
     #[command(subcommand)]
     command: AvalancheSubcommands,
