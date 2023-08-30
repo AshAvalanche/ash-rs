@@ -306,7 +306,7 @@ impl AvalancheSubnet {
                         "{}://{}:{}{}",
                         endpoint_scheme,
                         peer.public_ip.ip(),
-                        endpoint_port,
+                        peer.public_ip.port() - 1,
                         endpoint_path
                     );
 

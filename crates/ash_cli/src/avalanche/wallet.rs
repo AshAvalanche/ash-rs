@@ -37,7 +37,12 @@ enum WalletSubcommands {
         #[arg(env = "AVALANCHE_PRIVATE_KEY")]
         private_key: String,
         /// Private key format
-        #[arg(long, short = 'e', default_value = "cb58")]
+        #[arg(
+            long,
+            short = 'e',
+            default_value = "cb58",
+            env = "AVALANCHE_KEY_ENCODING"
+        )]
         key_encoding: PrivateKeyEncoding,
     },
     /// Randomly generate a private key (giving access to a wallet)
