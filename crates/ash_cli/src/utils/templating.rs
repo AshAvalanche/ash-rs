@@ -15,7 +15,6 @@ use ash_sdk::avalanche::{
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::{ColoredString, Colorize};
-use hex;
 use indoc::formatdoc;
 
 // Module that contains templating functions for info strings
@@ -43,7 +42,7 @@ where
 }
 
 pub(crate) fn human_readable_timestamp(timestamp: u64) -> String {
-    DateTime::<Utc>::from_utc(
+    DateTime::<Utc>::from_naive_utc_and_offset(
         NaiveDateTime::from_timestamp_opt(timestamp as i64, 0).unwrap(),
         Utc,
     )
