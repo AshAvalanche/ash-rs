@@ -110,7 +110,7 @@ fn navigate(
     for warp_message in warp_messages {
         println!(
             "{}",
-            template_warp_message(&warp_message, &blockchain.name, extended, true, 0)
+            template_warp_message(&warp_message, &blockchain, extended, true, 0)
         );
     }
 

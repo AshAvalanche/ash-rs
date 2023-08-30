@@ -15,6 +15,7 @@ use ash_sdk::avalanche::{
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::{ColoredString, Colorize};
+use hex;
 use indoc::formatdoc;
 
 // Module that contains templating functions for info strings
@@ -599,7 +600,7 @@ pub(crate) fn template_genesis_encoded(genesis_bytes: Vec<u8>, indent: usize) ->
 
 pub(crate) fn template_warp_message(
     message: &WarpMessage,
-    blockchain_name: &str,
+    blockchain: &AvalancheBlockchain,
     extended: bool,
     list: bool,
     indent: usize,
@@ -609,6 +610,16 @@ pub(crate) fn template_warp_message(
         true => 2,
         false => 0,
     };
+
+    if message.unsigned_message.source_chain_id != blockchain.id {
+        return format!(
+            "{}Couldn't decode message. Only Warp messages created by AvalancheGo > 1.10.5 are supported.",
+            match list {
+                true => "- ".to_string(),
+                false => "".to_string(),
+            }
+        ).yellow().to_string();
+    }
 
     let unsigned_message_str = indent::indent_all_by(
         sub_indent,
@@ -627,10 +638,7 @@ pub(crate) fn template_warp_message(
                     template_warp_addressed_payload(addressed_payload, 2),
                 WarpMessagePayload::Unknown(payload) => format!(
                     "Payload (Unknown): {}",
-                    type_colorize(&indent::indent_all_by(
-                        sub_indent,
-                        serde_json::to_string_pretty(&payload).unwrap()
-                    ))
+                    type_colorize(&format!("0x{}", hex::encode(payload)))
                 ),
             }
         ),
@@ -648,7 +656,7 @@ pub(crate) fn template_warp_message(
             false => "".to_string(),
         },
         type_colorize(&message.unsigned_message.id),
-        type_colorize(&blockchain_name),
+        type_colorize(&blockchain.name),
         match message.status {
             WarpMessageStatus::Sent => "Sent".yellow(),
             WarpMessageStatus::Signed(num) => format!("Signed by {num} validator nodes").green(),
