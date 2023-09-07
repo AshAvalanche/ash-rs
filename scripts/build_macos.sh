@@ -74,4 +74,3 @@ cd "$MAC_ARM_TARGET_DIR" || exit 1
 rm -f "ash-macos-arm64-v$PACKAGE_VERSION.tar.gz"
 tar -czf "ash-macos-arm64-v$PACKAGE_VERSION.tar.gz" ash
 sha512sum "ash-macos-arm64-v$PACKAGE_VERSION.tar.gz" >"ash-macos-arm64-v$PACKAGE_VERSION.tar.gz.sha512"
-cd "$OLDPWD" || exit 1
