@@ -20,4 +20,4 @@ categories = [
 keywords = ["blockchain", "avalanche", "subnets", "ash"]
 
 [patch.crates-io]
-avalanche-types = { git = "https://github.com/AshAvalanche/avalanche-types-rs", branch = "jsonrpc-info-missing-error-field" }
+avalanche-types = { git = "https://github.com/AshAvalanche/avalanche-rs", branch = "json-rpc-info" }
