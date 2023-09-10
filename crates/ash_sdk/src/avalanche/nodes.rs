@@ -5,9 +5,10 @@
 
 use crate::{avalanche::jsonrpc::info::*, errors::*};
 use avalanche_types::{
-    ids::node::Id,
+    ids::node::Id as NodeId,
     jsonrpc::info::{GetNodeVersionResult, UptimeResult, VmVersions},
 };
+use openssl::x509::X509;
 use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, Ipv4Addr};
 
@@ -15,7 +16,7 @@ use std::net::{IpAddr, Ipv4Addr};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheNode {
-    pub id: Id,
+    pub id: NodeId,
     pub network: String,
     pub http_host: String,
     pub http_port: u16,
@@ -29,7 +30,7 @@ pub struct AvalancheNode {
 impl Default for AvalancheNode {
     fn default() -> Self {
         Self {
-            id: Id::default(),
+            id: NodeId::default(),
             http_host: String::from("127.0.0.1"),
             http_port: 9650,
             https_enabled: false,
@@ -190,10 +191,31 @@ impl From<UptimeResult> for AvalancheNodeUptime {
     }
 }
 
+/// Compute the node ID from the DER-encoded certificate bytes
+pub fn node_id_from_cert_der(cert_bytes: &[u8]) -> Result<NodeId, AshError> {
+    let node_id = NodeId::from_cert_der_bytes(cert_bytes)
+        .map_err(|e| AvalancheNodeError::InvalidCertificate(e.to_string()))?;
+
+    Ok(node_id)
+}
+
+/// Compute the node ID from the PEM-encoded X509 certificate string
+pub fn node_id_from_cert_pem(cert_str: &str) -> Result<NodeId, AshError> {
+    let cert = X509::from_pem(cert_str.as_bytes())
+        .map_err(|e| AvalancheNodeError::InvalidCertificate(e.to_string()))?;
+    let cert_der = cert
+        .to_der()
+        .map_err(|e| AvalancheNodeError::InvalidCertificate(e.to_string()))?;
+
+    let node_id = node_id_from_cert_der(&cert_der)?;
+
+    Ok(node_id)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::str::FromStr;
+    use std::{fs, str::FromStr};
 
     // Using avalanche-network-runner to run a test network
     const ASH_TEST_HTTP_PORT: u16 = 9650;
@@ -218,7 +240,7 @@ mod tests {
         node.update_info().unwrap();
 
         // Test the node ID, network, public_ip and stacking_port
-        assert_eq!(node.id, Id::from_str(ASH_TEST_NODE_ID).unwrap());
+        assert_eq!(node.id, NodeId::from_str(ASH_TEST_NODE_ID).unwrap());
         assert_eq!(node.network, ASH_TEST_NETWORK_NAME);
         assert_eq!(node.public_ip, ASH_TEST_HTTP_HOST);
         assert_eq!(node.staking_port, ASH_TEST_STACKING_PORT);
@@ -253,5 +275,31 @@ mod tests {
         assert!(is_bootstrapped_p);
         assert!(is_bootstrapped_x);
         assert!(is_bootstrapped_c);
+    }
+
+    #[test]
+    fn test_node_id_from_cert_der() {
+        let cert_pem = fs::read_to_string("tests/certs/validator01.crt").unwrap();
+        let cert = X509::from_pem(cert_pem.as_bytes()).unwrap();
+        let cert_der = cert.to_der().unwrap();
+
+        let node_id = node_id_from_cert_der(&cert_der).unwrap();
+
+        assert_eq!(
+            node_id,
+            NodeId::from_str("NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_node_id_from_cert_pem() {
+        let cert_pem = fs::read_to_string("tests/certs/validator01.crt").unwrap();
+
+        let node_id = node_id_from_cert_pem(&cert_pem).unwrap();
+
+        assert_eq!(
+            node_id,
+            NodeId::from_str("NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg").unwrap()
+        );
     }
 }
