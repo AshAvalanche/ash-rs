@@ -4,7 +4,7 @@
 // Module that contains the node subcommand parser
 
 use crate::utils::{error::CliError, templating::*, version_tx_cmd};
-use ash_sdk::avalanche::nodes::AvalancheNode;
+use ash_sdk::avalanche::nodes::{node_id_from_cert_pem, AvalancheNode};
 use clap::{Parser, Subcommand};
 
 /// Interact with Avalanche nodes
@@ -13,27 +13,47 @@ use clap::{Parser, Subcommand};
 pub(crate) struct NodeCommand {
     #[command(subcommand)]
     command: NodeSubcommands,
-    /// Node's HTTP host (IP address or FQDN)
-    #[arg(long, short = 'n', default_value = "127.0.0.1", global = true)]
-    http_host: String,
-    /// Node's HTTP port
-    #[arg(long, short = 'p', default_value = "9650", global = true)]
-    http_port: u16,
-    /// Use HTTPS
-    #[arg(long, short = 's', global = true)]
-    https: bool,
 }
 
 #[derive(Subcommand)]
 enum NodeSubcommands {
     /// Show node information
     #[command(version = version_tx_cmd(false))]
-    Info,
+    Info {
+        /// Node's HTTP host (IP address or FQDN)
+        #[arg(long, short = 'n', default_value = "127.0.0.1", global = true)]
+        http_host: String,
+        /// Node's HTTP port
+        #[arg(long, short = 'p', default_value = "9650", global = true)]
+        http_port: u16,
+        /// Use HTTPS
+        #[arg(long, short = 's', global = true)]
+        https: bool,
+    },
     /// Check if a chain is done bootstrapping on the node
     #[command(version = version_tx_cmd(false))]
     IsBootstrapped {
+        /// Node's HTTP host (IP address or FQDN)
+        #[arg(long, short = 'n', default_value = "127.0.0.1", global = true)]
+        http_host: String,
+        /// Node's HTTP port
+        #[arg(long, short = 'p', default_value = "9650", global = true)]
+        http_port: u16,
+        /// Use HTTPS
+        #[arg(long, short = 's', global = true)]
+        https: bool,
         /// Chain ID or alias
         chain: String,
+    },
+    /// Get the node ID from the PEM-encoded X509 certificate
+    #[command(version = version_tx_cmd(false))]
+    IdFromCert {
+        /// PEM-encoded X509 certificate string
+        #[arg(long, short = 'p', group = "cert")]
+        pem_str: Option<String>,
+        /// Path to the PEM-encoded X509 certificate file
+        #[arg(long, short = 'f', group = "cert")]
+        pem_file: Option<String>,
     },
 }
 
@@ -103,12 +123,49 @@ fn is_bootstrapped(
     Ok(())
 }
 
+fn id_from_cert(
+    cert_str: Option<String>,
+    cert_file: Option<String>,
+    json: bool,
+) -> Result<(), CliError> {
+    let cert_pem =
+        match (cert_str, cert_file) {
+            (Some(cert_str), None) => cert_str,
+            (None, Some(cert_file)) => std::fs::read_to_string(cert_file)
+                .map_err(|e| CliError::dataerr(format!("Error reading certificate file: {e}")))?,
+            _ => return Err(CliError::dataerr(
+                "Error when parsing arguments: either 'cert-str' or 'cert-file' must be provided"
+                    .to_string(),
+            )),
+        };
+
+    let node_id = node_id_from_cert_pem(&cert_pem)
+        .map_err(|e| CliError::dataerr(format!("Error getting node ID from certificate: {e}")))?;
+
+    if json {
+        println!("{}", serde_json::json!({ "nodeID": node_id }));
+        return Ok(());
+    }
+
+    println!("Node ID: {}", type_colorize(&node_id.to_string()));
+
+    Ok(())
+}
+
 // Parse node subcommand
 pub(crate) fn parse(node: NodeCommand, json: bool) -> Result<(), CliError> {
     match node.command {
-        NodeSubcommands::Info => info(&node.http_host, node.http_port, node.https, json),
-        NodeSubcommands::IsBootstrapped { chain } => {
-            is_bootstrapped(&node.http_host, node.http_port, node.https, &chain, json)
-        }
+        NodeSubcommands::Info {
+            http_host,
+            http_port,
+            https,
+        } => info(&http_host, http_port, https, json),
+        NodeSubcommands::IsBootstrapped {
+            http_host,
+            http_port,
+            https,
+            chain,
+        } => is_bootstrapped(&http_host, http_port, https, &chain, json),
+        NodeSubcommands::IdFromCert { pem_str, pem_file } => id_from_cert(pem_str, pem_file, json),
     }
 }
