@@ -8,7 +8,7 @@ use avalanche_types::{
     ids::node::Id as NodeId,
     jsonrpc::info::{GetNodeVersionResult, UptimeResult, VmVersions},
 };
-use openssl::x509::X509;
+use rustls_pemfile::certs;
 use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, Ipv4Addr};
 
@@ -201,11 +201,9 @@ pub fn node_id_from_cert_der(cert_bytes: &[u8]) -> Result<NodeId, AshError> {
 
 /// Compute the node ID from the PEM-encoded X509 certificate string
 pub fn node_id_from_cert_pem(cert_str: &str) -> Result<NodeId, AshError> {
-    let cert = X509::from_pem(cert_str.as_bytes())
-        .map_err(|e| AvalancheNodeError::InvalidCertificate(e.to_string()))?;
-    let cert_der = cert
-        .to_der()
-        .map_err(|e| AvalancheNodeError::InvalidCertificate(e.to_string()))?;
+    let cert_der = certs(&mut cert_str.as_bytes())
+        .map_err(|e| AvalancheNodeError::InvalidCertificate(e.to_string()))?
+        .remove(0);
 
     let node_id = node_id_from_cert_der(&cert_der)?;
 
@@ -280,8 +278,7 @@ mod tests {
     #[test]
     fn test_node_id_from_cert_der() {
         let cert_pem = fs::read_to_string("tests/certs/validator01.crt").unwrap();
-        let cert = X509::from_pem(cert_pem.as_bytes()).unwrap();
-        let cert_der = cert.to_der().unwrap();
+        let cert_der = certs(&mut cert_pem.as_bytes()).unwrap().remove(0);
 
         let node_id = node_id_from_cert_der(&cert_der).unwrap();
 
