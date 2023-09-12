@@ -15,7 +15,7 @@ categories.workspace = true
 keywords.workspace = true
 
 [dependencies]
-avalanche-types = { version = "0.1.1", features = [
+avalanche-types = { version = "0.1.2", features = [
 	"jsonrpc_client",
 	"wallet",
 	"subnet_evm",

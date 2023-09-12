@@ -18,6 +18,3 @@ categories = [
 	"data-structures",
 ]
 keywords = ["blockchain", "avalanche", "subnets", "ash"]
-
-[patch.crates-io]
-avalanche-types = { git = "https://github.com/AshAvalanche/avalanche-rs", branch = "json-rpc-info" }
