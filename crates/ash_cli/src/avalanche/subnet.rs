@@ -73,7 +73,7 @@ fn list(network_name: &str, config: Option<&str>, json: bool) -> Result<(), CliE
     }
 
     println!(
-        "Found {} Subnet(s) on network '{}':",
+        "Found {} Subnets on network '{}':",
         type_colorize(&network.subnets.len()),
         type_colorize(&network.name)
     );

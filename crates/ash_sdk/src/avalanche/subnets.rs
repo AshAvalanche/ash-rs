@@ -3,18 +3,28 @@
 
 // Module that contains code to interact with Avalanche Subnets and validators
 
-use crate::avalanche::{
-    blockchains::AvalancheBlockchain, jsonrpc::platformvm::SubnetStringControlKeys, txs::p,
-    wallets::AvalancheWallet, AvalancheOutputOwners, AVAX_PRIMARY_NETWORK_ID,
+use crate::{
+    avalanche::{
+        blockchains::AvalancheBlockchain,
+        jsonrpc::{info, platformvm::SubnetStringControlKeys, subnet_evm},
+        nodes::AvalancheNode,
+        txs::p,
+        wallets::AvalancheWallet,
+        warp::WarpMessageNodeSignature,
+        AvalancheOutputOwners, AVAX_PRIMARY_NETWORK_ID,
+    },
+    errors::*,
 };
-use crate::errors::*;
 use avalanche_types::{
     ids::{node::Id as NodeId, Id},
     jsonrpc::platformvm::{ApiPrimaryDelegator, ApiPrimaryValidator},
+    utils::urls::extract_scheme_host_port_path_chain_alias,
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+
+use super::warp::WarpMessage;
 
 /// Avalanche Subnet types
 #[derive(Default, Debug, Display, Clone, Serialize, Deserialize, PartialEq)]
@@ -206,6 +216,115 @@ impl AvalancheSubnet {
             weight: Some(weight),
             ..Default::default()
         })
+    }
+
+    /// Get the validator nodes signatures of a Warp message
+    /// Tries to get the signatures from a provided number of the Subnet's validators
+    /// If the number of validators is not provided, tries to get the signatures from all the Subnet's validators
+    /// If the number of validators is provided, stops after reaching the said number of validators
+    /// Note: for now, the validator nodes queried are the ones that are part of the Subnet at the current height
+    pub fn get_warp_message_node_signatures(
+        &self,
+        warp_message: &WarpMessage,
+        signatures_threshold: Option<u32>,
+    ) -> Result<Vec<WarpMessageNodeSignature>, AshError> {
+        let mut signatures = vec![];
+
+        let source_chain = self.get_blockchain(warp_message.unsigned_message.source_chain_id)?;
+
+        // Parse the RPC URL to get the scheme, host, and port
+        let (scheme, endpoint_host, port, path, ..) =
+            extract_scheme_host_port_path_chain_alias(&source_chain.rpc_url).map_err(|e| {
+                RpcError::UrlParseFailure {
+                    rpc_url: source_chain.rpc_url.to_string(),
+                    msg: e.to_string(),
+                }
+            })?;
+        let endpoint_scheme = scheme.unwrap_or("http".to_string());
+        let endpoint_path = path.unwrap_or("/ext/bc/C/rpc".to_string());
+        let endpoint_port = port.unwrap_or(9650);
+
+        // Get the node information from the info endpoint
+        let mut endpoint_node = AvalancheNode {
+            http_host: endpoint_host.clone(),
+            http_port: endpoint_port,
+            https_enabled: matches!(endpoint_scheme.as_str(), "https"),
+            ..Default::default()
+        };
+        endpoint_node.update_info()?;
+
+        // Construct the RPC URL to query the info.peers endpoint
+        let info_rpc_url = format!(
+            "{}/{}",
+            endpoint_node.get_http_endpoint(),
+            info::AVAX_INFO_API_ENDPOINT
+        );
+
+        // Get the peers information from the info.peers endpoint (notably the nodes public IP addresses)
+        let peers = info::peers(
+            &info_rpc_url,
+            Some(
+                self.validators
+                    .iter()
+                    .map(|validator| validator.node_id)
+                    .collect(),
+            ),
+        )?;
+
+        // Until we have enough signatures or we have queried all the validators
+        let validators_threshold = match signatures_threshold {
+            Some(threshold) => threshold,
+            None => self.validators.len() as u32,
+        };
+        let mut validators_index = 0_u32;
+        while signatures.len() < validators_threshold as usize
+            && validators_index < self.validators.len() as u32
+        {
+            // Get the validator node
+            let validator = &self.validators[validators_index as usize];
+
+            let signature = match validator.node_id {
+                // If the validator node is the node being used as endpoint, get the signature from the node
+                node_id if node_id == endpoint_node.id => subnet_evm::get_warp_signature(
+                    &source_chain.rpc_url,
+                    warp_message.unsigned_message.id,
+                )?,
+                // If the validator node is a peer of the node being used as endpoint
+                _ => {
+                    // Get the validator node's IP address
+                    let peer = peers
+                        .iter()
+                        .find(|&peer| peer.node_id == validator.node_id)
+                        .ok_or(AvalancheSubnetError::NotFound {
+                            subnet_id: self.id.to_string(),
+                            target_type: "validator node".to_string(),
+                            target_value: validator.node_id.to_string(),
+                        })?;
+
+                    // Construct the RPC URL to query the warp_getSignature endpoint
+                    let warp_rpc_url = format!(
+                        "{}://{}:{}{}",
+                        endpoint_scheme,
+                        peer.public_ip.ip(),
+                        peer.public_ip.port() - 1,
+                        endpoint_path
+                    );
+
+                    // Get the validator node's signature for the Warp message
+                    subnet_evm::get_warp_signature(&warp_rpc_url, warp_message.unsigned_message.id)?
+                }
+            };
+
+            signatures.push(WarpMessageNodeSignature {
+                node_id: validator.node_id,
+                signature,
+            });
+
+            // Increment the validator index
+            validators_index += 1;
+        }
+
+        Ok(signatures)
     }
 }
 

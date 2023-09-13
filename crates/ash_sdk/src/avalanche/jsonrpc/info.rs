@@ -10,7 +10,7 @@ use crate::{
     impl_json_rpc_response,
 };
 use avalanche_types::{
-    ids::node::Id,
+    ids::node::Id as NodeId,
     jsonrpc::{info::*, ResponseError},
 };
 use std::net::SocketAddr;
@@ -24,9 +24,10 @@ impl_json_rpc_response!(GetNodeVersionResponse, GetNodeVersionResult);
 impl_json_rpc_response!(UptimeResponse, UptimeResult);
 impl_json_rpc_response!(GetNetworkNameResponse, GetNetworkNameResult);
 impl_json_rpc_response!(IsBootstrappedResponse, IsBootstrappedResult);
+impl_json_rpc_response!(PeersResponse, PeersResult);
 
 /// Get the ID of a node by querying the Info API
-pub fn get_node_id(rpc_url: &str) -> Result<Id, RpcError> {
+pub fn get_node_id(rpc_url: &str) -> Result<NodeId, RpcError> {
     let node_id = get_json_rpc_req_result::<GetNodeIdResponse, GetNodeIdResult>(
         rpc_url,
         "info.getNodeID",
@@ -97,10 +98,24 @@ pub fn is_bootstrapped(rpc_url: &str, chain: &str) -> Result<bool, RpcError> {
     Ok(is_bootstrapped)
 }
 
+/// Get the peers of a node by querying the Info API
+pub fn peers(rpc_url: &str, node_ids: Option<Vec<NodeId>>) -> Result<Vec<Peer>, RpcError> {
+    let peers = get_json_rpc_req_result::<PeersResponse, PeersResult>(
+        rpc_url,
+        "info.peers",
+        Some(ureq::json!({
+            "nodeIDs": node_ids.or(Some(vec![]))
+        })),
+    )?
+    .peers
+    .unwrap_or(vec![]);
+
+    Ok(peers)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use avalanche_types::ids::node::Id as NodeId;
     use std::{
         net::{IpAddr, Ipv4Addr},
         str::FromStr,
@@ -165,5 +180,30 @@ mod tests {
         // Check if the uptime is > 0
         assert!(node_uptime.rewarding_stake_percentage > 0.0);
         assert!(node_uptime.weighted_average_percentage > 0.0);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_peers() {
+        let rpc_url = format!(
+            "http://{}:{}/{}",
+            ASH_TEST_HTTP_HOST, ASH_TEST_HTTP_PORT, AVAX_INFO_API_ENDPOINT
+        );
+        let all_peers = peers(&rpc_url, None).unwrap();
+
+        // Check that the node has 4 peers (number of nodes in the test network)
+        assert!(all_peers.len() == 4);
+
+        // Check that the node_ids filter works
+        // Expected node ID: NodeID-MFrZFVCXPv5iCn6M9K6XduxGTYp891xXZ
+        let node_ids = vec![NodeId::from_str("NodeID-MFrZFVCXPv5iCn6M9K6XduxGTYp891xXZ").unwrap()];
+        let filtered_peers = peers(&rpc_url, Some(node_ids)).unwrap();
+
+        // Check that the node has 1 peer
+        assert!(filtered_peers.len() == 1);
+        assert!(
+            filtered_peers[0].node_id
+                == NodeId::from_str("NodeID-MFrZFVCXPv5iCn6M9K6XduxGTYp891xXZ").unwrap()
+        );
     }
 }

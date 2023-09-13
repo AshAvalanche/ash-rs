@@ -5,7 +5,12 @@ use ash_sdk::avalanche::{
     blockchains::AvalancheBlockchain,
     nodes::AvalancheNode,
     subnets::{AvalancheSubnet, AvalancheSubnetType, AvalancheSubnetValidator},
+    vms::subnet_evm::warp::{AddressedPayload, SubnetEVMWarpMessage},
     wallets::AvalancheWalletInfo,
+    warp::{
+        VerifiedWarpMessage, WarpMessage, WarpMessageNodeSignature, WarpMessagePayload,
+        WarpMessageStatus,
+    },
     AvalancheXChainBalance,
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
@@ -37,7 +42,7 @@ where
 }
 
 pub(crate) fn human_readable_timestamp(timestamp: u64) -> String {
-    DateTime::<Utc>::from_utc(
+    DateTime::<Utc>::from_naive_utc_and_offset(
         NaiveDateTime::from_timestamp_opt(timestamp as i64, 0).unwrap(),
         Utc,
     )
@@ -52,14 +57,14 @@ pub(crate) fn template_horizontal_rule(character: char, length: usize) -> String
 pub(crate) fn template_blockchain_info(
     blockchain: &AvalancheBlockchain,
     list: bool,
-    indent: u8,
+    indent: usize,
 ) -> String {
     let mut info_str = String::new();
 
     if list {
         info_str.push_str(&formatdoc!(
             "
-            - {}:
+            - '{}':
               ID:      {}
               VM ID:   {}
               VM type: {}{}",
@@ -108,7 +113,7 @@ pub(crate) fn template_blockchain_info(
         ));
     }
 
-    indent::indent_all_by(indent.into(), info_str)
+    indent::indent_all_by(indent, info_str)
 }
 
 pub(crate) fn template_validator_info(
@@ -116,7 +121,7 @@ pub(crate) fn template_validator_info(
     subnet: &AvalancheSubnet,
     list: bool,
     extended: bool,
-    indent: u8,
+    indent: usize,
 ) -> String {
     let mut info_str = String::new();
 
@@ -212,7 +217,7 @@ pub(crate) fn template_validator_info(
         if extended {
             info_str.push_str(&formatdoc!(
                 "
-                - {}:
+                - '{}':
                 ",
                 type_colorize(&validator.node_id),
             ));
@@ -257,14 +262,14 @@ pub(crate) fn template_validator_info(
         }
     }
 
-    indent::indent_all_by(indent.into(), info_str)
+    indent::indent_all_by(indent, info_str)
 }
 
 pub(crate) fn template_subnet_info(
     subnet: &AvalancheSubnet,
     list: bool,
     extended: bool,
-    indent: u8,
+    indent: usize,
 ) -> String {
     let mut info_str = String::new();
 
@@ -302,7 +307,7 @@ pub(crate) fn template_subnet_info(
         info_str.push_str(&formatdoc!(
             "
             {}
-            - {}:
+            - '{}':
               Type: {}
             {}  Blockchains list ({}): {}",
             template_horizontal_rule('-', format!("- '{}':", subnet.id).len()),
@@ -310,7 +315,7 @@ pub(crate) fn template_subnet_info(
             type_colorize(&subnet.subnet_type.to_string()),
             match subnet.subnet_type {
                 AvalancheSubnetType::Permissioned =>
-                    indent::indent_all_by(subindent.into(), permissioned_subnet_info),
+                    indent::indent_all_by(subindent, permissioned_subnet_info),
                 _ => "".to_string(),
             },
             type_colorize(&subnet.blockchains.len()),
@@ -346,7 +351,7 @@ pub(crate) fn template_subnet_info(
         ));
     }
 
-    indent::indent_all_by(indent.into(), info_str)
+    indent::indent_all_by(indent, info_str)
 }
 
 pub(crate) fn template_subnet_creation(subnet: &AvalancheSubnet, wait: bool) -> String {
@@ -413,13 +418,13 @@ pub(crate) fn template_validator_add(
     }
 }
 
-pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> String {
+pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: usize) -> String {
     let mut info_str = String::new();
 
     let mut subnet_vm_versions = String::new();
     for (vm, version) in node.versions.vm_versions.subnets.iter() {
         subnet_vm_versions.push_str(&format!(
-            "\n{}: {}",
+            "\n'{}': {}",
             type_colorize(vm),
             type_colorize(version),
         ));
@@ -466,14 +471,14 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: u8) -> 
         type_colorize(&node.uptime.weighted_average_percentage),
     ));
 
-    indent::indent_all_by(indent.into(), info_str)
+    indent::indent_all_by(indent, info_str)
 }
 
 pub(crate) fn template_chain_is_bootstrapped(
     node: &AvalancheNode,
     chain: &str,
     is_bootstrapped: bool,
-    indent: u8,
+    indent: usize,
 ) -> String {
     let mut bootstrapped_str = String::new();
 
@@ -488,13 +493,13 @@ pub(crate) fn template_chain_is_bootstrapped(
         }
     ));
 
-    indent::indent_all_by(indent.into(), bootstrapped_str)
+    indent::indent_all_by(indent, bootstrapped_str)
 }
 
 pub(crate) fn template_generate_private_key(
     private_key_cb58: &str,
     private_key_hex: &str,
-    indent: u8,
+    indent: usize,
 ) -> String {
     let mut private_key_str = String::new();
 
@@ -506,10 +511,10 @@ pub(crate) fn template_generate_private_key(
         type_colorize(&private_key_hex),
     ));
 
-    indent::indent_all_by(indent.into(), private_key_str)
+    indent::indent_all_by(indent, private_key_str)
 }
 
-pub(crate) fn template_wallet_info(wallet_info: &AvalancheWalletInfo, indent: u8) -> String {
+pub(crate) fn template_wallet_info(wallet_info: &AvalancheWalletInfo, indent: usize) -> String {
     let mut info_str = String::new();
 
     info_str.push_str(&formatdoc!(
@@ -523,14 +528,14 @@ pub(crate) fn template_wallet_info(wallet_info: &AvalancheWalletInfo, indent: u8
         type_colorize(&wallet_info.evm_address),
     ));
 
-    indent::indent_all_by(indent.into(), info_str)
+    indent::indent_all_by(indent, info_str)
 }
 
 pub(crate) fn template_xchain_balance(
     address: &str,
     asset_id: &str,
     balance: &AvalancheXChainBalance,
-    indent: u8,
+    indent: usize,
 ) -> String {
     let mut balance_str = String::new();
 
@@ -541,7 +546,7 @@ pub(crate) fn template_xchain_balance(
         type_colorize(&(balance.balance as f64 / 1_000_000_000.0)),
     ));
 
-    indent::indent_all_by(indent.into(), balance_str)
+    indent::indent_all_by(indent, balance_str)
 }
 
 pub(crate) fn template_xchain_transfer(
@@ -550,7 +555,7 @@ pub(crate) fn template_xchain_transfer(
     asset_id: &str,
     amount: f64,
     wait: bool,
-    indent: u8,
+    indent: usize,
 ) -> String {
     let mut transfer_str = String::new();
 
@@ -576,10 +581,10 @@ pub(crate) fn template_xchain_transfer(
         ));
     }
 
-    indent::indent_all_by(indent.into(), transfer_str)
+    indent::indent_all_by(indent, transfer_str)
 }
 
-pub(crate) fn template_genesis_encoded(genesis_bytes: Vec<u8>, indent: u8) -> String {
+pub(crate) fn template_genesis_encoded(genesis_bytes: Vec<u8>, indent: usize) -> String {
     let mut genesis_str = String::new();
 
     genesis_str.push_str(&formatdoc!(
@@ -589,5 +594,157 @@ pub(crate) fn template_genesis_encoded(genesis_bytes: Vec<u8>, indent: u8) -> St
         type_colorize(&format!("0x{}", hex::encode(genesis_bytes))),
     ));
 
-    indent::indent_all_by(indent.into(), genesis_str)
+    indent::indent_all_by(indent, genesis_str)
+}
+
+pub(crate) fn template_warp_message(
+    message: &WarpMessage,
+    blockchain: &AvalancheBlockchain,
+    extended: bool,
+    list: bool,
+    indent: usize,
+) -> String {
+    let mut message_str = String::new();
+    let sub_indent = match list {
+        true => 2,
+        false => 0,
+    };
+
+    if message.unsigned_message.source_chain_id != blockchain.id {
+        return format!(
+            "{}Couldn't decode message. Only Warp messages created by AvalancheGo > 1.10.5 are supported.",
+            match list {
+                true => "- ".to_string(),
+                false => "".to_string(),
+            }
+        ).yellow().to_string();
+    }
+
+    let unsigned_message_str = indent::indent_all_by(
+        sub_indent,
+        formatdoc!(
+            "
+            Unsigned message:
+              ID:            {}
+              NetworkID:     {}
+              SourceChainID: {}
+            {}",
+            type_colorize(&message.unsigned_message.id),
+            type_colorize(&message.unsigned_message.network_id),
+            type_colorize(&message.unsigned_message.source_chain_id),
+            match &message.unsigned_message.payload {
+                WarpMessagePayload::SubnetEVMAddressedPayload(addressed_payload) =>
+                    template_warp_addressed_payload(addressed_payload, 2),
+                WarpMessagePayload::Unknown(payload) => format!(
+                    "Payload (Unknown): {}",
+                    type_colorize(&format!("0x{}", hex::encode(payload)))
+                ),
+            }
+        ),
+    );
+
+    message_str.push_str(&formatdoc!(
+        "
+            {}Message '{}' from '{}':
+              Status: {}
+            {}
+            {}
+            {}",
+        match list {
+            true => "- ".to_string(),
+            false => "".to_string(),
+        },
+        type_colorize(&message.unsigned_message.id),
+        type_colorize(&blockchain.name),
+        match message.status {
+            WarpMessageStatus::Sent => "Sent".yellow(),
+            WarpMessageStatus::Signed(num) => format!("Signed by {num} validator nodes").green(),
+        },
+        unsigned_message_str,
+        match &message.verified_message {
+            VerifiedWarpMessage::SubnetEVM(verified_message) =>
+                template_warp_subnet_evm_message(verified_message, 2),
+            VerifiedWarpMessage::Unknown => "".to_string(),
+        },
+        match extended {
+            true => template_warp_node_signatures(&message.node_signatures, 2),
+            false => "".to_string(),
+        }
+    ));
+
+    indent::indent_all_by(indent, message_str)
+}
+
+pub(crate) fn template_warp_addressed_payload(payload: &AddressedPayload, indent: usize) -> String {
+    let mut payload_str = String::new();
+
+    payload_str.push_str(&formatdoc!(
+        "
+        Payload ({}):
+          SourceAddress:      {}
+          DestinationChainID: {}
+          DestinationAddress: {}
+          Payload:            {}",
+        type_colorize(&"AddressedPayload".to_string()),
+        type_colorize(&format!("{:?}", payload.source_address)),
+        type_colorize(&format!("{:?}", payload.destination_chain_id)),
+        type_colorize(&format!("{:?}", payload.destination_address)),
+        type_colorize(&payload.payload),
+    ));
+
+    indent::indent_all_by(indent, payload_str)
+}
+
+pub(crate) fn template_warp_subnet_evm_message(
+    message: &SubnetEVMWarpMessage,
+    indent: usize,
+) -> String {
+    let mut message_str = String::new();
+
+    message_str.push_str(&formatdoc!(
+        "
+        Verified message ({}):
+          OriginChainID:       {}
+          OriginSenderAddress: {}
+          DestinationChainID:  {}
+          DestinationAddress:  {}
+          Payload:             {}",
+        type_colorize(&"Subnet-EVM".to_string()),
+        type_colorize(&format!("{:?}", message.origin_chain_id)),
+        type_colorize(&format!("{:?}", message.origin_sender_address)),
+        type_colorize(&format!("{:?}", message.destination_chain_id)),
+        type_colorize(&format!("{:?}", message.destination_address)),
+        match message.payload {
+            Some(ref payload) => type_colorize(payload),
+            None => type_colorize(&"None".to_string()),
+        }
+    ));
+
+    indent::indent_all_by(indent, message_str)
+}
+
+pub(crate) fn template_warp_node_signatures(
+    signatures: &Vec<WarpMessageNodeSignature>,
+    indent: usize,
+) -> String {
+    let mut signatures_str = String::new();
+
+    signatures_str.push_str(&formatdoc!(
+        "
+        Signatures ({}):
+        ",
+        type_colorize(&signatures.len()),
+    ));
+
+    for signature in signatures {
+        signatures_str.push_str(&formatdoc!(
+            "
+            - {}: {}
+            ",
+            type_colorize(&signature.node_id),
+            type_colorize(&format!("0x{}", hex::encode(signature.signature)))
+        ))
+    }
+
+    indent::indent_all_by(indent, signatures_str)
 }
