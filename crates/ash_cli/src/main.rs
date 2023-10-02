@@ -3,6 +3,7 @@
 
 mod avalanche;
 mod conf;
+mod console;
 mod utils;
 
 #[macro_use]
@@ -23,7 +24,7 @@ struct Cli {
     /// Output in JSON format
     #[arg(long, short = 'j', global = true, env = "ASH_JSON")]
     json: bool,
-    /// Path to the configuration file
+    /// Path to the CLI configuration file
     #[arg(long, short = 'c', global = true, env = "ASH_CONFIG")]
     config: Option<String>,
 }
@@ -32,6 +33,7 @@ struct Cli {
 enum CliCommands {
     Avalanche(avalanche::AvalancheCommand),
     Conf(conf::ConfCommand),
+    Console(console::ConsoleCommand),
 }
 
 fn main() {
@@ -42,6 +44,7 @@ fn main() {
             avalanche::parse(avalanche, cli.config.as_deref(), cli.json)
         }
         CliCommands::Conf(conf) => conf::parse(conf),
+        CliCommands::Console(console) => console::parse(console, cli.config.as_deref(), cli.json),
     }
     .unwrap_or_else(|e| {
         eprintln!("{}", e.message.red());
