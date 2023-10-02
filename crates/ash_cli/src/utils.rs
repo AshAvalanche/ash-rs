@@ -16,11 +16,7 @@ pub(crate) fn version_tx_cmd(is_tx: bool) -> Str {
 }
 
 /// Store a value in the device keyring
-pub(crate) fn store_keyring_value(
-    target: &str,
-    service: &str,
-    value: &str,
-) -> Result<(), CliError> {
+pub(crate) fn set_keyring_value(target: &str, service: &str, value: &str) -> Result<(), CliError> {
     Entry::new_with_target(target, service, &whoami::username())
         .map_err(|e| CliError::dataerr(format!("Error storing access token: {e}")))?
         .set_password(value)
@@ -33,4 +29,12 @@ pub(crate) fn get_keyring_value(target: &str, service: &str) -> Result<String, C
         .map_err(|e| CliError::dataerr(format!("Error getting access token: {e}")))?
         .get_password()
         .map_err(|e| CliError::dataerr(format!("Error getting access token: {e}")))
+}
+
+/// Remove a value from the device keyring
+pub(crate) fn delete_keyring_value(target: &str, service: &str) -> Result<(), CliError> {
+    Entry::new_with_target(target, service, &whoami::username())
+        .map_err(|e| CliError::dataerr(format!("Error removing access token: {e}")))?
+        .delete_password()
+        .map_err(|e| CliError::dataerr(format!("Error removing access token: {e}")))
 }

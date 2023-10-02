@@ -8,7 +8,8 @@ use crate::{
         load_console, KEYRING_ACCESS_TOKEN_SERVICE, KEYRING_REFRESH_TOKEN_SERVICE, KEYRING_TARGET,
     },
     utils::{
-        error::CliError, get_keyring_value, store_keyring_value, templating::*, version_tx_cmd,
+        delete_keyring_value, error::CliError, get_keyring_value, set_keyring_value, templating::*,
+        version_tx_cmd,
     },
 };
 use ash_sdk::console::AshConsole;
@@ -35,6 +36,12 @@ enum AuthSubcommands {
     /// Show the current access token
     #[command(version = version_tx_cmd(false))]
     ShowToken,
+    /// Logout from the Ash Console. Credentials are removed from the device keyring.
+    #[command(version = version_tx_cmd(false))]
+    Logout,
+    /// Displays information about the authentication state
+    #[command(version = version_tx_cmd(false))]
+    Status,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -69,7 +76,7 @@ pub(crate) fn refresh_keyring_access_token(console: &AshConsole) -> Result<(), C
         .map_err(|e| CliError::dataerr(format!("Error refreshing access token: {e}")))?;
 
     // Store the access token in the keyring
-    store_keyring_value(
+    set_keyring_value(
         KEYRING_TARGET,
         KEYRING_ACCESS_TOKEN_SERVICE,
         &access_token.secret().to_string(),
@@ -122,7 +129,7 @@ pub(crate) fn get_access_token(console: &AshConsole) -> Result<String, CliError>
 fn login(config: Option<&str>) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
-    eprintln!("Logging in to Ash Console at {}", console.api_url);
+    eprintln!("Logging in to the Ash Console at {}", console.api_url);
 
     console.oauth2.init();
 
@@ -144,18 +151,21 @@ fn login(config: Option<&str>) -> Result<(), CliError> {
         .map_err(|e| CliError::dataerr(format!("Error getting access token: {e}")))?;
 
     // Store the access token and refresh token in the keyring
-    store_keyring_value(
+    set_keyring_value(
         KEYRING_TARGET,
         KEYRING_ACCESS_TOKEN_SERVICE,
         &access_token.secret().to_string(),
     )?;
-    store_keyring_value(
+    set_keyring_value(
         KEYRING_TARGET,
         KEYRING_REFRESH_TOKEN_SERVICE,
         &refresh_token.secret().to_string(),
     )?;
 
-    println!("\nLogin successful! The credentials have been stored in your device keyring.");
+    println!(
+        "\n{} The credentials have been stored in your device keyring.",
+        "Login successful!".green()
+    );
 
     Ok(())
 }
@@ -165,7 +175,7 @@ fn refresh_access_token(config: Option<&str>) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
     eprintln!(
-        "Refreshing access token for Ash Console at {}",
+        "Refreshing access token for the Ash Console at {}",
         console.api_url
     );
 
@@ -173,7 +183,7 @@ fn refresh_access_token(config: Option<&str>) -> Result<(), CliError> {
 
     refresh_keyring_access_token(&console)?;
 
-    println!("\nAccess token refreshed successfully!");
+    println!("\n{}", "Access token refreshed successfully!".green());
 
     Ok(())
 }
@@ -185,7 +195,7 @@ fn show_access_token(config: Option<&str>, json: bool) -> Result<(), CliError> {
     let access_token = get_keyring_access_token()?;
 
     eprintln!(
-        "Showing access token for Ash Console at {}",
+        "Showing access token for the Ash Console at {}",
         console.api_url
     );
 
@@ -211,11 +221,89 @@ fn show_access_token(config: Option<&str>, json: bool) -> Result<(), CliError> {
     Ok(())
 }
 
+// Logout from the Ash Console
+fn logout(config: Option<&str>) -> Result<(), CliError> {
+    let console = load_console(config)?;
+
+    eprintln!("Logging out from the Ash Console at {}", console.api_url);
+
+    // Check if the user is logged in
+    let access_token_res = get_keyring_access_token();
+
+    match access_token_res {
+        Ok(_) => (),
+        Err(_) => {
+            println!("\n{} Nothing to do.", "You are not logged in.".yellow());
+            return Ok(());
+        }
+    }
+
+    // Delete the access token and refresh token from the keyring
+    delete_keyring_value(KEYRING_TARGET, KEYRING_ACCESS_TOKEN_SERVICE)?;
+    delete_keyring_value(KEYRING_TARGET, KEYRING_REFRESH_TOKEN_SERVICE)?;
+
+    println!(
+        "\n{} The credentials have been removed from your device keyring.",
+        "Logout successful!".green()
+    );
+
+    Ok(())
+}
+
+// Displays information about the authentication state (username, auth_time)
+fn status(config: Option<&str>, json: bool) -> Result<(), CliError> {
+    let console = load_console(config)?;
+
+    eprintln!("Auth status for the Ash Console at {}", console.api_url);
+
+    // Check if the user is logged in
+    let access_token_res = get_keyring_access_token();
+
+    let token_data;
+    match access_token_res {
+        Ok(access_token) => {
+            // Decode the access token to get its token data
+            token_data = decode_access_token(&access_token)?;
+        }
+        Err(_) => {
+            if json {
+                println!("{}", serde_json::json!({"loggedIn": false}));
+            } else {
+                println!(
+                    "\n{} Use `ash console auth login` to login.",
+                    "You are not logged in.".yellow()
+                );
+            }
+            return Ok(());
+        }
+    }
+
+    if json {
+        println!(
+            "{}",
+            serde_json::json!({ "loggedIn": true, "username": token_data.claims.username, "authTime": token_data.claims.auth_time })
+        );
+        return Ok(());
+    }
+
+    println!(
+        "\nYou are logged in as {} since {} (UTC)",
+        type_colorize(&token_data.claims.username),
+        type_colorize(&human_readable_timestamp(
+            token_data.claims.auth_time as u64
+        ))
+    );
+
+    Ok(())
+}
+
 // Parse console subcommand
 pub(crate) fn parse(auth: AuthCommand, config: Option<&str>, json: bool) -> Result<(), CliError> {
     match auth.command {
         AuthSubcommands::Login => login(config),
         AuthSubcommands::RefreshToken => refresh_access_token(config),
         AuthSubcommands::ShowToken => show_access_token(config, json),
+        AuthSubcommands::Logout => logout(config),
+        AuthSubcommands::Status => status(config, json),
     }
 }
