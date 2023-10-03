@@ -2,11 +2,12 @@
 // Copyright (c) 2023, E36 Knots
 
 mod auth;
+mod secret;
 
 // Module that contains the console subcommand parser
 
 use crate::utils::error::CliError;
-use ash_sdk::console::AshConsole;
+use ash_sdk::console::{api_config::Configuration, AshConsole};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -19,6 +20,7 @@ pub(crate) struct ConsoleCommand {
 #[derive(Subcommand)]
 enum ConsoleSubcommands {
     Auth(auth::AuthCommand),
+    Secret(secret::SecretCommand),
 }
 
 const KEYRING_TARGET: &str = "ash-console";
@@ -30,6 +32,15 @@ fn load_console(config: Option<&str>) -> Result<AshConsole, CliError> {
     AshConsole::load(config).map_err(|e| CliError::dataerr(format!("Error loading console: {e}")))
 }
 
+// Create a new Ash Console API configuration with the current access token
+fn create_api_config_with_access_token(
+    console: &mut AshConsole,
+) -> Result<Configuration, CliError> {
+    let access_token = auth::get_access_token(console)?;
+
+    Ok(console.create_api_config_with_access_token(&access_token))
+}
+
 // Parse console subcommand
 pub(crate) fn parse(
     console: ConsoleCommand,
@@ -38,5 +49,6 @@ pub(crate) fn parse(
 ) -> Result<(), CliError> {
     match console.command {
         ConsoleSubcommands::Auth(auth) => auth::parse(auth, config, json),
+        ConsoleSubcommands::Secret(secret) => secret::parse(secret, config, json),
     }
 }

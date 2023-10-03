@@ -7,10 +7,7 @@ use crate::{
     console::{
         load_console, KEYRING_ACCESS_TOKEN_SERVICE, KEYRING_REFRESH_TOKEN_SERVICE, KEYRING_TARGET,
     },
-    utils::{
-        delete_keyring_value, error::CliError, get_keyring_value, set_keyring_value, templating::*,
-        version_tx_cmd,
-    },
+    utils::{error::CliError, keyring::*, templating::*, version_tx_cmd},
 };
 use ash_sdk::console::AshConsole;
 use clap::{Parser, Subcommand};
@@ -33,13 +30,13 @@ enum AuthSubcommands {
     /// Refresh the Ash Console access token
     #[command(version = version_tx_cmd(false))]
     RefreshToken,
-    /// Show the current access token
+    /// Show the current Ash Console access token
     #[command(version = version_tx_cmd(false))]
     ShowToken,
     /// Logout from the Ash Console. Credentials are removed from the device keyring.
     #[command(version = version_tx_cmd(false))]
     Logout,
-    /// Displays information about the authentication state
+    /// Displays information about the Ash Console authentication state
     #[command(version = version_tx_cmd(false))]
     Status,
 }
@@ -65,7 +62,9 @@ pub(crate) struct Claims {
 }
 
 // Refresh the user access token to the Ash Console
-pub(crate) fn refresh_keyring_access_token(console: &AshConsole) -> Result<(), CliError> {
+pub(crate) fn refresh_keyring_access_token(console: &mut AshConsole) -> Result<(), CliError> {
+    console.oauth2.init();
+
     // Get the refresh token from the keyring
     let refresh_token = get_keyring_value(KEYRING_TARGET, KEYRING_REFRESH_TOKEN_SERVICE)?;
 
@@ -108,9 +107,15 @@ pub(crate) fn decode_access_token(access_token: &str) -> Result<TokenData<Claims
 
 // Get an access token. If the access token is expired, refresh it.
 #[allow(dead_code)]
-pub(crate) fn get_access_token(console: &AshConsole) -> Result<String, CliError> {
+pub(crate) fn get_access_token(console: &mut AshConsole) -> Result<String, CliError> {
+    console.oauth2.init();
+
     // Get the access token from the keyring
-    let access_token = get_keyring_access_token()?;
+    let access_token = get_keyring_access_token().map_err(|_| {
+        CliError::dataerr(
+            "Error getting access token from keyring. You are probably not logged in (try `ash console auth status`).".to_string()
+        )
+    })?;
 
     // Decode the access token to get its token data
     let token_data = decode_access_token(&access_token)?;
@@ -179,9 +184,7 @@ fn refresh_access_token(config: Option<&str>) -> Result<(), CliError> {
         console.api_url
     );
 
-    console.oauth2.init();
-
-    refresh_keyring_access_token(&console)?;
+    refresh_keyring_access_token(&mut console)?;
 
     println!("\n{}", "Access token refreshed successfully!".green());
 
@@ -259,11 +262,10 @@ fn status(config: Option<&str>, json: bool) -> Result<(), CliError> {
     // Check if the user is logged in
     let access_token_res = get_keyring_access_token();
 
-    let token_data;
-    match access_token_res {
+    let token_data = match access_token_res {
         Ok(access_token) => {
             // Decode the access token to get its token data
-            token_data = decode_access_token(&access_token)?;
+            decode_access_token(&access_token)?
         }
         Err(_) => {
             if json {
@@ -276,7 +278,7 @@ fn status(config: Option<&str>, json: bool) -> Result<(), CliError> {
             }
             return Ok(());
         }
-    }
+    };
 
     if json {
         println!(

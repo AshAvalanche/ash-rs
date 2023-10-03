@@ -1,21 +1,25 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023, E36 Knots
 
-use ash_sdk::avalanche::{
-    blockchains::AvalancheBlockchain,
-    nodes::AvalancheNode,
-    subnets::{AvalancheSubnet, AvalancheSubnetType, AvalancheSubnetValidator},
-    vms::subnet_evm::warp::{AddressedPayload, SubnetEVMWarpMessage},
-    wallets::AvalancheWalletInfo,
-    warp::{
-        VerifiedWarpMessage, WarpMessage, WarpMessageNodeSignature, WarpMessagePayload,
-        WarpMessageStatus,
+use ash_sdk::{
+    avalanche::{
+        blockchains::AvalancheBlockchain,
+        nodes::AvalancheNode,
+        subnets::{AvalancheSubnet, AvalancheSubnetType, AvalancheSubnetValidator},
+        vms::subnet_evm::warp::{AddressedPayload, SubnetEVMWarpMessage},
+        wallets::AvalancheWalletInfo,
+        warp::{
+            VerifiedWarpMessage, WarpMessage, WarpMessageNodeSignature, WarpMessagePayload,
+            WarpMessageStatus,
+        },
+        AvalancheXChainBalance,
     },
-    AvalancheXChainBalance,
+    console,
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::{ColoredString, Colorize};
 use indoc::formatdoc;
+use prettytable::Table;
 
 // Module that contains templating functions for info strings
 
@@ -36,7 +40,7 @@ where
         "&i64" | "&i32" | "&i16" | "&i8" | "&isize" => var.to_string().cyan(),
         "&f64" | "&f32" | "IpAddr" => var.to_string().magenta(),
         "&bool" => var.to_string().blue(),
-        "Id" => var.to_string().green(),
+        "Id" | "Uuid" => var.to_string().green(),
         _ => var.to_string().bright_white(),
     }
 }
@@ -747,4 +751,41 @@ pub(crate) fn template_warp_node_signatures(
     }
 
     indent::indent_all_by(indent, signatures_str)
+}
+
+pub(crate) fn truncate_uuid(uuid: &str) -> String {
+    format!("{}...{}", &uuid[..6], &uuid[uuid.len() - 6..])
+}
+
+pub(crate) fn template_secrets_table(
+    secrets: Vec<console::api_models::Secret>,
+    extended: bool,
+    indent: usize,
+) -> String {
+    let mut secrets_table = Table::new();
+
+    secrets_table.set_titles(row![
+        "Secret ID".bold(),
+        "Owner ID".bold(),
+        "Name".bold(),
+        "Type".bold(),
+        "Created at".bold(),
+    ]);
+
+    for secret in secrets {
+        secrets_table.add_row(row![
+            type_colorize(&secret.id.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&secret.owner_id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(
+                    &secret.owner_id.unwrap_or_default().to_string()
+                )),
+            },
+            type_colorize(&secret.name.unwrap_or_default()),
+            type_colorize(&format!("{:?}", secret.secret_type.unwrap_or_default())),
+            type_colorize(&secret.created.unwrap_or_default()),
+        ]);
+    }
+
+    indent::indent_all_by(indent, secrets_table.to_string())
 }

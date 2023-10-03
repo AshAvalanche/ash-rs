@@ -176,7 +176,7 @@ mod tests {
     const AVAX_FUJI_CCHAIN_ID: &str = "yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp";
     const AVAX_FUJI_XCHAIN_ID: &str = "2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm";
     // ID of a node operated by Ava Labs
-    const AVAX_FUJI_NODE_ID: &str = " NodeID-JjvzhxnLHLUQ5HjVRkvG827ivbLXPwA9u ";
+    const AVAX_FUJI_NODE_ID: &str = "NodeID-4B4rc5vdD1758JSBYL1xyvE5NHGzz6xzH";
 
     // Load the test network from the ASH_TEST_CONFIG file
     fn load_test_network() -> AvalancheNetwork {
