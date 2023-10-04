@@ -42,6 +42,7 @@ rustls-pemfile = "1.0.3"
 sha2 = "0.10.7"
 oauth2 = "4.4.2"
 url = "2.4.1"
+ash_api = { path = "../../../hai/target/rust" }
 
 [dev-dependencies]
 serial_test = "2.0.0"

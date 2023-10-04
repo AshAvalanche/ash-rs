@@ -2,9 +2,13 @@
 // Copyright (c) 2023, E36 Knots
 
 pub mod oauth2;
+pub use ash_api::apis::configuration as api_config;
+pub use ash_api::apis::default_api as api;
+pub use ash_api::models as api_models;
 
 // Module that contains code to interact with the Ash Console
 
+use ash_api::apis::configuration::Configuration;
 use serde::{Deserialize, Serialize};
 
 use crate::conf::AshConfig;
@@ -33,5 +37,13 @@ impl AshConsole {
             }
             .into()),
         }
+    }
+
+    /// Create a new Ash Console API configuration with the given access token
+    pub fn create_api_config_with_access_token(&self, access_token: &str) -> Configuration {
+        let mut config = Configuration::new();
+        config.base_path = self.api_url.clone();
+        config.oauth_access_token = Some(access_token.to_string());
+        config
     }
 }
