@@ -26,6 +26,8 @@ pub enum AshError {
     AvalancheNodeError(#[from] AvalancheNodeError),
     #[error("Avalanche Warp Messaging error: {0}")]
     AvalancheWarpMessagingError(#[from] AvalancheWarpMessagingError),
+    #[error("Console OAuth2 error: {0}")]
+    ConsoleOAuth2Error(#[from] ConsoleOAuth2Error),
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -158,4 +160,16 @@ pub enum AvalancheWarpMessagingError {
     ParseFailure { property: String, msg: String },
     #[error("invalid message signature: {0}")]
     InvalidSignature(String),
+}
+
+#[derive(Error, Debug, PartialEq)]
+pub enum ConsoleOAuth2Error {
+    #[error("failed to parse URL '{url}': {msg}")]
+    UrlParseFailure { url: String, msg: String },
+    #[error("failed to request OAuth2 token: {msg}")]
+    TokenRequestFailure { msg: String },
+    #[error("client is not initialized")]
+    ClientNotInitialized,
+    #[error("'{url}' is not specified")]
+    UrlNotSpecified { url: String },
 }

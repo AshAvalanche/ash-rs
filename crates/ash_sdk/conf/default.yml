@@ -123,3 +123,11 @@ avalancheNetworks:
             vmID: jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq
             vmType: AvalancheVM
             rpcUrl: https://ava-testnet.public.blastapi.io/ext/bc/X
+ashConsole:
+  apiUrl: http://localhost:8080
+  oauth2:
+    clientID: cf83e1357eefb8bd
+    authorizationUrl: http://localhost:8090/realms/jeeo/protocol/openid-connect/auth
+    tokenUrl: http://localhost:8090/realms/jeeo/protocol/openid-connect/token
+    tokenIntrospectionUrl: http://localhost:8090/realms/jeeo/protocol/openid-connect/token/introspect
+    deviceAuthorizationUrl: http://localhost:8090/realms/jeeo/protocol/openid-connect/auth/device

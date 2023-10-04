@@ -40,9 +40,8 @@ enum AvalancheSubcommands {
 
 // Load the network configuation
 fn load_network(network_name: &str, config: Option<&str>) -> Result<AvalancheNetwork, CliError> {
-    let network = AvalancheNetwork::load(network_name, config)
-        .map_err(|e| CliError::dataerr(format!("Error loading network: {e}")))?;
-    Ok(network)
+    AvalancheNetwork::load(network_name, config)
+        .map_err(|e| CliError::dataerr(format!("Error loading network: {e}")))
 }
 
 // Recursively update the Subnets (and their blockchains)
