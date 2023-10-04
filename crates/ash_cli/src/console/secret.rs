@@ -12,7 +12,7 @@ use async_std::task;
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 
-/// Interact with Avalanche networks
+/// Interact with Ash Console secrets
 #[derive(Parser)]
 #[command()]
 pub(crate) struct SecretCommand {

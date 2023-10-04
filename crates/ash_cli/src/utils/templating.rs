@@ -757,6 +757,12 @@ pub(crate) fn truncate_uuid(uuid: &str) -> String {
     format!("{}...{}", &uuid[..6], &uuid[uuid.len() - 6..])
 }
 
+/// Truncate a datetime string to the format "YYYY-MM-DD HH:MM"
+/// Example: "2021-08-31T14:00:00.000000" -> "2021-08-31T14:00"
+pub(crate) fn truncate_datetime(datetime: &str) -> String {
+    format!("{}", &datetime[..16])
+}
+
 pub(crate) fn template_secrets_table(
     secrets: Vec<console::api_models::Secret>,
     extended: bool,
@@ -783,9 +789,49 @@ pub(crate) fn template_secrets_table(
             },
             type_colorize(&secret.name.unwrap_or_default()),
             type_colorize(&format!("{:?}", secret.secret_type.unwrap_or_default())),
-            type_colorize(&secret.created.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&secret.created.unwrap_or_default()),
+                false => type_colorize(&truncate_datetime(&secret.created.unwrap_or_default())),
+            },
         ]);
     }
 
     indent::indent_all_by(indent, secrets_table.to_string())
+}
+
+pub(crate) fn template_projects_table(
+    projects: Vec<console::api_models::Project>,
+    extended: bool,
+    indent: usize,
+) -> String {
+    let mut projects_table = Table::new();
+
+    // TODO: Display information about the project's cloud regions
+    projects_table.set_titles(row![
+        "Project ID".bold(),
+        "Owner ID".bold(),
+        "Name".bold(),
+        "Network".bold(),
+        "Created at".bold(),
+    ]);
+
+    for project in projects {
+        projects_table.add_row(row![
+            type_colorize(&project.id.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&project.owner_id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(
+                    &project.owner_id.unwrap_or_default().to_string()
+                )),
+            },
+            type_colorize(&project.name.unwrap_or_default()),
+            type_colorize(&format!("{:?}", project.network.unwrap_or_default())),
+            match extended {
+                true => type_colorize(&project.created.unwrap_or_default()),
+                false => type_colorize(&truncate_datetime(&project.created.unwrap_or_default())),
+            },
+        ]);
+    }
+
+    indent::indent_all_by(indent, projects_table.to_string())
 }
