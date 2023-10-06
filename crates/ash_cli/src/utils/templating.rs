@@ -20,6 +20,7 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::{ColoredString, Colorize};
 use indoc::formatdoc;
 use prettytable::Table;
+use std::collections::HashMap;
 
 // Module that contains templating functions for info strings
 
@@ -776,6 +777,7 @@ pub(crate) fn template_secrets_table(
         "Name".bold(),
         "Type".bold(),
         "Created at".bold(),
+        "Used by".bold(),
     ]);
 
     for secret in secrets {
@@ -793,6 +795,13 @@ pub(crate) fn template_secrets_table(
                 true => type_colorize(&secret.created.unwrap_or_default()),
                 false => type_colorize(&truncate_datetime(&secret.created.unwrap_or_default())),
             },
+            type_colorize(
+                &serde_json::from_value::<HashMap<String, String>>(
+                    secret.used_by.unwrap_or_default()
+                )
+                .unwrap_or_default()
+                .len()
+            ),
         ]);
     }
 
