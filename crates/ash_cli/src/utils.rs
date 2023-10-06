@@ -4,6 +4,7 @@
 pub(crate) mod error;
 pub(crate) mod keyring;
 pub(crate) mod parsing;
+pub(crate) mod prompt;
 pub(crate) mod templating;
 
 use clap::{builder::Str, crate_version};
