@@ -9,8 +9,10 @@ use crate::{
 };
 use ash_sdk::console;
 use async_std::task;
+use base64::{engine, Engine};
 use clap::{Parser, Subcommand};
 use colored::Colorize;
+use std::{fs, path::PathBuf};
 
 /// Interact with Ash Console secrets
 #[derive(Parser)]
@@ -70,6 +72,56 @@ fn get_secret_response_to_secret(
     .unwrap()
 }
 
+// For a given nodeId secret, load the cert and key files if their values are paths
+// Both cert and key must be either paths to PEM files or Base64-encoded strings
+fn load_node_id_tls_cert_key(
+    node_id_secret: &mut console::api_models::CreateSecretRequest,
+) -> Result<(), CliError> {
+    let node_cert = match node_id_secret.node_cert {
+        Some(ref cert) => cert,
+        None => {
+            return Err(CliError::dataerr(
+                "Error parsing node ID secret JSON: nodeCert field is missing".to_string(),
+            ))
+        }
+    };
+    let node_key = match node_id_secret.node_key {
+        Some(ref key) => key,
+        None => {
+            return Err(CliError::dataerr(
+                "Error parsing node ID secret JSON: nodeKey field is missing".to_string(),
+            ))
+        }
+    };
+
+    let cert_path = PathBuf::from(&node_cert);
+    let key_path = PathBuf::from(&node_key);
+
+    node_id_secret.node_cert = if cert_path.exists() {
+        Some(
+            engine::general_purpose::STANDARD.encode(
+                fs::read_to_string(cert_path)
+                    .map_err(|e| CliError::dataerr(format!("Error reading cert file: {e}")))?,
+            ),
+        )
+    } else {
+        Some(node_cert.clone())
+    };
+
+    node_id_secret.node_key = if key_path.exists() {
+        Some(
+            engine::general_purpose::STANDARD.encode(
+                fs::read_to_string(key_path)
+                    .map_err(|e| CliError::dataerr(format!("Error reading key file: {e}")))?,
+            ),
+        )
+    } else {
+        Some(node_key.clone())
+    };
+
+    Ok(())
+}
+
 // List secrets
 fn list(extended: bool, config: Option<&str>, json: bool) -> Result<(), CliError> {
     let mut console = load_console(config)?;
@@ -121,9 +173,18 @@ fn create(secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError
     let api_config = create_api_config_with_access_token(&mut console)?;
 
     // Deserialize the secret JSON
-    let create_secret_request: console::api_models::CreateSecretRequest =
+    let mut create_secret_request: console::api_models::CreateSecretRequest =
         serde_json::from_str(secret)
             .map_err(|e| CliError::dataerr(format!("Error parsing secret JSON: {e}")))?;
+
+    // Apply special secret type logic
+    match *create_secret_request.secret_type {
+        console::api_models::SecretType::NodeId => {
+            // Load the cert and key files if their values are paths
+            load_node_id_tls_cert_key(&mut create_secret_request)?;
+        }
+        _ => {}
+    }
 
     let response = task::block_on(async {
         console::api::create_secret(&api_config, create_secret_request).await
