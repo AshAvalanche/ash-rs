@@ -13,11 +13,11 @@ pub(crate) fn confirm_deletion(object_type: &str) -> bool {
         Ok(true) => true,
         Ok(false) => {
             println!("Aborting deletion.");
-            return false;
+            false
         }
         Err(_) => {
             println!("{}", "Error parsing answer. Aborting deletion.".red());
-            return false;
+            false
         }
     }
 }

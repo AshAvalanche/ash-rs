@@ -170,6 +170,7 @@ fn get(extended: bool, config: Option<&str>, secret_id: &str, json: bool) -> Res
 }
 
 // Create a new secret
+#[allow(clippy::single_match)]
 fn create(secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
