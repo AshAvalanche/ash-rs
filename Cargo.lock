@@ -177,6 +177,7 @@ version = "0.3.0"
 dependencies = [
  "ash_sdk",
  "async-std",
+ "base64 0.21.4",
  "chrono",
  "clap",
  "colored",
@@ -208,6 +209,7 @@ dependencies = [
  "hex",
  "oauth2",
  "openssl",
+ "rcgen 0.11.3",
  "regex",
  "reqwest",
  "rustls",
@@ -855,7 +857,7 @@ dependencies = [
  "log",
  "rand",
  "random-manager",
- "rcgen",
+ "rcgen 0.10.0",
  "rsa",
  "rustls",
  "rustls-pemfile",
@@ -2543,7 +2545,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6971da4d9c3aa03c3d8f3ff0f4155b534aad021292003895a469716b2a230378"
 dependencies = [
  "base64 0.21.4",
- "pem",
+ "pem 1.1.1",
  "ring",
  "serde",
  "serde_json",
@@ -3197,6 +3199,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "pem"
+version = "3.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3163d2912b7c3b52d651a055f2c7eec9ba5cd22d26ef75b8dd3a59980b185923"
+dependencies = [
+ "base64 0.21.4",
+ "serde",
+]
+
+[[package]]
 name = "pem-rfc7468"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3616,10 +3628,22 @@ version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ffbe84efe2f38dea12e9bfc1f65377fdf03e53a18cb3b995faedf7934c7e785b"
 dependencies = [
- "pem",
+ "pem 1.1.1",
  "ring",
  "time",
  "x509-parser 0.14.0",
+ "yasna",
+]
+
+[[package]]
+name = "rcgen"
+version = "0.11.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52c4f3084aa3bc7dfbba4eff4fab2a54db4324965d8872ab933565e6fbd83bc6"
+dependencies = [
+ "pem 3.0.2",
+ "ring",
+ "time",
  "yasna",
 ]
 

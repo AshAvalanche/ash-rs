@@ -4,8 +4,9 @@
 // Module that contains the node subcommand parser
 
 use crate::utils::{error::CliError, templating::*, version_tx_cmd};
-use ash_sdk::avalanche::nodes::{node_id_from_cert_pem, AvalancheNode};
+use ash_sdk::avalanche::nodes::{generate_node_id, node_id_from_cert_pem, AvalancheNode};
 use clap::{Parser, Subcommand};
+use std::{fs, path};
 
 /// Interact with Avalanche nodes
 #[derive(Parser)]
@@ -54,6 +55,13 @@ enum NodeSubcommands {
         /// Path to the PEM-encoded X509 certificate file
         #[arg(long, short = 'f', group = "cert")]
         pem_file: Option<String>,
+    },
+    /// Generate a new node ID with its certificate and key files
+    #[command(version = version_tx_cmd(false))]
+    GenerateId {
+        /// Path to the output directory where to create the cert and key files
+        #[arg(long, short = 'o', global = true)]
+        output_dir: Option<String>,
     },
 }
 
@@ -152,6 +160,64 @@ fn id_from_cert(
     Ok(())
 }
 
+fn generate_id(output_dir: Option<String>, json: bool) -> Result<(), CliError> {
+    let (node_id, cert_pem, key_pem) = generate_node_id(vec![])
+        .map_err(|e| CliError::dataerr(format!("Error generating node ID: {e}")))?;
+
+    if let Some(dir) = &output_dir {
+        let output_path = path::Path::new(dir);
+
+        // Create output directory if it doesn't exist
+        if !output_path.exists() {
+            fs::create_dir_all(output_path)
+                .map_err(|e| CliError::dataerr(format!("Error creating output directory: {e}")))?;
+        }
+
+        // Write cert and key files
+        let cert_file = output_path.join("node.crt");
+        let key_file = output_path.join("node.key");
+        fs::write(&cert_file, &cert_pem)
+            .map_err(|e| CliError::dataerr(format!("Error writing cert file: {e}")))?;
+        fs::write(&key_file, &key_pem)
+            .map_err(|e| CliError::dataerr(format!("Error writing key file: {e}")))?;
+    }
+
+    if json {
+        println!(
+            "{}",
+            serde_json::json!({ "nodeID": node_id,
+                "cert": match &output_dir {
+                    Some(output_dir) => format!("{}/node.crt", output_dir),
+                    None => cert_pem
+                },
+                "key": match &output_dir {
+                    Some(output_dir) => format!("{}/node.key", output_dir),
+                    None => key_pem
+                }
+            })
+        );
+        return Ok(());
+    }
+
+    println!("Node ID: {}", type_colorize(&node_id.to_string()));
+
+    if output_dir.is_some() {
+        println!(
+            "Certificate and key files written to '{}/node.crt' and '{}/node.key'",
+            output_dir.as_ref().unwrap(),
+            output_dir.as_ref().unwrap()
+        );
+    } else {
+        println!(
+            "Certificate:\n{}\nKey:\n{}",
+            type_colorize(&cert_pem),
+            type_colorize(&key_pem)
+        );
+    }
+
+    Ok(())
+}
+
 // Parse node subcommand
 pub(crate) fn parse(node: NodeCommand, json: bool) -> Result<(), CliError> {
     match node.command {
@@ -167,5 +233,6 @@ pub(crate) fn parse(node: NodeCommand, json: bool) -> Result<(), CliError> {
             chain,
         } => is_bootstrapped(&http_host, http_port, https, &chain, json),
         NodeSubcommands::IdFromCert { pem_str, pem_file } => id_from_cert(pem_str, pem_file, json),
+        NodeSubcommands::GenerateId { output_dir } => generate_id(output_dir, json),
     }
 }

@@ -8,6 +8,7 @@ use avalanche_types::{
     ids::node::Id as NodeId,
     jsonrpc::info::{GetNodeVersionResult, UptimeResult, VmVersions},
 };
+use rcgen::{Certificate, CertificateParams, DistinguishedName, DnType, PKCS_RSA_SHA256};
 use rustls_pemfile::certs;
 use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, Ipv4Addr};
@@ -208,6 +209,32 @@ pub fn node_id_from_cert_pem(cert_str: &str) -> Result<NodeId, AshError> {
     let node_id = node_id_from_cert_der(&cert_der)?;
 
     Ok(node_id)
+}
+
+/// Generate a node ID with its TLS certificate and private key
+pub fn generate_node_id(san: impl Into<Vec<String>>) -> Result<(NodeId, String, String), AshError> {
+    let mut cert_params = CertificateParams::new(san);
+
+    // Use RSA for Mac M* (ARM64) and ECDSA for everything else (AMD64)
+    // See https://github.com/gyuho/cert-manager/blob/1b4211e1606ebfff6d958ba8a6a726fec03db232/src/x509.rs#L465
+    if cfg!(target_arch = "aarch64") && cfg!(target_os = "macos") {
+        cert_params.alg = &PKCS_RSA_SHA256
+    }
+
+    let mut distinguished_name = DistinguishedName::new();
+    distinguished_name.push(DnType::CountryName, "Avalanche");
+    distinguished_name.push(DnType::OrganizationName, "E36 Knots");
+    distinguished_name.push(DnType::OrganizationalUnitName, "Ash");
+    distinguished_name.push(DnType::CommonName, "Ash CLI self signed cert");
+    cert_params.distinguished_name = distinguished_name;
+
+    let cert = Certificate::from_params(cert_params).unwrap();
+    let cert_pem = cert.serialize_pem().unwrap();
+    let key_pem = cert.serialize_private_key_pem();
+
+    let node_id = node_id_from_cert_pem(&cert_pem)?;
+
+    Ok((node_id, cert_pem, key_pem))
 }
 
 #[cfg(test)]
