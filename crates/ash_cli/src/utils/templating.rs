@@ -761,7 +761,7 @@ pub(crate) fn truncate_uuid(uuid: &str) -> String {
 /// Truncate a datetime string to the format "YYYY-MM-DD HH:MM"
 /// Example: "2021-08-31T14:00:00.000000" -> "2021-08-31T14:00"
 pub(crate) fn truncate_datetime(datetime: &str) -> String {
-    format!("{}", &datetime[..16])
+    datetime[..16].to_string()
 }
 
 pub(crate) fn template_secrets_table(

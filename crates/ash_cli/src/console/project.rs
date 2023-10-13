@@ -5,7 +5,7 @@
 
 use crate::{
     console::{create_api_config_with_access_token, load_console},
-    utils::{error::CliError, templating::*, version_tx_cmd},
+    utils::{error::CliError, prompt::confirm_deletion, templating::*, version_tx_cmd},
 };
 use ash_sdk::console;
 use async_std::task;
@@ -58,6 +58,9 @@ enum ProjectSubcommands {
     Delete {
         /// Secret ID
         secret_id: String,
+        /// Assume yes to all prompts
+        #[arg(long, short = 'y')]
+        yes: bool,
     },
 }
 
@@ -163,12 +166,19 @@ fn update(
 }
 
 // Delete a project
-fn delete(project_id: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
+fn delete(project_id: &str, yes: bool, config: Option<&str>, json: bool) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
-    // TODO: Add confirmation prompt when inquire used for interactive mode
+    // Prompt for confirmation if not using --yes
+    if !yes {
+        get(false, config, project_id, false)?;
+
+        if !confirm_deletion("project") {
+            return Ok(());
+        }
+    }
 
     let response =
         task::block_on(async { console::api::delete_project_by_id(&api_config, project_id).await })
@@ -200,6 +210,6 @@ pub(crate) fn parse(
         ProjectSubcommands::Update { secret_id, secret } => {
             update(&secret_id, &secret, config, json)
         }
-        ProjectSubcommands::Delete { secret_id } => delete(&secret_id, config, json),
+        ProjectSubcommands::Delete { secret_id, yes } => delete(&secret_id, yes, config, json),
     }
 }

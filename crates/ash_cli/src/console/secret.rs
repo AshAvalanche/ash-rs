@@ -5,7 +5,7 @@
 
 use crate::{
     console::{create_api_config_with_access_token, load_console},
-    utils::{error::CliError, templating::*, version_tx_cmd},
+    utils::{error::CliError, prompt::confirm_deletion, templating::*, version_tx_cmd},
 };
 use ash_sdk::console;
 use async_std::task;
@@ -60,6 +60,9 @@ enum SecretSubcommands {
     Delete {
         /// Secret ID
         secret_id: String,
+        /// Assume yes to all prompts
+        #[arg(long, short = 'y')]
+        yes: bool,
     },
 }
 
@@ -167,6 +170,7 @@ fn get(extended: bool, config: Option<&str>, secret_id: &str, json: bool) -> Res
 }
 
 // Create a new secret
+#[allow(clippy::single_match)]
 fn create(secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
@@ -236,12 +240,19 @@ fn update(secret_id: &str, secret: &str, config: Option<&str>, json: bool) -> Re
 }
 
 // Delete a secret
-fn delete(secret_id: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
+fn delete(secret_id: &str, yes: bool, config: Option<&str>, json: bool) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
-    // TODO: Add confirmation prompt when inquire used for interactive mode
+    // Prompt for confirmation if not using --yes
+    if !yes {
+        get(false, config, secret_id, false)?;
+
+        if !confirm_deletion("secret") {
+            return Ok(());
+        }
+    }
 
     let response =
         task::block_on(async { console::api::delete_secret_by_id(&api_config, secret_id).await })
@@ -273,6 +284,6 @@ pub(crate) fn parse(
         SecretSubcommands::Update { secret_id, secret } => {
             update(&secret_id, &secret, config, json)
         }
-        SecretSubcommands::Delete { secret_id } => delete(&secret_id, config, json),
+        SecretSubcommands::Delete { secret_id, yes } => delete(&secret_id, yes, config, json),
     }
 }

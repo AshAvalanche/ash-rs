@@ -176,9 +176,9 @@ fn generate_id(output_dir: Option<String>, json: bool) -> Result<(), CliError> {
         // Write cert and key files
         let cert_file = output_path.join("node.crt");
         let key_file = output_path.join("node.key");
-        fs::write(&cert_file, &cert_pem)
+        fs::write(cert_file, &cert_pem)
             .map_err(|e| CliError::dataerr(format!("Error writing cert file: {e}")))?;
-        fs::write(&key_file, &key_pem)
+        fs::write(key_file, &key_pem)
             .map_err(|e| CliError::dataerr(format!("Error writing key file: {e}")))?;
     }
 
