@@ -3,6 +3,7 @@
 
 mod auth;
 mod project;
+mod region;
 mod secret;
 
 // Module that contains the console subcommand parser
@@ -22,6 +23,7 @@ pub(crate) struct ConsoleCommand {
 enum ConsoleSubcommands {
     Auth(auth::AuthCommand),
     Project(project::ProjectCommand),
+    Region(region::RegionCommand),
     Secret(secret::SecretCommand),
 }
 
@@ -51,7 +53,8 @@ pub(crate) fn parse(
 ) -> Result<(), CliError> {
     match console.command {
         ConsoleSubcommands::Auth(auth) => auth::parse(auth, config, json),
-        ConsoleSubcommands::Secret(secret) => secret::parse(secret, config, json),
         ConsoleSubcommands::Project(project) => project::parse(project, config, json),
+        ConsoleSubcommands::Region(region) => region::parse(region, config, json),
+        ConsoleSubcommands::Secret(secret) => secret::parse(secret, config, json),
     }
 }
