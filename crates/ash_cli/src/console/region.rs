@@ -176,7 +176,7 @@ fn show(
         console::api::get_project_cloud_region_by_name(
             &api_config,
             project_id,
-            &region_name.replace("/", "_"),
+            &region_name.replace('/', "_"),
         )
         .await
     })
@@ -188,12 +188,9 @@ fn show(
     }
 
     println!(
-        "{}\n{}",
-        format!(
-            "Region '{}' of project '{}':",
-            type_colorize(&region_name),
-            type_colorize(&project_id)
-        ),
+        "Region '{}' of project '{}':\n{}",
+        type_colorize(&region_name),
+        type_colorize(&project_id),
         template_regions_table(vec![response], extended, 0)
     );
 
@@ -225,7 +222,7 @@ fn remove(
         console::api::remove_project_cloud_region_by_name(
             &api_config,
             project_id,
-            &region_name.replace("/", "_"),
+            &region_name.replace('/', "_"),
         )
         .await
     })

@@ -260,14 +260,14 @@ fn show(config: Option<&str>, json: bool) -> Result<(), CliError> {
             }
             Err(_) => {
                 eprintln!(
-                    "{}\n{}",
+                    "{}",
                     format!(
                         "The selected project '{}' does not exist anymore.",
-                        project_id
+                        project_id,
                     )
-                    .red(),
-                    "Use `ash project select` to set a new one."
+                    .red()
                 );
+                println!("Use `ash project select` to set a new one.");
             }
         }
     } else {
@@ -313,8 +313,8 @@ fn select(project_id: &str, config: Option<&str>, json: bool) -> Result<(), CliE
         "{}",
         format!(
             "Switched to project '{}' ({})!",
-            current_project.name.unwrap_or_default().to_string(),
-            current_project.id.unwrap_or_default().to_string()
+            current_project.name.unwrap_or_default(),
+            current_project.id.unwrap_or_default()
         )
         .green()
     );

@@ -877,7 +877,7 @@ pub(crate) fn template_regions_table(
     for region in regions {
         regions_table.add_row(row![
             type_colorize(
-                &serde_json::to_value(&region.cloud_provider.unwrap_or_default())
+                &serde_json::to_value(region.cloud_provider.unwrap_or_default())
                     .unwrap()
                     .as_str()
                     .unwrap()
