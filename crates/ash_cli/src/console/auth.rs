@@ -24,19 +24,19 @@ pub(crate) struct AuthCommand {
 
 #[derive(Subcommand)]
 enum AuthSubcommands {
-    /// Login to the Ash Console. Credentials are stored in the device keyring.
+    /// Login to the Console. Credentials are stored in the device keyring.
     #[command(version = version_tx_cmd(false))]
     Login,
-    /// Refresh the Ash Console access token
+    /// Refresh the Console access token
     #[command(version = version_tx_cmd(false))]
     RefreshToken,
-    /// Show the current Ash Console access token
+    /// Show the current Console access token
     #[command(version = version_tx_cmd(false))]
     ShowToken,
-    /// Logout from the Ash Console. Credentials are removed from the device keyring.
+    /// Logout from the Console. Credentials are removed from the device keyring.
     #[command(version = version_tx_cmd(false))]
     Logout,
-    /// Displays information about the Ash Console authentication state
+    /// Displays information about the Console authentication state
     #[command(version = version_tx_cmd(false))]
     Status,
 }

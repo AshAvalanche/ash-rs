@@ -5,7 +5,9 @@
 
 use crate::{
     console::{create_api_config_with_access_token, load_console},
-    utils::{error::CliError, prompt::confirm_deletion, templating::*, version_tx_cmd},
+    utils::{
+        error::CliError, prompt::confirm_deletion, state::CliState, templating::*, version_tx_cmd,
+    },
 };
 use ash_sdk::console;
 use async_std::task;
@@ -22,46 +24,69 @@ pub(crate) struct ProjectCommand {
 
 #[derive(Subcommand)]
 enum ProjectSubcommands {
-    /// List Ash Console projects
+    /// List Console projects
     #[command(version = version_tx_cmd(false))]
     List {
         /// Whether to show extended information (e.g. full IDs)
         #[arg(long, short = 'e')]
         extended: bool,
     },
-    /// Create a new Ash Console project
+    /// Create a new Console project
     #[command(version = version_tx_cmd(false))]
     Create {
         /// Secret JSON string
         /// e.g.: '{"name": "My project", "network": "local"}'
-        secret: String,
+        project: String,
     },
-    /// Get an Ash Console project
+    /// Show Console project information
     #[command(version = version_tx_cmd(false))]
-    Get {
+    Info {
         /// Secret ID
-        secret_id: String,
+        project_id: String,
         /// Whether to show extended information (e.g. full IDs)
         #[arg(long, short = 'e')]
         extended: bool,
     },
-    /// Update an Ash Console project
+    /// Update a Console project
     #[command(version = version_tx_cmd(false))]
     Update {
         /// Secret ID
-        secret_id: String,
+        project_id: String,
         /// Secret JSON string
-        secret: String,
+        project: String,
     },
-    /// Delete an Ash Console project
+    /// Delete a Console project
     #[command(version = version_tx_cmd(false))]
     Delete {
         /// Secret ID
-        secret_id: String,
+        project_id: String,
         /// Assume yes to all prompts
         #[arg(long, short = 'y')]
         yes: bool,
     },
+    /// Show the current Console project
+    #[command(version = version_tx_cmd(false))]
+    Show,
+    /// Select the current Console project
+    /// This project will be used by default in other commands
+    #[command(version = version_tx_cmd(false))]
+    Select {
+        /// Secret ID
+        project_id: String,
+    },
+}
+
+// Get the current project ID
+pub(crate) fn get_current_project_id() -> Result<String, CliError> {
+    let state = CliState::load()?;
+
+    if let Some(project_id) = state.current_project {
+        Ok(project_id)
+    } else {
+        Err(CliError::dataerr(
+            "No current project set. Use `ash project select` to set one.".to_string(),
+        ))
+    }
 }
 
 // List projects
@@ -79,26 +104,6 @@ fn list(extended: bool, config: Option<&str>, json: bool) -> Result<(), CliError
     }
 
     println!("{}", template_projects_table(response, extended, 0));
-
-    Ok(())
-}
-
-// Get a project by its ID
-fn get(extended: bool, config: Option<&str>, project_id: &str, json: bool) -> Result<(), CliError> {
-    let mut console = load_console(config)?;
-
-    let api_config = create_api_config_with_access_token(&mut console)?;
-
-    let response =
-        task::block_on(async { console::api::get_project_by_id(&api_config, project_id).await })
-            .map_err(|e| CliError::dataerr(format!("Error getting secret: {e}")))?;
-
-    if json {
-        println!("{}", serde_json::json!(&response));
-        return Ok(());
-    }
-
-    println!("{}", template_projects_table(vec![response], extended, 0));
 
     Ok(())
 }
@@ -127,6 +132,31 @@ fn create(project: &str, config: Option<&str>, json: bool) -> Result<(), CliErro
         "Project created successfully!".green(),
         template_projects_table(vec![response], false, 0)
     );
+
+    Ok(())
+}
+
+// Get a project information by its ID
+fn info(
+    project_id: &str,
+    extended: bool,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
+    let mut console = load_console(config)?;
+
+    let api_config = create_api_config_with_access_token(&mut console)?;
+
+    let response =
+        task::block_on(async { console::api::get_project_by_id(&api_config, project_id).await })
+            .map_err(|e| CliError::dataerr(format!("Error getting project: {e}")))?;
+
+    if json {
+        println!("{}", serde_json::json!(&response));
+        return Ok(());
+    }
+
+    println!("{}", template_projects_table(vec![response], extended, 0));
 
     Ok(())
 }
@@ -173,9 +203,9 @@ fn delete(project_id: &str, yes: bool, config: Option<&str>, json: bool) -> Resu
 
     // Prompt for confirmation if not using --yes
     if !yes {
-        get(false, config, project_id, false)?;
+        info(project_id, false, config, false)?;
 
-        if !confirm_deletion("project") {
+        if !confirm_deletion("project", None) {
             return Ok(());
         }
     }
@@ -194,22 +224,123 @@ fn delete(project_id: &str, yes: bool, config: Option<&str>, json: bool) -> Resu
     Ok(())
 }
 
-// Parse secret subcommand
+// Show the current project
+fn show(config: Option<&str>, json: bool) -> Result<(), CliError> {
+    let mut console = load_console(config)?;
+
+    let api_config = create_api_config_with_access_token(&mut console)?;
+
+    let state = CliState::load()?;
+
+    if let Some(project_id) = state.current_project {
+        let response = task::block_on(async {
+            console::api::get_project_by_id(&api_config, &project_id).await
+        });
+
+        match response {
+            Ok(current_project) => {
+                if json {
+                    println!(
+                        "{}",
+                        serde_json::json!({
+                            "currentProject": {
+                                "id": current_project.id,
+                                "name": current_project.name,
+                            }
+                        })
+                    );
+                    return Ok(());
+                }
+
+                println!(
+                    "Current project: '{}' ({})",
+                    type_colorize(&current_project.name.unwrap_or_default()),
+                    type_colorize(&current_project.id.unwrap_or_default())
+                );
+            }
+            Err(_) => {
+                eprintln!(
+                    "{}\n{}",
+                    format!(
+                        "The selected project '{}' does not exist anymore.",
+                        project_id
+                    )
+                    .red(),
+                    "Use `ash project select` to set a new one."
+                );
+            }
+        }
+    } else {
+        if json {
+            println!("{}", serde_json::json!({ "currentProject": null }));
+            return Ok(());
+        }
+
+        println!("No current project set. Use `ash project select` to set one.");
+    }
+
+    Ok(())
+}
+
+// Select the current project
+fn select(project_id: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
+    let mut console = load_console(config)?;
+
+    let api_config = create_api_config_with_access_token(&mut console)?;
+
+    let current_project =
+        task::block_on(async { console::api::get_project_by_id(&api_config, project_id).await })
+            .map_err(|e| CliError::dataerr(format!("Error getting project: {e}")))?;
+
+    let mut state = CliState::load()?;
+    state.current_project = Some(project_id.to_string());
+    state.save()?;
+
+    if json {
+        println!(
+            "{}",
+            serde_json::json!({
+                "currentProject": {
+                    "id": current_project.id,
+                    "name": current_project.name,
+                }
+            })
+        );
+        return Ok(());
+    }
+
+    println!(
+        "{}",
+        format!(
+            "Switched to project '{}' ({})!",
+            current_project.name.unwrap_or_default().to_string(),
+            current_project.id.unwrap_or_default().to_string()
+        )
+        .green()
+    );
+
+    Ok(())
+}
+
+// Parse project subcommand
 pub(crate) fn parse(
-    network: ProjectCommand,
+    project: ProjectCommand,
     config: Option<&str>,
     json: bool,
 ) -> Result<(), CliError> {
-    match network.command {
+    match project.command {
         ProjectSubcommands::List { extended } => list(extended, config, json),
-        ProjectSubcommands::Get {
-            secret_id,
+        ProjectSubcommands::Info {
+            project_id,
             extended,
-        } => get(extended, config, &secret_id, json),
-        ProjectSubcommands::Create { secret } => create(&secret, config, json),
-        ProjectSubcommands::Update { secret_id, secret } => {
-            update(&secret_id, &secret, config, json)
-        }
-        ProjectSubcommands::Delete { secret_id, yes } => delete(&secret_id, yes, config, json),
+        } => info(&project_id, extended, config, json),
+        ProjectSubcommands::Create { project } => create(&project, config, json),
+        ProjectSubcommands::Update {
+            project_id,
+            project,
+        } => update(&project_id, &project, config, json),
+        ProjectSubcommands::Delete { project_id, yes } => delete(&project_id, yes, config, json),
+        ProjectSubcommands::Show => show(config, json),
+        ProjectSubcommands::Select { project_id } => select(&project_id, config, json),
     }
 }
