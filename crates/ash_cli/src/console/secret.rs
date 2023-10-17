@@ -24,30 +24,30 @@ pub(crate) struct SecretCommand {
 
 #[derive(Subcommand)]
 enum SecretSubcommands {
-    /// List Ash Console secrets
+    /// List Console secrets
     #[command(version = version_tx_cmd(false))]
     List {
         /// Whether to show extended information (e.g. full IDs)
         #[arg(long, short = 'e')]
         extended: bool,
     },
-    /// Create a new Ash Console secret
+    /// Create a new Console secret
     #[command(version = version_tx_cmd(false))]
     Create {
         /// Secret JSON string
         /// e.g.: '{"name": "My secret", "secretType": "generic", "content": "MyS3cr3tC0nt3nt"}'
         secret: String,
     },
-    /// Get an Ash Console secret
+    /// Show Console secret information
     #[command(version = version_tx_cmd(false))]
-    Get {
+    Info {
         /// Secret ID
         secret_id: String,
         /// Whether to show extended information (e.g. full IDs)
         #[arg(long, short = 'e')]
         extended: bool,
     },
-    /// Update an Ash Console secret
+    /// Update a Console secret
     #[command(version = version_tx_cmd(false))]
     Update {
         /// Secret ID
@@ -55,7 +55,7 @@ enum SecretSubcommands {
         /// Secret JSON string
         secret: String,
     },
-    /// Delete an Ash Console secret
+    /// Delete a Console secret
     #[command(version = version_tx_cmd(false))]
     Delete {
         /// Secret ID
@@ -146,29 +146,6 @@ fn list(extended: bool, config: Option<&str>, json: bool) -> Result<(), CliError
     Ok(())
 }
 
-// Get a secret by its ID
-fn get(extended: bool, config: Option<&str>, secret_id: &str, json: bool) -> Result<(), CliError> {
-    let mut console = load_console(config)?;
-
-    let api_config = create_api_config_with_access_token(&mut console)?;
-
-    let response =
-        task::block_on(async { console::api::get_secret_by_id(&api_config, secret_id).await })
-            .map_err(|e| CliError::dataerr(format!("Error getting secret: {e}")))?;
-
-    if json {
-        println!("{}", serde_json::json!(&response));
-        return Ok(());
-    }
-
-    println!(
-        "{}",
-        template_secrets_table(vec![get_secret_response_to_secret(&response)], extended, 0)
-    );
-
-    Ok(())
-}
-
 // Create a new secret
 #[allow(clippy::single_match)]
 fn create(secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
@@ -204,6 +181,29 @@ fn create(secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError
         "{}\n{}",
         "Secret created successfully!".green(),
         template_secrets_table(vec![get_secret_response_to_secret(&response)], false, 0)
+    );
+
+    Ok(())
+}
+
+// Get a secret information by its ID
+fn info(extended: bool, config: Option<&str>, secret_id: &str, json: bool) -> Result<(), CliError> {
+    let mut console = load_console(config)?;
+
+    let api_config = create_api_config_with_access_token(&mut console)?;
+
+    let response =
+        task::block_on(async { console::api::get_secret_by_id(&api_config, secret_id).await })
+            .map_err(|e| CliError::dataerr(format!("Error getting secret: {e}")))?;
+
+    if json {
+        println!("{}", serde_json::json!(&response));
+        return Ok(());
+    }
+
+    println!(
+        "{}",
+        template_secrets_table(vec![get_secret_response_to_secret(&response)], extended, 0)
     );
 
     Ok(())
@@ -247,9 +247,9 @@ fn delete(secret_id: &str, yes: bool, config: Option<&str>, json: bool) -> Resul
 
     // Prompt for confirmation if not using --yes
     if !yes {
-        get(false, config, secret_id, false)?;
+        info(false, config, secret_id, false)?;
 
-        if !confirm_deletion("secret") {
+        if !confirm_deletion("secret", None) {
             return Ok(());
         }
     }
@@ -270,16 +270,16 @@ fn delete(secret_id: &str, yes: bool, config: Option<&str>, json: bool) -> Resul
 
 // Parse secret subcommand
 pub(crate) fn parse(
-    network: SecretCommand,
+    secret: SecretCommand,
     config: Option<&str>,
     json: bool,
 ) -> Result<(), CliError> {
-    match network.command {
+    match secret.command {
         SecretSubcommands::List { extended } => list(extended, config, json),
-        SecretSubcommands::Get {
+        SecretSubcommands::Info {
             secret_id,
             extended,
-        } => get(extended, config, &secret_id, json),
+        } => info(extended, config, &secret_id, json),
         SecretSubcommands::Create { secret } => create(&secret, config, json),
         SecretSubcommands::Update { secret_id, secret } => {
             update(&secret_id, &secret, config, json)

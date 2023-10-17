@@ -34,6 +34,7 @@ serde = "1.0.188"
 prettytable = "0.10.0"
 base64 = "0.21.4"
 inquire = "0.6.2"
+shellexpand = "3.1.0"
 
 [[bin]]
 name = "ash"

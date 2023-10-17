@@ -19,7 +19,7 @@ use ash_sdk::{
 use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::{ColoredString, Colorize};
 use indoc::formatdoc;
-use prettytable::Table;
+use prettytable::{format, Table};
 use std::collections::HashMap;
 
 // Module that contains templating functions for info strings
@@ -815,16 +815,29 @@ pub(crate) fn template_projects_table(
 ) -> String {
     let mut projects_table = Table::new();
 
-    // TODO: Display information about the project's cloud regions
     projects_table.set_titles(row![
         "Project ID".bold(),
         "Owner ID".bold(),
         "Name".bold(),
         "Network".bold(),
+        "Cloud regions".bold(),
         "Created at".bold(),
     ]);
 
     for project in projects {
+        let mut regions_table = Table::new();
+        regions_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+
+        for (region_name, _) in project
+            .cloud_regions_ids
+            .clone()
+            .unwrap_or_default()
+            .as_object()
+            .unwrap()
+        {
+            regions_table.add_row(row![type_colorize(&region_name),]);
+        }
+
         projects_table.add_row(row![
             type_colorize(&project.id.unwrap_or_default()),
             match extended {
@@ -835,6 +848,7 @@ pub(crate) fn template_projects_table(
             },
             type_colorize(&project.name.unwrap_or_default()),
             type_colorize(&format!("{:?}", project.network.unwrap_or_default())),
+            regions_table,
             match extended {
                 true => type_colorize(&project.created.unwrap_or_default()),
                 false => type_colorize(&truncate_datetime(&project.created.unwrap_or_default())),
@@ -843,4 +857,73 @@ pub(crate) fn template_projects_table(
     }
 
     indent::indent_all_by(indent, projects_table.to_string())
+}
+
+pub(crate) fn template_regions_table(
+    regions: Vec<console::api_models::CloudRegion>,
+    extended: bool,
+    indent: usize,
+) -> String {
+    let mut regions_table = Table::new();
+
+    regions_table.set_titles(row![
+        "Cloud provider".bold(),
+        "Cloud region".bold(),
+        "Region ID".bold(),
+        "Cloud creds secret ID".bold(),
+        "Created at".bold(),
+    ]);
+
+    for region in regions {
+        regions_table.add_row(row![
+            type_colorize(
+                &serde_json::to_value(region.cloud_provider.unwrap_or_default())
+                    .unwrap()
+                    .as_str()
+                    .unwrap()
+            ),
+            type_colorize(&region.region.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&region.id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(&region.id.unwrap_or_default().to_string())),
+            },
+            match extended {
+                true => type_colorize(&region.cloud_credentials_secret_id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(
+                    &region
+                        .cloud_credentials_secret_id
+                        .unwrap_or_default()
+                        .to_string()
+                )),
+            },
+            match extended {
+                true => type_colorize(&region.created.unwrap_or_default()),
+                false => type_colorize(&truncate_datetime(&region.created.unwrap_or_default())),
+            },
+        ]);
+    }
+
+    indent::indent_all_by(indent, regions_table.to_string())
+}
+
+pub(crate) fn template_available_regions_table(
+    provider_regions: serde_json::Value,
+    indent: usize,
+) -> String {
+    let mut provider_regions_table = Table::new();
+
+    provider_regions_table.set_titles(row!["Cloud provider".bold(), "Available regions".bold(),]);
+
+    for provider in provider_regions.as_object().unwrap() {
+        let mut regions_table = Table::new();
+        regions_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+
+        for region in provider.1.as_array().unwrap() {
+            regions_table.add_row(row![&region.as_str().unwrap_or_default(),]);
+        }
+
+        provider_regions_table.add_row(row![&provider.0, regions_table,]);
+    }
+
+    indent::indent_all_by(indent, provider_regions_table.to_string())
 }
