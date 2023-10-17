@@ -34,14 +34,14 @@ enum ProjectSubcommands {
     /// Create a new Console project
     #[command(version = version_tx_cmd(false))]
     Create {
-        /// Secret JSON string
+        /// Project JSON string
         /// e.g.: '{"name": "My project", "network": "local"}'
         project: String,
     },
     /// Show Console project information
     #[command(version = version_tx_cmd(false))]
     Info {
-        /// Secret ID
+        /// Project ID
         project_id: String,
         /// Whether to show extended information (e.g. full IDs)
         #[arg(long, short = 'e')]
@@ -50,15 +50,15 @@ enum ProjectSubcommands {
     /// Update a Console project
     #[command(version = version_tx_cmd(false))]
     Update {
-        /// Secret ID
+        /// Project ID
         project_id: String,
-        /// Secret JSON string
+        /// Project JSON string
         project: String,
     },
     /// Delete a Console project
     #[command(version = version_tx_cmd(false))]
     Delete {
-        /// Secret ID
+        /// Project ID
         project_id: String,
         /// Assume yes to all prompts
         #[arg(long, short = 'y')]
@@ -71,7 +71,7 @@ enum ProjectSubcommands {
     /// This project will be used by default in other commands
     #[command(version = version_tx_cmd(false))]
     Select {
-        /// Secret ID
+        /// Project ID
         project_id: String,
     },
 }
@@ -130,7 +130,22 @@ fn create(project: &str, config: Option<&str>, json: bool) -> Result<(), CliErro
     println!(
         "{}\n{}",
         "Project created successfully!".green(),
-        template_projects_table(vec![response], false, 0)
+        template_projects_table(vec![response.clone()], false, 0)
+    );
+
+    // Set the new project as the current one
+    let mut state = CliState::load()?;
+    state.current_project = Some(response.id.unwrap_or_default().to_string());
+    state.save()?;
+
+    println!(
+        "{}",
+        format!(
+            "Switched to project '{}' ({})!",
+            response.name.unwrap_or_default(),
+            response.id.unwrap_or_default().to_string()
+        )
+        .green()
     );
 
     Ok(())
