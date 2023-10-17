@@ -755,7 +755,15 @@ pub(crate) fn template_warp_node_signatures(
 }
 
 pub(crate) fn truncate_uuid(uuid: &str) -> String {
-    format!("{}...{}", &uuid[..6], &uuid[uuid.len() - 6..])
+    format!("{}...{}", &uuid[..4], &uuid[uuid.len() - 4..])
+}
+
+pub(crate) fn truncate_string(string: &str, length: usize) -> String {
+    if length > string.len() {
+        return string.to_string();
+    }
+
+    format!("{}...", &string[..length])
 }
 
 /// Truncate a datetime string to the format "YYYY-MM-DD HH:MM"
@@ -926,4 +934,58 @@ pub(crate) fn template_available_regions_table(
     }
 
     indent::indent_all_by(indent, provider_regions_table.to_string())
+}
+
+pub(crate) fn template_operations_table(
+    operations: Vec<console::api_models::Operation>,
+    extended: bool,
+    indent: usize,
+) -> String {
+    let mut operations_table = Table::new();
+
+    operations_table.set_titles(row![
+        "Operation ID".bold(),
+        "Logged at".bold(),
+        "User ID".bold(),
+        "Operation type".bold(),
+        "Target ID".bold(),
+        "Target value".bold(),
+        "Result".bold(),
+    ]);
+
+    for operation in operations {
+        operations_table.add_row(row![
+            match extended {
+                true => type_colorize(&operation.id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(
+                    &operation.id.unwrap_or_default().to_string()
+                )),
+            },
+            match extended {
+                true => type_colorize(&operation.logged.unwrap_or_default()),
+                false => type_colorize(&truncate_datetime(&operation.logged.unwrap_or_default())),
+            },
+            match extended {
+                true => type_colorize(&operation.owner_id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(
+                    &operation.owner_id.unwrap_or_default().to_string()
+                )),
+            },
+            type_colorize(&operation.operation_type.unwrap_or_default()),
+            type_colorize(&operation.target_id.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&operation.target_value.unwrap_or_default()),
+                false => type_colorize(&truncate_string(
+                    &operation.target_value.unwrap_or_default(),
+                    20
+                )),
+            },
+            match operation.result.unwrap_or_default() {
+                console::api_models::operation::Result::Success => "Success".green(),
+                console::api_models::operation::Result::Failure => "Failure".red(),
+            },
+        ]);
+    }
+
+    indent::indent_all_by(indent, operations_table.to_string())
 }
