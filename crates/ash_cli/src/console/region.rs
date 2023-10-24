@@ -161,7 +161,7 @@ fn add(project_id: &str, region: &str, config: Option<&str>, json: bool) -> Resu
 }
 
 // Get a project cloud region information by its ID
-fn show(
+fn info(
     project_id: &str,
     region_name: &str,
     extended: bool,
@@ -211,7 +211,7 @@ fn remove(
 
     // Prompt for confirmation if not using --yes
     if !yes {
-        show(project_id, region_name, false, config, false)?;
+        info(project_id, region_name, false, config, false)?;
 
         if !confirm_deletion("region", Some("remove")) {
             return Ok(());
@@ -263,7 +263,7 @@ pub(crate) fn parse(
         RegionSubcommands::Info {
             region_name,
             extended,
-        } => show(&project_id, &region_name, extended, config, json),
+        } => info(&project_id, &region_name, extended, config, json),
         RegionSubcommands::Remove { region_name, yes } => {
             remove(&project_id, &region_name, yes, config, json)
         }
