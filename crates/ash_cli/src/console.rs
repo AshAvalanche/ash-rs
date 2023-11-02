@@ -5,6 +5,7 @@ mod auth;
 mod operation;
 mod project;
 mod region;
+mod resource;
 mod secret;
 
 // Module that contains the console subcommand parser
@@ -26,6 +27,7 @@ enum ConsoleSubcommands {
     Operation(operation::OperationCommand),
     Project(project::ProjectCommand),
     Region(region::RegionCommand),
+    Resource(resource::ResourceCommand),
     Secret(secret::SecretCommand),
 }
 
@@ -58,6 +60,7 @@ pub(crate) fn parse(
         ConsoleSubcommands::Operation(operation) => operation::parse(operation, config, json),
         ConsoleSubcommands::Project(project) => project::parse(project, config, json),
         ConsoleSubcommands::Region(region) => region::parse(region, config, json),
+        ConsoleSubcommands::Resource(resource) => resource::parse(resource, config, json),
         ConsoleSubcommands::Secret(secret) => secret::parse(secret, config, json),
     }
 }

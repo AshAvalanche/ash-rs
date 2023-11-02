@@ -875,15 +875,16 @@ pub(crate) fn template_regions_table(
     let mut regions_table = Table::new();
 
     regions_table.set_titles(row![
+        "Region ID".bold(),
         "Cloud provider".bold(),
         "Cloud region".bold(),
-        "Region ID".bold(),
         "Cloud creds secret ID".bold(),
         "Created at".bold(),
     ]);
 
     for region in regions {
         regions_table.add_row(row![
+            type_colorize(&region.id.unwrap_or_default()),
             type_colorize(
                 &serde_json::to_value(region.cloud_provider.unwrap_or_default())
                     .unwrap()
@@ -891,10 +892,6 @@ pub(crate) fn template_regions_table(
                     .unwrap()
             ),
             type_colorize(&region.region.unwrap_or_default()),
-            match extended {
-                true => type_colorize(&region.id.unwrap_or_default()),
-                false => type_colorize(&truncate_uuid(&region.id.unwrap_or_default().to_string())),
-            },
             match extended {
                 true => type_colorize(&region.cloud_credentials_secret_id.unwrap_or_default()),
                 false => type_colorize(&truncate_uuid(
@@ -983,6 +980,51 @@ pub(crate) fn template_operations_table(
             match operation.result.unwrap_or_default() {
                 console::api_models::operation::Result::Success => "Success".green(),
                 console::api_models::operation::Result::Failure => "Failure".red(),
+            },
+        ]);
+    }
+
+    indent::indent_all_by(indent, operations_table.to_string())
+}
+
+pub(crate) fn template_resources_table(
+    resources: Vec<console::api_models::GetAllProjectResources200ResponseInner>,
+    extended: bool,
+    indent: usize,
+) -> String {
+    use console::api_models::get_all_project_resources_200_response_inner::Status;
+
+    let mut operations_table = Table::new();
+
+    operations_table.set_titles(row![
+        "Resource ID".bold(),
+        "Name".bold(),
+        "Type".bold(),
+        "Cloud region ID".bold(),
+        "Created at".bold(),
+        "Status".bold(),
+    ]);
+
+    for operation in resources {
+        operations_table.add_row(row![
+            type_colorize(&operation.id.unwrap_or_default()),
+            type_colorize(&operation.name.unwrap_or_default()),
+            type_colorize(&format!(
+                "{:?}",
+                operation.resource_type.unwrap_or_default()
+            )),
+            type_colorize(&operation.cloud_region_id.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&operation.created.unwrap_or_default()),
+                false => type_colorize(&truncate_datetime(&operation.created.unwrap_or_default())),
+            },
+            match operation.status.unwrap_or_default() {
+                Status::Pending => "Pending".yellow(),
+                Status::Configuring => "Configuring".blue(),
+                Status::Running => "Running".green(),
+                Status::Error => "Error".red(),
+                Status::Destroying => "Destroying".yellow(),
+                Status::Stopped => "Stopped".bright_black(),
             },
         ]);
     }
