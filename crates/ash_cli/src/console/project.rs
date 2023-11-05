@@ -124,29 +124,31 @@ fn create(project: &str, config: Option<&str>, json: bool) -> Result<(), CliErro
 
     if json {
         println!("{}", serde_json::json!(&response));
-        return Ok(());
+    } else {
+        println!(
+            "{}\n{}",
+            "Project created successfully!".green(),
+            template_projects_table(vec![response.clone()], false, 0)
+        );
     }
-
-    println!(
-        "{}\n{}",
-        "Project created successfully!".green(),
-        template_projects_table(vec![response.clone()], false, 0)
-    );
 
     // Set the new project as the current one
     let mut state = CliState::load()?;
     state.current_project = Some(response.id.unwrap_or_default().to_string());
     state.save()?;
 
-    println!(
-        "{}",
-        format!(
-            "Switched to project '{}' ({})!",
-            response.name.unwrap_or_default(),
-            response.id.unwrap_or_default().to_string()
-        )
-        .green()
-    );
+    let switch_message = format!(
+        "Switched to project '{}' ({})!",
+        response.name.unwrap_or_default(),
+        response.id.unwrap_or_default().to_string()
+    )
+    .green();
+
+    if json {
+        eprint!("{}", switch_message);
+    } else {
+        println!("{}", switch_message);
+    }
 
     Ok(())
 }
