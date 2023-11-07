@@ -987,6 +987,72 @@ pub(crate) fn template_operations_table(
     indent::indent_all_by(indent, operations_table.to_string())
 }
 
+pub(crate) fn template_avalanche_node_props_table(
+    avalanche_node: &console::api_models::GetAllProjectResources200ResponseInner,
+) -> Table {
+    let mut props_table = Table::new();
+    props_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+
+    props_table.add_row(row![
+        "Running".bold(),
+        type_colorize(
+            &avalanche_node
+                .node_status
+                .clone()
+                .unwrap()
+                .running
+                .unwrap_or_default()
+        ),
+    ]);
+    props_table.add_row(row![
+        "Bootstrapped".bold(),
+        format!(
+            "{:?}",
+            &avalanche_node
+                .node_status
+                .clone()
+                .unwrap()
+                .bootstrapped
+                .unwrap_or_default()
+                .as_object()
+                .unwrap()
+                .values()
+                .map(|b| serde_json::from_value::<bool>(b.clone()).unwrap_or_default())
+                .collect::<Vec<bool>>()
+        ),
+    ]);
+    props_table.add_row(row![
+        "Healthy".bold(),
+        format!(
+            "{:?}",
+            &avalanche_node
+                .node_status
+                .clone()
+                .unwrap()
+                .healthy
+                .unwrap_or_default()
+                .as_object()
+                .unwrap()
+                .values()
+                .map(|b| serde_json::from_value::<bool>(b.clone()).unwrap_or_default())
+                .collect::<Vec<bool>>()
+        ),
+    ]);
+    props_table.add_row(row![
+        "Restart req.".bold(),
+        type_colorize(
+            &avalanche_node
+                .node_status
+                .clone()
+                .unwrap()
+                .restart_required
+                .unwrap_or_default()
+        ),
+    ]);
+
+    return props_table;
+}
+
 pub(crate) fn template_resources_table(
     resources: Vec<console::api_models::GetAllProjectResources200ResponseInner>,
     extended: bool,
@@ -994,31 +1060,36 @@ pub(crate) fn template_resources_table(
 ) -> String {
     use console::api_models::get_all_project_resources_200_response_inner::Status;
 
-    let mut operations_table = Table::new();
+    let mut resources_table = Table::new();
 
-    operations_table.set_titles(row![
+    resources_table.set_titles(row![
         "Resource ID".bold(),
         "Name".bold(),
         "Type".bold(),
         "Cloud region ID".bold(),
+        "Size".bold(),
         "Created at".bold(),
         "Status".bold(),
+        "Resource specific".bold(),
     ]);
 
-    for operation in resources {
-        operations_table.add_row(row![
-            type_colorize(&operation.id.unwrap_or_default()),
-            type_colorize(&operation.name.unwrap_or_default()),
+    for resource in resources {
+        resources_table.add_row(row![
+            type_colorize(&resource.id.unwrap_or_default()),
+            type_colorize(&resource.name.clone().unwrap_or_default()),
             type_colorize(&format!(
                 "{:?}",
-                operation.resource_type.unwrap_or_default()
+                resource.resource_type.clone().unwrap_or_default()
             )),
-            type_colorize(&operation.cloud_region_id.unwrap_or_default()),
+            type_colorize(&resource.cloud_region_id.unwrap_or_default()),
+            type_colorize(&format!("{:?}", resource.size.unwrap_or_default())),
             match extended {
-                true => type_colorize(&operation.created.unwrap_or_default()),
-                false => type_colorize(&truncate_datetime(&operation.created.unwrap_or_default())),
+                true => type_colorize(&resource.created.clone().unwrap_or_default()),
+                false => type_colorize(&truncate_datetime(
+                    &resource.created.clone().unwrap_or_default()
+                )),
             },
-            match operation.status.unwrap_or_default() {
+            match resource.status.unwrap_or_default() {
                 Status::Pending => "Pending".yellow(),
                 Status::Configuring => "Configuring".blue(),
                 Status::Running => "Running".green(),
@@ -1026,8 +1097,13 @@ pub(crate) fn template_resources_table(
                 Status::Destroying => "Destroying".yellow(),
                 Status::Stopped => "Stopped".bright_black(),
             },
+            match *resource.resource_type.clone().unwrap_or_default() {
+                console::api_models::ResourceType::AvalancheNode => {
+                    template_avalanche_node_props_table(&resource.clone())
+                }
+            },
         ]);
     }
 
-    indent::indent_all_by(indent, operations_table.to_string())
+    indent::indent_all_by(indent, resources_table.to_string())
 }
