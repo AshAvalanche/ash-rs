@@ -75,6 +75,14 @@ fn get_secret_response_to_secret(
     .unwrap()
 }
 
+// Read a file and return its content as a Base64-encoded string
+fn read_file_base64(file_path: PathBuf) -> Result<String, CliError> {
+    let file_content = fs::read_to_string(file_path)
+        .map_err(|e| CliError::dataerr(format!("Error reading file: {e}")))?;
+
+    Ok(engine::general_purpose::STANDARD.encode(file_content))
+}
+
 // For a given nodeId secret, load the cert and key files if their values are paths
 // Both cert and key must be either paths to PEM files or Base64-encoded strings
 fn load_node_id_tls_cert_key(
@@ -97,29 +105,45 @@ fn load_node_id_tls_cert_key(
         }
     };
 
-    let cert_path = PathBuf::from(&node_cert);
-    let key_path = PathBuf::from(&node_key);
+    let cert_path = PathBuf::from(&shellexpand::tilde(node_cert).to_string());
+    let key_path = PathBuf::from(&shellexpand::tilde(node_key).to_string());
 
     node_id_secret.node_cert = if cert_path.exists() {
-        Some(
-            engine::general_purpose::STANDARD.encode(
-                fs::read_to_string(cert_path)
-                    .map_err(|e| CliError::dataerr(format!("Error reading cert file: {e}")))?,
-            ),
-        )
+        Some(read_file_base64(cert_path)?)
     } else {
         Some(node_cert.clone())
     };
 
     node_id_secret.node_key = if key_path.exists() {
-        Some(
-            engine::general_purpose::STANDARD.encode(
-                fs::read_to_string(key_path)
-                    .map_err(|e| CliError::dataerr(format!("Error reading key file: {e}")))?,
-            ),
-        )
+        Some(read_file_base64(key_path)?)
     } else {
         Some(node_key.clone())
+    };
+
+    Ok(())
+}
+
+// For a given googleCredentials secret, load the private key file if its value is a path
+// The private key must be either a path to a PEM file or a Base64-encoded string
+fn load_google_credentials_private_key(
+    google_credentials_secret: &mut console::api_models::CreateSecretRequest,
+) -> Result<(), CliError> {
+    let private_key = match google_credentials_secret.private_key {
+        Some(ref key) => key,
+        None => {
+            return Err(CliError::dataerr(
+                "Error parsing googleCredentials secret JSON: privateKey field is missing"
+                    .to_string(),
+            ))
+        }
+    };
+
+    let key_path = PathBuf::from(&shellexpand::tilde(private_key).to_string());
+
+    google_credentials_secret.private_key = if key_path.exists() {
+        Some(read_file_base64(key_path)?)
+    } else {
+        Some(private_key.clone())
     };
 
     Ok(())
@@ -163,6 +187,10 @@ fn create(secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError
         console::api_models::SecretType::NodeId => {
             // Load the cert and key files if their values are paths
             load_node_id_tls_cert_key(&mut create_secret_request)?;
+        }
+        console::api_models::SecretType::GoogleCredentials => {
+            // Load the private key file if its value is a path
+            load_google_credentials_private_key(&mut create_secret_request)?;
         }
         _ => {}
     }
