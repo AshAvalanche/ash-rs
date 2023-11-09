@@ -880,6 +880,7 @@ pub(crate) fn template_regions_table(
         "Cloud region".bold(),
         "Cloud creds secret ID".bold(),
         "Created at".bold(),
+        "Status".bold()
     ]);
 
     for region in regions {
@@ -904,6 +905,11 @@ pub(crate) fn template_regions_table(
             match extended {
                 true => type_colorize(&region.created.unwrap_or_default()),
                 false => type_colorize(&truncate_datetime(&region.created.unwrap_or_default())),
+            },
+            match region.status.unwrap_or_default() {
+                console::api_models::cloud_region::Status::Available => "Available".green(),
+                console::api_models::cloud_region::Status::Destroying => "Destroying".yellow(),
+                console::api_models::cloud_region::Status::Suspended => "Suspended".red(),
             },
         ]);
     }
@@ -993,6 +999,10 @@ pub(crate) fn template_avalanche_node_props_table(
     let mut props_table = Table::new();
     props_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
 
+    props_table.add_row(row![
+        "IP address".bold(),
+        type_colorize(&avalanche_node.node_ip.clone().unwrap_or_default()),
+    ]);
     props_table.add_row(row![
         "Running".bold(),
         type_colorize(
