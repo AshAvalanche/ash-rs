@@ -6,7 +6,12 @@
 use crate::{
     console::project::get_current_project_id,
     console::{create_api_config_with_access_token, load_console},
-    utils::{error::CliError, prompt::confirm_deletion, templating::*, version_tx_cmd},
+    utils::{
+        error::CliError,
+        prompt::{confirm_deletion, confirm_restart},
+        templating::*,
+        version_tx_cmd,
+    },
 };
 use ash_sdk::console;
 use async_std::task;
@@ -74,6 +79,15 @@ enum ResourceSubcommands {
         #[arg(long, short = 'y')]
         yes: bool,
     },
+    /// Restart a resource of the Console project
+    #[command(version = version_tx_cmd(false))]
+    Restart {
+        /// Resource ID
+        resource_id: String,
+        /// Assume yes to all prompts
+        #[arg(long, short = 'y')]
+        yes: bool,
+    },
 }
 
 // List resources of a project
@@ -135,7 +149,7 @@ fn create(
 
     println!(
         "{}\n{}",
-        format!("Resource successfully added to project '{}'!", project_id).green(),
+        format!("Resource successfully created in project '{}'!", project_id).green(),
         template_resources_table(vec![response], false, 0)
     );
 
@@ -248,7 +262,43 @@ fn delete(
         return Ok(());
     }
 
-    println!("{}", "Cloud resource removed successfully!".green());
+    println!("{}", "Resource deleted successfully!".green());
+
+    Ok(())
+}
+
+// Restart a resource
+fn restart(
+    project_id: &str,
+    resource_id: &str,
+    yes: bool,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
+    let mut console = load_console(config)?;
+
+    let api_config = create_api_config_with_access_token(&mut console)?;
+
+    // Prompt for confirmation if not using --yes
+    if !yes {
+        info(project_id, resource_id, false, config, false)?;
+
+        if !confirm_restart("resource") {
+            return Ok(());
+        }
+    }
+
+    let response = task::block_on(async {
+        console::api::restart_project_resource_by_id(&api_config, project_id, &resource_id).await
+    })
+    .map_err(|e| CliError::dataerr(format!("Error restarting resource: {e}")))?;
+
+    if json {
+        println!("{}", serde_json::json!(&response));
+        return Ok(());
+    }
+
+    println!("{}", "Resource restarted successfully!".green());
 
     Ok(())
 }
@@ -283,6 +333,9 @@ pub(crate) fn parse(
         } => update(&project_id, &resource_id, &resource, config, json),
         ResourceSubcommands::Delete { resource_id, yes } => {
             delete(&project_id, &resource_id, yes, config, json)
+        }
+        ResourceSubcommands::Restart { resource_id, yes } => {
+            restart(&project_id, &resource_id, yes, config, json)
         }
     }
 }

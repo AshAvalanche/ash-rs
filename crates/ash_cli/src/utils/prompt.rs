@@ -4,11 +4,11 @@
 use colored::Colorize;
 use inquire::Confirm;
 
-pub(crate) fn confirm_deletion(object_type: &str, action: Option<&str>) -> bool {
+pub(crate) fn confirm_deletion(entity_type: &str, action: Option<&str>) -> bool {
     let action = action.unwrap_or("delete");
 
     let confirmation = Confirm::new(&format!(
-        "Are you sure you want to {action} this {object_type}?"
+        "Are you sure you want to {action} this {entity_type}?"
     ))
     .with_default(false)
     .with_help_message("This action is irreversible!")
@@ -22,6 +22,27 @@ pub(crate) fn confirm_deletion(object_type: &str, action: Option<&str>) -> bool 
         }
         Err(_) => {
             println!("{}", "Error parsing answer. Aborting deletion.".red());
+            false
+        }
+    }
+}
+
+pub(crate) fn confirm_restart(resource_type: &str) -> bool {
+    let confirmation = Confirm::new(&format!(
+        "Are you sure you want to restart this {resource_type}?"
+    ))
+    .with_default(false)
+    .with_help_message("This action might significanlty impact the uptime of the resource!")
+    .prompt();
+
+    match confirmation {
+        Ok(true) => true,
+        Ok(false) => {
+            println!("Aborting restart.");
+            false
+        }
+        Err(_) => {
+            println!("{}", "Error parsing answer. Aborting restart.".red());
             false
         }
     }
