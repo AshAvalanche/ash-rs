@@ -34,6 +34,7 @@ enum ConsoleSubcommands {
 const KEYRING_TARGET: &str = "ash-console";
 const KEYRING_ACCESS_TOKEN_SERVICE: &str = "access_token";
 const KEYRING_REFRESH_TOKEN_SERVICE: &str = "refresh_token";
+const KEYRING_FALLBACK_FILES_DIR: &str = "~/.ash-console/tokens";
 
 // Load the console configuation
 fn load_console(config: Option<&str>) -> Result<AshConsole, CliError> {

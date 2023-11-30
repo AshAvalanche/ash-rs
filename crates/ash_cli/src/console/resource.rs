@@ -169,7 +169,7 @@ fn info(
     let api_config = create_api_config_with_access_token(&mut console)?;
 
     let response = task::block_on(async {
-        console::api::get_project_resource_by_id(&api_config, project_id, &resource_id).await
+        console::api::get_project_resource_by_id(&api_config, project_id, resource_id).await
     })
     .map_err(|e| CliError::dataerr(format!("Error getting resource: {e}")))?;
 
@@ -253,7 +253,7 @@ fn delete(
     }
 
     let response = task::block_on(async {
-        console::api::delete_project_resource_by_id(&api_config, project_id, &resource_id).await
+        console::api::delete_project_resource_by_id(&api_config, project_id, resource_id).await
     })
     .map_err(|e| CliError::dataerr(format!("Error removing resource: {e}")))?;
 
@@ -289,7 +289,7 @@ fn restart(
     }
 
     let response = task::block_on(async {
-        console::api::restart_project_resource_by_id(&api_config, project_id, &resource_id).await
+        console::api::restart_project_resource_by_id(&api_config, project_id, resource_id).await
     })
     .map_err(|e| CliError::dataerr(format!("Error restarting resource: {e}")))?;
 

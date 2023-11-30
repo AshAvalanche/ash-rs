@@ -140,7 +140,7 @@ fn create(project: &str, config: Option<&str>, json: bool) -> Result<(), CliErro
     let switch_message = format!(
         "Switched to project '{}' ({})!",
         response.name.unwrap_or_default(),
-        response.id.unwrap_or_default().to_string()
+        response.id.unwrap_or_default()
     )
     .green();
 

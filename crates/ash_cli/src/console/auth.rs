@@ -5,7 +5,8 @@
 
 use crate::{
     console::{
-        load_console, KEYRING_ACCESS_TOKEN_SERVICE, KEYRING_REFRESH_TOKEN_SERVICE, KEYRING_TARGET,
+        load_console, KEYRING_ACCESS_TOKEN_SERVICE, KEYRING_FALLBACK_FILES_DIR,
+        KEYRING_REFRESH_TOKEN_SERVICE, KEYRING_TARGET,
     },
     utils::{error::CliError, keyring::*, templating::*, version_tx_cmd},
 };
@@ -24,7 +25,9 @@ pub(crate) struct AuthCommand {
 
 #[derive(Subcommand)]
 enum AuthSubcommands {
-    /// Login to the Console. Credentials are stored in the device keyring.
+    /// Login to the Console
+    ///
+    /// Credentials are stored in the device keyring or in plain text files if keyring is not available.
     #[command(version = version_tx_cmd(false))]
     Login,
     /// Refresh the Console access token
@@ -33,7 +36,9 @@ enum AuthSubcommands {
     /// Show the current Console access token
     #[command(version = version_tx_cmd(false))]
     ShowToken,
-    /// Logout from the Console. Credentials are removed from the device keyring.
+    /// Logout from the Console
+    ///
+    /// Credentials are removed from the device keyring or from plain text files if keyring is not available.
     #[command(version = version_tx_cmd(false))]
     Logout,
     /// Displays information about the Console authentication state
@@ -66,7 +71,11 @@ pub(crate) fn refresh_keyring_access_token(console: &mut AshConsole) -> Result<(
     console.oauth2.init();
 
     // Get the refresh token from the keyring
-    let refresh_token = get_keyring_value(KEYRING_TARGET, KEYRING_REFRESH_TOKEN_SERVICE)?;
+    let refresh_token = get_keyring_value(
+        KEYRING_TARGET,
+        KEYRING_REFRESH_TOKEN_SERVICE,
+        KEYRING_FALLBACK_FILES_DIR,
+    )?;
 
     // Exchange the refresh token for a new access token
     let access_token = console
@@ -79,6 +88,7 @@ pub(crate) fn refresh_keyring_access_token(console: &mut AshConsole) -> Result<(
         KEYRING_TARGET,
         KEYRING_ACCESS_TOKEN_SERVICE,
         &access_token.secret().to_string(),
+        KEYRING_FALLBACK_FILES_DIR,
     )?;
 
     Ok(())
@@ -86,7 +96,11 @@ pub(crate) fn refresh_keyring_access_token(console: &mut AshConsole) -> Result<(
 
 // Get the current access token from the keyring
 pub(crate) fn get_keyring_access_token() -> Result<String, CliError> {
-    get_keyring_value(KEYRING_TARGET, KEYRING_ACCESS_TOKEN_SERVICE)
+    get_keyring_value(
+        KEYRING_TARGET,
+        KEYRING_ACCESS_TOKEN_SERVICE,
+        KEYRING_FALLBACK_FILES_DIR,
+    )
 }
 
 // Decode the access token to get its token data
@@ -113,7 +127,7 @@ pub(crate) fn get_access_token(console: &mut AshConsole) -> Result<String, CliEr
     // Get the access token from the keyring
     let access_token = get_keyring_access_token().map_err(|_| {
         CliError::dataerr(
-            "Error getting access token from keyring. You are probably not logged in (try `ash console auth status`).".to_string()
+            "Error getting local access token. You are probably not logged in (try `ash console auth status`).".to_string()
         )
     })?;
 
@@ -160,16 +174,22 @@ fn login(config: Option<&str>) -> Result<(), CliError> {
         KEYRING_TARGET,
         KEYRING_ACCESS_TOKEN_SERVICE,
         &access_token.secret().to_string(),
+        KEYRING_FALLBACK_FILES_DIR,
     )?;
-    set_keyring_value(
+    let keyring_available = set_keyring_value(
         KEYRING_TARGET,
         KEYRING_REFRESH_TOKEN_SERVICE,
         &refresh_token.secret().to_string(),
+        KEYRING_FALLBACK_FILES_DIR,
     )?;
 
     println!(
-        "\n{} The credentials have been stored in your device keyring.",
-        "Login successful!".green()
+        "\n{} The credentials have been stored in {}",
+        "Login successful!".green(),
+        match keyring_available {
+            true => "your device keyring".to_string(),
+            false => format!("plain text files in '{}'", KEYRING_FALLBACK_FILES_DIR),
+        }
     );
 
     Ok(())
@@ -242,12 +262,24 @@ fn logout(config: Option<&str>) -> Result<(), CliError> {
     }
 
     // Delete the access token and refresh token from the keyring
-    delete_keyring_value(KEYRING_TARGET, KEYRING_ACCESS_TOKEN_SERVICE)?;
-    delete_keyring_value(KEYRING_TARGET, KEYRING_REFRESH_TOKEN_SERVICE)?;
+    delete_keyring_value(
+        KEYRING_TARGET,
+        KEYRING_ACCESS_TOKEN_SERVICE,
+        KEYRING_FALLBACK_FILES_DIR,
+    )?;
+    let keyring_available = delete_keyring_value(
+        KEYRING_TARGET,
+        KEYRING_REFRESH_TOKEN_SERVICE,
+        KEYRING_FALLBACK_FILES_DIR,
+    )?;
 
     println!(
-        "\n{} The credentials have been removed from your device keyring.",
-        "Logout successful!".green()
+        "\n{} The credentials have been removed from {}",
+        "Logout successful!".green(),
+        match keyring_available {
+            true => "your device keyring".to_string(),
+            false => format!("plain text files in '{}'", KEYRING_FALLBACK_FILES_DIR),
+        }
     );
 
     Ok(())
