@@ -1060,7 +1060,7 @@ pub(crate) fn template_avalanche_node_props_table(
         ),
     ]);
 
-    return props_table;
+    props_table
 }
 
 pub(crate) fn template_resources_table(
