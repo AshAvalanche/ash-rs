@@ -6,7 +6,7 @@
 use crate::{
     console::project::get_current_project_id,
     console::{create_api_config_with_access_token, load_console},
-    utils::{error::CliError, prompt::confirm_deletion, templating::*, version_tx_cmd},
+    utils::{error::CliError, file::*, prompt::confirm_deletion, templating::*, version_tx_cmd},
 };
 use ash_sdk::console;
 use async_std::task;
@@ -46,8 +46,8 @@ enum RegionSubcommands {
     /// Add a cloud region to the Console project
     #[command(version = version_tx_cmd(false))]
     Add {
-        /// Cloud region JSON string
-        /// e.g.: '{"cloudProvider": "aws", "region": "us-east-1", "cloudCredentialsSecretId": "secret-id"}'
+        /// Cloud region YAML/JSON string or file path ('-' for stdin)
+        /// e.g.: '{cloudProvider: aws, region: us-east-1, cloudCredentialsSecretId: secret-id}'
         region: String,
     },
     /// Show information about a cloud region of the Console project
@@ -133,8 +133,10 @@ fn add(project_id: &str, region: &str, config: Option<&str>, json: bool) -> Resu
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
+    let region_str = read_file_or_stdin(region)?;
+
     // Deserialize the region JSON
-    let new_region: console::api_models::NewCloudRegion = serde_json::from_str(region)
+    let new_region: console::api_models::NewCloudRegion = serde_yaml::from_str(&region_str)
         .map_err(|e| CliError::dataerr(format!("Error parsing cloud region JSON: {e}")))?;
 
     let response = task::block_on(async {

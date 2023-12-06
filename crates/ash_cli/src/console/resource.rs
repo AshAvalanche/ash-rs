@@ -8,6 +8,7 @@ use crate::{
     console::{create_api_config_with_access_token, load_console},
     utils::{
         error::CliError,
+        file::*,
         prompt::{confirm_deletion, confirm_restart},
         templating::*,
         version_tx_cmd,
@@ -48,8 +49,8 @@ enum ResourceSubcommands {
     /// Create a resource in the Console project
     #[command(version = version_tx_cmd(false))]
     Create {
-        /// Resource JSON string
-        /// e.g.: '{"name": "my-node", "resourceType": "avalancheNode", "cloudRegionId": "region-id", ...}'
+        /// Resource YAML/JSON string or file path ('-' for stdin)
+        /// e.g.: '{name: my-node, resourceType: avalancheNode, cloudRegionId: region-id, ...}'
         resource: String,
     },
     /// Show information about a resource of the Console project
@@ -66,8 +67,8 @@ enum ResourceSubcommands {
     Update {
         /// Resource ID
         resource_id: String,
-        /// Resource JSON string
-        /// e.g.: '{"name": "my-node", "resourceType": "avalancheNode", "cloudRegionId": "region-id", ...}'
+        /// Resource YAML/JSON string or file path ('-' for stdin)
+        /// e.g.: '{name: my-node, resourceType: avalancheNode, cloudRegionId: region-id, ...}'
         resource: String,
     },
     /// Delete a resource from the Console project
@@ -131,10 +132,12 @@ fn create(
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
+    let resource_str = read_file_or_stdin(resource)?;
+
     // Deserialize the resource JSON
     // TODO: Change to CreateResourceRequest when another resource type is added
     let new_resource: console::api_models::NewAvalancheNodeResource =
-        serde_json::from_str(resource)
+        serde_yaml::from_str(&resource_str)
             .map_err(|e| CliError::dataerr(format!("Error parsing resource JSON: {e}")))?;
 
     let response = task::block_on(async {
@@ -200,10 +203,12 @@ fn update(
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
+    let resource_str = read_file_or_stdin(resource)?;
+
     // Deserialize the resource JSON
     // TODO: Change to UpdateResourceByIdRequest when another resource type is added
     let update_resource_request: console::api_models::UpdateAvalancheNodeResource =
-        serde_json::from_str(resource)
+        serde_yaml::from_str(&resource_str)
             .map_err(|e| CliError::dataerr(format!("Error parsing resource JSON: {e}")))?;
 
     let response = task::block_on(async {

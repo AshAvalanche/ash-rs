@@ -6,7 +6,8 @@
 use crate::{
     console::{create_api_config_with_access_token, load_console},
     utils::{
-        error::CliError, prompt::confirm_deletion, state::CliState, templating::*, version_tx_cmd,
+        error::CliError, file::*, prompt::confirm_deletion, state::CliState, templating::*,
+        version_tx_cmd,
     },
 };
 use ash_sdk::console;
@@ -34,8 +35,8 @@ enum ProjectSubcommands {
     /// Create a new Console project
     #[command(version = version_tx_cmd(false))]
     Create {
-        /// Project JSON string
-        /// e.g.: '{"name": "My project", "network": "local"}'
+        /// Project YAML/JSON string or file path ('-' for stdin)
+        /// e.g.: '{name: my-project, network: local}'
         project: String,
     },
     /// Show Console project information
@@ -52,7 +53,7 @@ enum ProjectSubcommands {
     Update {
         /// Project ID
         project_id: String,
-        /// Project JSON string
+        /// Project YAML/JSON string or file path ('-' for stdin)
         project: String,
     },
     /// Delete a Console project
@@ -114,8 +115,10 @@ fn create(project: &str, config: Option<&str>, json: bool) -> Result<(), CliErro
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
+    let project_str = read_file_or_stdin(project)?;
+
     // Deserialize the project JSON
-    let new_project: console::api_models::NewProject = serde_json::from_str(project)
+    let new_project: console::api_models::NewProject = serde_yaml::from_str(&project_str)
         .map_err(|e| CliError::dataerr(format!("Error parsing project JSON: {e}")))?;
 
     let response =
@@ -189,9 +192,12 @@ fn update(
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
+    let project_str = read_file_or_stdin(project)?;
+
     // Deserialize the project JSON
-    let update_project_request: console::api_models::UpdateProject = serde_json::from_str(project)
-        .map_err(|e| CliError::dataerr(format!("Error parsing project JSON: {e}")))?;
+    let update_project_request: console::api_models::UpdateProject =
+        serde_yaml::from_str(&project_str)
+            .map_err(|e| CliError::dataerr(format!("Error parsing project JSON: {e}")))?;
 
     let response = task::block_on(async {
         console::api::update_project_by_id(&api_config, project_id, update_project_request).await
