@@ -5,14 +5,13 @@
 
 use crate::{
     console::{create_api_config_with_access_token, load_console},
-    utils::{error::CliError, prompt::confirm_deletion, templating::*, version_tx_cmd},
+    utils::{error::CliError, file::*, prompt::confirm_deletion, templating::*, version_tx_cmd},
 };
 use ash_sdk::console;
 use async_std::task;
-use base64::{engine, Engine};
 use clap::{Parser, Subcommand};
 use colored::Colorize;
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
 /// Interact with Ash Console secrets
 #[derive(Parser)]
@@ -34,8 +33,8 @@ enum SecretSubcommands {
     /// Create a new Console secret
     #[command(version = version_tx_cmd(false))]
     Create {
-        /// Secret JSON string
-        /// e.g.: '{"name": "My secret", "secretType": "generic", "content": "MyS3cr3tC0nt3nt"}'
+        /// Secret YAML/JSON string or file path ('-' for stdin)
+        /// e.g.: '{name: my-secret, secretType: generic, content: "MyS3cr3tC0nt3nt"}'
         secret: String,
     },
     /// Show Console secret information
@@ -52,7 +51,7 @@ enum SecretSubcommands {
     Update {
         /// Secret ID
         secret_id: String,
-        /// Secret JSON string
+        /// Secret YAML/JSON string or file path ('-' for stdin)
         secret: String,
     },
     /// Delete a Console secret
@@ -73,14 +72,6 @@ fn get_secret_response_to_secret(
         get_all_secrets_response
     ))
     .unwrap()
-}
-
-// Read a file and return its content as a Base64-encoded string
-fn read_file_base64(file_path: PathBuf) -> Result<String, CliError> {
-    let file_content = fs::read_to_string(file_path)
-        .map_err(|e| CliError::dataerr(format!("Error reading file: {e}")))?;
-
-    Ok(engine::general_purpose::STANDARD.encode(file_content))
 }
 
 // For a given nodeId secret, load the cert and key files if their values are paths
@@ -177,9 +168,11 @@ fn create(secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
+    let secret_str = read_file_or_stdin(secret)?;
+
     // Deserialize the secret JSON
     let mut create_secret_request: console::api_models::CreateSecretRequest =
-        serde_json::from_str(secret)
+        serde_yaml::from_str(&secret_str)
             .map_err(|e| CliError::dataerr(format!("Error parsing secret JSON: {e}")))?;
 
     // Apply special secret type logic
@@ -243,9 +236,11 @@ fn update(secret_id: &str, secret: &str, config: Option<&str>, json: bool) -> Re
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
+    let secret_str = read_file_or_stdin(secret)?;
+
     // Deserialize the secret JSON
     let update_secret_request: console::api_models::UpdateSecretByIdRequest =
-        serde_json::from_str(secret)
+        serde_yaml::from_str(&secret_str)
             .map_err(|e| CliError::dataerr(format!("Error parsing secret JSON: {e}")))?;
 
     let response = task::block_on(async {
