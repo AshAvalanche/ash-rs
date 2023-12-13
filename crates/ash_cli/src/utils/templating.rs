@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023, E36 Knots
 
+use crate::console::blueprint::Blueprint;
 use ash_sdk::{
     avalanche::{
         blockchains::AvalancheBlockchain,
@@ -18,9 +19,11 @@ use ash_sdk::{
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::{ColoredString, Colorize};
+use indicatif::ProgressBar;
 use indoc::formatdoc;
 use prettytable::{format, Table};
 use std::collections::HashMap;
+use std::time::Duration;
 
 // Module that contains templating functions for info strings
 
@@ -57,6 +60,13 @@ pub(crate) fn human_readable_timestamp(timestamp: u64) -> String {
 
 pub(crate) fn template_horizontal_rule(character: char, length: usize) -> String {
     format!("{character}").repeat(length)
+}
+
+pub(crate) fn spinner_with_message(message: String) -> ProgressBar {
+    let spinner = ProgressBar::new_spinner();
+    spinner.set_message(message);
+    spinner.enable_steady_tick(Duration::from_millis(100));
+    spinner
 }
 
 pub(crate) fn template_blockchain_info(
@@ -1108,4 +1118,44 @@ pub(crate) fn template_resources_table(
     }
 
     indent::indent_all_by(indent, resources_table.to_string())
+}
+
+pub(crate) fn template_blueprint_summary(to_create: &Blueprint, to_update: &Blueprint) -> String {
+    let mut summary_str = String::new();
+
+    summary_str.push_str(&formatdoc!(
+        "
+        {}
+          {}
+            {} to create: {}
+            {} to update: {}",
+        "Blueprint summary".bold(),
+        "Secrets".bold(),
+        type_colorize(&to_create.secrets.len()),
+        match to_create.secrets.len() {
+            0 => type_colorize(&"[]".to_string()),
+            _ => type_colorize(
+                &to_create
+                    .secrets
+                    .iter()
+                    .map(|s| s.name.clone())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
+        },
+        type_colorize(&to_update.secrets.len()),
+        match to_update.secrets.len() {
+            0 => type_colorize(&"[]".to_string()),
+            _ => type_colorize(
+                &to_update
+                    .secrets
+                    .iter()
+                    .map(|s| s.name.clone())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
+        },
+    ));
+
+    summary_str
 }

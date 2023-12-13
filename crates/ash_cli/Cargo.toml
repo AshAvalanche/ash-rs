@@ -37,6 +37,7 @@ inquire = "0.6.2"
 shellexpand = "3.1.0"
 serde_yaml = "0.9.27"
 atty = "0.2.14"
+indicatif = "0.17.7"
 
 [[bin]]
 name = "ash"

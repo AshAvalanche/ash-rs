@@ -6,7 +6,7 @@
 use crate::{
     console::project::get_current_project_id_or_name,
     console::{create_api_config_with_access_token, load_console},
-    utils::{error::CliError, file::*, prompt::confirm_deletion, templating::*, version_tx_cmd},
+    utils::{error::CliError, file::*, prompt::confirm_action, templating::*, version_tx_cmd},
 };
 use ash_sdk::console;
 use async_std::task;
@@ -220,7 +220,7 @@ fn remove(
     if !yes {
         info(project_id_or_name, region_name, false, config, false)?;
 
-        if !confirm_deletion("region", Some("remove")) {
+        if !confirm_action("region", Some("remove")) {
             return Ok(());
         }
     }

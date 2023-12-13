@@ -51,12 +51,10 @@ pub(crate) fn read_file_or_stdin(input_str: &str) -> Result<String, CliError> {
 
     let output_str = if file_path.exists() {
         read_file(file_path)?
+    } else if input_str == "-" {
+        read_stdin()?
     } else {
-        if input_str == "-" {
-            read_stdin()?
-        } else {
-            input_str.to_string()
-        }
+        input_str.to_string()
     };
 
     Ok(output_str)

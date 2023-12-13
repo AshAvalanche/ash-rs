@@ -6,7 +6,7 @@
 use crate::{
     console::{create_api_config_with_access_token, load_console},
     utils::{
-        error::CliError, file::*, prompt::confirm_deletion, state::CliState, templating::*,
+        error::CliError, file::*, prompt::confirm_action, state::CliState, templating::*,
         version_tx_cmd,
     },
 };
@@ -239,7 +239,7 @@ fn delete(
     if !yes {
         info(project_id_or_name, false, config, false)?;
 
-        if !confirm_deletion("project", None) {
+        if !confirm_action("project", None) {
             return Ok(());
         }
     }

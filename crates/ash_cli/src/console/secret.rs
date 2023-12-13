@@ -5,7 +5,7 @@
 
 use crate::{
     console::{create_api_config_with_access_token, load_console},
-    utils::{error::CliError, file::*, prompt::confirm_deletion, templating::*, version_tx_cmd},
+    utils::{error::CliError, file::*, prompt::confirm_action, templating::*, version_tx_cmd},
 };
 use ash_sdk::console;
 use async_std::task;
@@ -163,12 +163,14 @@ fn list(extended: bool, config: Option<&str>, json: bool) -> Result<(), CliError
 
 // Create a new secret
 #[allow(clippy::single_match)]
-fn create(secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
+pub(crate) fn create(secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
     let secret_str = read_file_or_stdin(secret)?;
+
+    let spinner = spinner_with_message("Creating secret...".to_string());
 
     // Deserialize the secret JSON
     let mut create_secret_request: console::api_models::CreateSecretRequest =
@@ -192,6 +194,8 @@ fn create(secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError
         console::api::create_secret(&api_config, create_secret_request).await
     })
     .map_err(|e| CliError::dataerr(format!("Error creating secret: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -237,7 +241,7 @@ fn info(
 }
 
 // Update a secret
-fn update(
+pub(crate) fn update(
     secret_id_or_name: &str,
     secret: &str,
     config: Option<&str>,
@@ -248,6 +252,8 @@ fn update(
     let api_config = create_api_config_with_access_token(&mut console)?;
 
     let secret_str = read_file_or_stdin(secret)?;
+
+    let spinner = spinner_with_message("Updating secret...".to_string());
 
     // Deserialize the secret JSON
     let update_secret_request: console::api_models::UpdateSecretByIdOrNameRequest =
@@ -263,6 +269,8 @@ fn update(
         .await
     })
     .map_err(|e| CliError::dataerr(format!("Error updating secret: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -293,7 +301,7 @@ fn delete(
     if !yes {
         info(false, config, secret_id_or_name, false)?;
 
-        if !confirm_deletion("secret", None) {
+        if !confirm_action("secret", None) {
             return Ok(());
         }
     }

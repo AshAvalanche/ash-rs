@@ -9,7 +9,7 @@ use crate::{
     utils::{
         error::CliError,
         file::*,
-        prompt::{confirm_deletion, confirm_restart},
+        prompt::{confirm_action, confirm_restart},
         templating::*,
         version_tx_cmd,
     },
@@ -256,7 +256,7 @@ fn delete(
     if !yes {
         info(project_id_or_name, resource_id, false, config, false)?;
 
-        if !confirm_deletion("resource", None) {
+        if !confirm_action("resource", None) {
             return Ok(());
         }
     }

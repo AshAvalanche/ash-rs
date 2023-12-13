@@ -2,6 +2,7 @@
 // Copyright (c) 2023, E36 Knots
 
 mod auth;
+pub(crate) mod blueprint;
 mod operation;
 mod project;
 mod region;
@@ -24,6 +25,7 @@ pub(crate) struct ConsoleCommand {
 #[derive(Subcommand)]
 enum ConsoleSubcommands {
     Auth(auth::AuthCommand),
+    Blueprint(blueprint::BlueprintCommand),
     Operation(operation::OperationCommand),
     Project(project::ProjectCommand),
     Region(region::RegionCommand),
@@ -58,6 +60,7 @@ pub(crate) fn parse(
 ) -> Result<(), CliError> {
     match console.command {
         ConsoleSubcommands::Auth(auth) => auth::parse(auth, config, json),
+        ConsoleSubcommands::Blueprint(blueprint) => blueprint::parse(blueprint, config),
         ConsoleSubcommands::Operation(operation) => operation::parse(operation, config, json),
         ConsoleSubcommands::Project(project) => project::parse(project, config, json),
         ConsoleSubcommands::Region(region) => region::parse(region, config, json),

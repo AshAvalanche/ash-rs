@@ -4,7 +4,7 @@
 use colored::Colorize;
 use inquire::Confirm;
 
-pub(crate) fn confirm_deletion(entity_type: &str, action: Option<&str>) -> bool {
+pub(crate) fn confirm_action(entity_type: &str, action: Option<&str>) -> bool {
     let action = action.unwrap_or("delete");
 
     let confirmation = Confirm::new(&format!(
@@ -17,11 +17,14 @@ pub(crate) fn confirm_deletion(entity_type: &str, action: Option<&str>) -> bool 
     match confirmation {
         Ok(true) => true,
         Ok(false) => {
-            println!("Aborting deletion.");
+            println!("Aborting {} action.", action.yellow());
             false
         }
         Err(_) => {
-            println!("{}", "Error parsing answer. Aborting deletion.".red());
+            println!(
+                "{}",
+                format!("Error parsing answer. Aborting {} action.", action).red()
+            );
             false
         }
     }
