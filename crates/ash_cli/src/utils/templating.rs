@@ -780,9 +780,8 @@ pub(crate) fn template_secrets_table(
     let mut secrets_table = Table::new();
 
     secrets_table.set_titles(row![
+        "Secret name".bold(),
         "Secret ID".bold(),
-        "Owner ID".bold(),
-        "Name".bold(),
         "Type".bold(),
         "Created at".bold(),
         "Used by".bold(),
@@ -790,14 +789,11 @@ pub(crate) fn template_secrets_table(
 
     for secret in secrets {
         secrets_table.add_row(row![
-            type_colorize(&secret.id.unwrap_or_default()),
-            match extended {
-                true => type_colorize(&secret.owner_id.unwrap_or_default()),
-                false => type_colorize(&truncate_uuid(
-                    &secret.owner_id.unwrap_or_default().to_string()
-                )),
-            },
             type_colorize(&secret.name.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&secret.id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(&secret.id.unwrap_or_default().to_string())),
+            },
             type_colorize(&format!("{:?}", secret.secret_type.unwrap_or_default())),
             match extended {
                 true => type_colorize(&secret.created.unwrap_or_default()),
@@ -824,9 +820,8 @@ pub(crate) fn template_projects_table(
     let mut projects_table = Table::new();
 
     projects_table.set_titles(row![
+        "Project name".bold(),
         "Project ID".bold(),
-        "Owner ID".bold(),
-        "Name".bold(),
         "Network".bold(),
         "Cloud regions".bold(),
         "Created at".bold(),
@@ -847,14 +842,11 @@ pub(crate) fn template_projects_table(
         }
 
         projects_table.add_row(row![
-            type_colorize(&project.id.unwrap_or_default()),
-            match extended {
-                true => type_colorize(&project.owner_id.unwrap_or_default()),
-                false => type_colorize(&truncate_uuid(
-                    &project.owner_id.unwrap_or_default().to_string()
-                )),
-            },
             type_colorize(&project.name.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&project.id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(&project.id.unwrap_or_default().to_string())),
+            },
             type_colorize(&format!("{:?}", project.network.unwrap_or_default())),
             regions_table,
             match extended {

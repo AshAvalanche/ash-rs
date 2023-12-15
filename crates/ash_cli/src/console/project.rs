@@ -42,8 +42,8 @@ enum ProjectSubcommands {
     /// Show Console project information
     #[command(version = version_tx_cmd(false))]
     Info {
-        /// Project ID
-        project_id: String,
+        /// Project ID or name
+        project_id_or_name: String,
         /// Whether to show extended information (e.g. full IDs)
         #[arg(long, short = 'e')]
         extended: bool,
@@ -51,16 +51,16 @@ enum ProjectSubcommands {
     /// Update a Console project
     #[command(version = version_tx_cmd(false))]
     Update {
-        /// Project ID
-        project_id: String,
+        /// Project ID or name
+        project_id_or_name: String,
         /// Project YAML/JSON string or file path ('-' for stdin)
         project: String,
     },
     /// Delete a Console project
     #[command(version = version_tx_cmd(false))]
     Delete {
-        /// Project ID
-        project_id: String,
+        /// Project ID or name
+        project_id_or_name: String,
         /// Assume yes to all prompts
         #[arg(long, short = 'y')]
         yes: bool,
@@ -72,13 +72,13 @@ enum ProjectSubcommands {
     /// This project will be used by default in other commands
     #[command(version = version_tx_cmd(false))]
     Select {
-        /// Project ID
-        project_id: String,
+        /// Project ID or name
+        project_id_or_name: String,
     },
 }
 
-// Get the current project ID
-pub(crate) fn get_current_project_id() -> Result<String, CliError> {
+// Get the current project ID or name
+pub(crate) fn get_current_project_id_or_name() -> Result<String, CliError> {
     let state = CliState::load()?;
 
     if let Some(project_id) = state.current_project {
@@ -137,7 +137,7 @@ fn create(project: &str, config: Option<&str>, json: bool) -> Result<(), CliErro
 
     // Set the new project as the current one
     let mut state = CliState::load()?;
-    state.current_project = Some(response.id.unwrap_or_default().to_string());
+    state.current_project = Some(response.name.clone().unwrap_or_default());
     state.save()?;
 
     let switch_message = format!(
@@ -158,7 +158,7 @@ fn create(project: &str, config: Option<&str>, json: bool) -> Result<(), CliErro
 
 // Get a project information by its ID
 fn info(
-    project_id: &str,
+    project_id_or_name: &str,
     extended: bool,
     config: Option<&str>,
     json: bool,
@@ -167,9 +167,10 @@ fn info(
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
-    let response =
-        task::block_on(async { console::api::get_project_by_id(&api_config, project_id).await })
-            .map_err(|e| CliError::dataerr(format!("Error getting project: {e}")))?;
+    let response = task::block_on(async {
+        console::api::get_project_by_id_or_name(&api_config, project_id_or_name).await
+    })
+    .map_err(|e| CliError::dataerr(format!("Error getting project: {e}")))?;
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -183,7 +184,7 @@ fn info(
 
 // Update a project
 fn update(
-    project_id: &str,
+    project_id_or_name: &str,
     project: &str,
     config: Option<&str>,
     json: bool,
@@ -200,7 +201,12 @@ fn update(
             .map_err(|e| CliError::dataerr(format!("Error parsing project JSON: {e}")))?;
 
     let response = task::block_on(async {
-        console::api::update_project_by_id(&api_config, project_id, update_project_request).await
+        console::api::update_project_by_id_or_name(
+            &api_config,
+            project_id_or_name,
+            update_project_request,
+        )
+        .await
     })
     .map_err(|e| CliError::dataerr(format!("Error updating project: {e}")))?;
 
@@ -219,23 +225,29 @@ fn update(
 }
 
 // Delete a project
-fn delete(project_id: &str, yes: bool, config: Option<&str>, json: bool) -> Result<(), CliError> {
+fn delete(
+    project_id_or_name: &str,
+    yes: bool,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
     // Prompt for confirmation if not using --yes
     if !yes {
-        info(project_id, false, config, false)?;
+        info(project_id_or_name, false, config, false)?;
 
         if !confirm_deletion("project", None) {
             return Ok(());
         }
     }
 
-    let response =
-        task::block_on(async { console::api::delete_project_by_id(&api_config, project_id).await })
-            .map_err(|e| CliError::dataerr(format!("Error deleting project: {e}")))?;
+    let response = task::block_on(async {
+        console::api::delete_project_by_id_or_name(&api_config, project_id_or_name).await
+    })
+    .map_err(|e| CliError::dataerr(format!("Error deleting project: {e}")))?;
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -257,7 +269,7 @@ fn show(config: Option<&str>, json: bool) -> Result<(), CliError> {
 
     if let Some(project_id) = state.current_project {
         let response = task::block_on(async {
-            console::api::get_project_by_id(&api_config, &project_id).await
+            console::api::get_project_by_id_or_name(&api_config, &project_id).await
         });
 
         match response {
@@ -306,17 +318,18 @@ fn show(config: Option<&str>, json: bool) -> Result<(), CliError> {
 }
 
 // Select the current project
-fn select(project_id: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
+fn select(project_id_or_name: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
-    let current_project =
-        task::block_on(async { console::api::get_project_by_id(&api_config, project_id).await })
-            .map_err(|e| CliError::dataerr(format!("Error getting project: {e}")))?;
+    let current_project = task::block_on(async {
+        console::api::get_project_by_id_or_name(&api_config, project_id_or_name).await
+    })
+    .map_err(|e| CliError::dataerr(format!("Error getting project: {e}")))?;
 
     let mut state = CliState::load()?;
-    state.current_project = Some(project_id.to_string());
+    state.current_project = Some(project_id_or_name.to_string());
     state.save()?;
 
     if json {
@@ -354,16 +367,21 @@ pub(crate) fn parse(
     match project.command {
         ProjectSubcommands::List { extended } => list(extended, config, json),
         ProjectSubcommands::Info {
-            project_id,
+            project_id_or_name,
             extended,
-        } => info(&project_id, extended, config, json),
+        } => info(&project_id_or_name, extended, config, json),
         ProjectSubcommands::Create { project } => create(&project, config, json),
         ProjectSubcommands::Update {
-            project_id,
+            project_id_or_name,
             project,
-        } => update(&project_id, &project, config, json),
-        ProjectSubcommands::Delete { project_id, yes } => delete(&project_id, yes, config, json),
+        } => update(&project_id_or_name, &project, config, json),
+        ProjectSubcommands::Delete {
+            project_id_or_name,
+            yes,
+        } => delete(&project_id_or_name, yes, config, json),
         ProjectSubcommands::Show => show(config, json),
-        ProjectSubcommands::Select { project_id } => select(&project_id, config, json),
+        ProjectSubcommands::Select { project_id_or_name } => {
+            select(&project_id_or_name, config, json)
+        }
     }
 }
