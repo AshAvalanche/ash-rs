@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023, E36 Knots
 
-use crate::console::blueprint::Blueprint;
+use crate::console::blueprint::{Blueprint, BlueprintProject};
 use ash_sdk::{
     avalanche::{
         blockchains::AvalancheBlockchain,
@@ -877,9 +877,8 @@ pub(crate) fn template_regions_table(
     let mut regions_table = Table::new();
 
     regions_table.set_titles(row![
-        "Region ID".bold(),
-        "Cloud provider".bold(),
         "Cloud region".bold(),
+        "Region ID".bold(),
         "Cloud creds secret ID".bold(),
         "Created at".bold(),
         "Status".bold()
@@ -887,14 +886,18 @@ pub(crate) fn template_regions_table(
 
     for region in regions {
         regions_table.add_row(row![
-            type_colorize(&region.id.unwrap_or_default()),
-            type_colorize(
-                &serde_json::to_value(region.cloud_provider.unwrap_or_default())
+            type_colorize(&format!(
+                "{}/{}",
+                serde_json::to_value(region.cloud_provider.unwrap_or_default())
                     .unwrap()
                     .as_str()
-                    .unwrap()
-            ),
-            type_colorize(&region.region.unwrap_or_default()),
+                    .unwrap(),
+                region.region.unwrap_or_default()
+            )),
+            match extended {
+                true => type_colorize(&region.id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(&region.id.unwrap_or_default().to_string())),
+            },
             match extended {
                 true => type_colorize(&region.cloud_credentials_secret_id.unwrap_or_default()),
                 false => type_colorize(&truncate_uuid(
@@ -1120,41 +1123,84 @@ pub(crate) fn template_resources_table(
     indent::indent_all_by(indent, resources_table.to_string())
 }
 
+fn template_blueprint_secrets_list(
+    secrets: &Vec<console::api_models::CreateSecretRequest>,
+) -> ColoredString {
+    type_colorize(
+        &secrets
+            .iter()
+            .map(|s| s.name.clone())
+            .collect::<Vec<String>>()
+            .join(", "),
+    )
+}
+
+fn template_blueprint_projects_list(projects: &Vec<BlueprintProject>) -> String {
+    let mut projects_str = String::new();
+    for project in projects.iter() {
+        projects_str.push_str(&format!(
+            "\n- '{}':{}{}{}{}",
+            type_colorize(&project.project.name).bold(),
+            match project.regions.len() {
+                0 => ColoredString::from(""),
+                _ => "\n  Regions: ".to_string().bold(),
+            },
+            type_colorize(
+                &project
+                    .regions
+                    .iter()
+                    .map(|r| format!(
+                        "{}/{}",
+                        serde_json::to_value(r.cloud_provider.unwrap_or_default())
+                            .unwrap()
+                            .as_str()
+                            .unwrap(),
+                        r.region.clone().unwrap_or_default()
+                    ))
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
+            match project.resources.len() {
+                0 => "".to_string(),
+                _ => "\n  Resources: ".to_string(),
+            },
+            type_colorize(
+                &project
+                    .resources
+                    .iter()
+                    .map(|r| r.name.clone())
+                    .collect::<Vec<String>>()
+                    .join(", "),
+            )
+        ));
+    }
+
+    indent::indent_all_by(2, projects_str)
+}
+
 pub(crate) fn template_blueprint_summary(to_create: &Blueprint, to_update: &Blueprint) -> String {
     let mut summary_str = String::new();
 
     summary_str.push_str(&formatdoc!(
         "
         {}
-          {}
-            {} to create: {}
-            {} to update: {}",
+        {}
+          {} to create: {}
+          {} to update: {}
+        {}
+          {} to create:{}
+          {} to update:{}",
         "Blueprint summary".bold(),
         "Secrets".bold(),
         type_colorize(&to_create.secrets.len()),
-        match to_create.secrets.len() {
-            0 => type_colorize(&"[]".to_string()),
-            _ => type_colorize(
-                &to_create
-                    .secrets
-                    .iter()
-                    .map(|s| s.name.clone())
-                    .collect::<Vec<String>>()
-                    .join(", ")
-            ),
-        },
+        template_blueprint_secrets_list(&to_create.secrets),
         type_colorize(&to_update.secrets.len()),
-        match to_update.secrets.len() {
-            0 => type_colorize(&"[]".to_string()),
-            _ => type_colorize(
-                &to_update
-                    .secrets
-                    .iter()
-                    .map(|s| s.name.clone())
-                    .collect::<Vec<String>>()
-                    .join(", ")
-            ),
-        },
+        template_blueprint_secrets_list(&to_update.secrets),
+        "Projects".bold(),
+        type_colorize(&to_create.projects.len()),
+        template_blueprint_projects_list(&to_create.projects),
+        type_colorize(&to_update.projects.len()),
+        template_blueprint_projects_list(&to_update.projects),
     ));
 
     summary_str

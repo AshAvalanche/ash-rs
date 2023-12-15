@@ -110,7 +110,7 @@ fn list(extended: bool, config: Option<&str>, json: bool) -> Result<(), CliError
 }
 
 // Create a new project
-fn create(project: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
+pub(crate) fn create(project: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
     let api_config = create_api_config_with_access_token(&mut console)?;
@@ -183,7 +183,7 @@ fn info(
 }
 
 // Update a project
-fn update(
+pub(crate) fn update(
     project_id_or_name: &str,
     project: &str,
     config: Option<&str>,

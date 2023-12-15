@@ -128,7 +128,7 @@ fn list(
 }
 
 // Add a cloud region to a project
-fn add(
+pub(crate) fn add(
     project_id_or_name: &str,
     region: &str,
     config: Option<&str>,
@@ -140,6 +140,8 @@ fn add(
 
     let region_str = read_file_or_stdin(region)?;
 
+    let spinner = spinner_with_message("Creating cloud region...".to_string());
+
     // Deserialize the region JSON
     let new_region: console::api_models::NewCloudRegion = serde_yaml::from_str(&region_str)
         .map_err(|e| CliError::dataerr(format!("Error parsing cloud region JSON: {e}")))?;
@@ -148,6 +150,8 @@ fn add(
         console::api::add_project_cloud_region(&api_config, project_id_or_name, new_region).await
     })
     .map_err(|e| CliError::dataerr(format!("Error adding cloud region to the project: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -225,6 +229,8 @@ fn remove(
         }
     }
 
+    let spinner = spinner_with_message("Removing cloud region...".to_string());
+
     let response = task::block_on(async {
         console::api::remove_project_cloud_region_by_name(
             &api_config,
@@ -234,6 +240,8 @@ fn remove(
         .await
     })
     .map_err(|e| CliError::dataerr(format!("Error removing cloud region: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));
