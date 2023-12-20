@@ -4,7 +4,9 @@
 // Module that contains the blueprint subcommand parser
 
 use crate::{
-    console::{create_api_config_with_access_token, load_console, project, region, secret},
+    console::{
+        create_api_config_with_access_token, load_console, project, region, resource, secret,
+    },
     utils::{
         error::CliError, file::read_file_or_stdin, prompt::confirm_action, templating::*,
         version_tx_cmd,
@@ -36,7 +38,7 @@ pub(crate) struct BlueprintProject {
     #[serde(default)]
     pub regions: Vec<console::api_models::NewCloudRegion>,
     #[serde(default)]
-    pub resources: Vec<console::api_models::NewResource>,
+    pub resources: Vec<console::api_models::NewAvalancheNodeResource>,
 }
 
 /// Interact with Ash Console entities
@@ -54,6 +56,9 @@ enum BlueprintSubcommands {
     Apply {
         /// Blueprint YAML/JSON string or file path ('-' for stdin)
         blueprint: String,
+        /// Assume yes to all prompts
+        #[arg(long, short = 'y')]
+        yes: bool,
     },
 }
 
@@ -105,6 +110,53 @@ fn add_project_regions(
     Ok(())
 }
 
+// Add or update resources to a project
+fn add_update_project_resources(
+    project_name: &str,
+    resources: Vec<console::api_models::NewAvalancheNodeResource>,
+    config: Option<&str>,
+    api_config: &console::api_config::Configuration,
+) -> Result<(), CliError> {
+    for resource in resources {
+        let response = task::block_on(async {
+            console::api::get_project_resource_by_id_or_name(
+                api_config,
+                project_name,
+                &resource.name,
+            )
+            .await
+        });
+        match response {
+            Ok(_) => {
+                println!(
+                    "Updating resource: {}",
+                    type_colorize(&format!("{}:{}", project_name, resource.name))
+                );
+                resource::update(
+                    project_name,
+                    &resource.name,
+                    &serde_json::to_string(&resource).unwrap(),
+                    config,
+                    false,
+                )?;
+            }
+            Err(_) => {
+                println!(
+                    "Adding resource: {}",
+                    type_colorize(&format!("{}:{}", project_name, resource.name))
+                );
+                resource::create(
+                    project_name,
+                    &serde_json::to_string(&resource).unwrap(),
+                    config,
+                    false,
+                )?;
+            }
+        }
+    }
+    Ok(())
+}
+
 // Create all entities in a blueprint
 fn create_from_blueprint(
     blueprint: Blueprint,
@@ -123,6 +175,7 @@ fn create_from_blueprint(
             false,
         )?;
         add_project_regions(&project.project.name, project.regions, config, api_config)?;
+        add_update_project_resources(&project.project.name, project.resources, config, api_config)?;
     }
     Ok(())
 }
@@ -151,12 +204,13 @@ fn update_from_blueprint(
             false,
         )?;
         add_project_regions(&project.project.name, project.regions, config, api_config)?;
+        add_update_project_resources(&project.project.name, project.resources, config, api_config)?;
     }
     Ok(())
 }
 
 // Apply the blueprint
-fn apply(blueprint: String, config: Option<&str>) -> Result<(), CliError> {
+fn apply(blueprint: String, yes: bool, config: Option<&str>) -> Result<(), CliError> {
     let blueprint_str = read_file_or_stdin(&blueprint)?;
     let apply_blueprint: Blueprint = serde_yaml::from_str(&blueprint_str)
         .map_err(|e| CliError::dataerr(format!("Could not parse blueprint file: {e}")))?;
@@ -202,8 +256,10 @@ fn apply(blueprint: String, config: Option<&str>) -> Result<(), CliError> {
     // Print a summary of the actions to be taken
     println!("{}", template_blueprint_summary(&to_create, &to_update));
     // Ask for confirmation
-    if !confirm_action("blueprint", Some("apply")) {
-        return Ok(());
+    if !yes {
+        if !confirm_action("blueprint", Some("apply")) {
+            return Ok(());
+        }
     }
 
     if to_create != Blueprint::default() {
@@ -236,7 +292,7 @@ pub(crate) fn parse(
     config: Option<&str>,
 ) -> Result<(), CliError> {
     match blueprint_command.command {
-        BlueprintSubcommands::Apply { blueprint } => apply(blueprint, config)?,
+        BlueprintSubcommands::Apply { blueprint, yes } => apply(blueprint, yes, config)?,
     }
     Ok(())
 }

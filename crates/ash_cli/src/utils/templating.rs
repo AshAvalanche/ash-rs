@@ -1078,8 +1078,8 @@ pub(crate) fn template_resources_table(
     let mut resources_table = Table::new();
 
     resources_table.set_titles(row![
+        "Resource name".bold(),
         "Resource ID".bold(),
-        "Name".bold(),
         "Type".bold(),
         "Cloud region ID".bold(),
         "Size".bold(),
@@ -1090,13 +1090,27 @@ pub(crate) fn template_resources_table(
 
     for resource in resources {
         resources_table.add_row(row![
-            type_colorize(&resource.id.unwrap_or_default()),
             type_colorize(&resource.name.clone().unwrap_or_default()),
+            match extended {
+                true => type_colorize(&resource.id.clone().unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(
+                    &resource.id.clone().unwrap_or_default().to_string()
+                )),
+            },
             type_colorize(&format!(
                 "{:?}",
                 resource.resource_type.clone().unwrap_or_default()
             )),
-            type_colorize(&resource.cloud_region_id.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&resource.cloud_region_id.clone().unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(
+                    &resource
+                        .cloud_region_id
+                        .clone()
+                        .unwrap_or_default()
+                        .to_string()
+                )),
+            },
             type_colorize(&format!("{:?}", resource.size.unwrap_or_default())),
             match extended {
                 true => type_colorize(&resource.created.clone().unwrap_or_default()),
@@ -1143,7 +1157,7 @@ fn template_blueprint_projects_list(projects: &Vec<BlueprintProject>) -> String 
             type_colorize(&project.project.name).bold(),
             match project.regions.len() {
                 0 => ColoredString::from(""),
-                _ => "\n  Regions: ".to_string().bold(),
+                _ => "\n    Regions: ".to_string().bold(),
             },
             type_colorize(
                 &project
@@ -1161,8 +1175,8 @@ fn template_blueprint_projects_list(projects: &Vec<BlueprintProject>) -> String 
                     .join(", ")
             ),
             match project.resources.len() {
-                0 => "".to_string(),
-                _ => "\n  Resources: ".to_string(),
+                0 => ColoredString::from(""),
+                _ => "\n    Resources: ".to_string().bold(),
             },
             type_colorize(
                 &project

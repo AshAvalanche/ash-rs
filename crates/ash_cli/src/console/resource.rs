@@ -56,8 +56,8 @@ enum ResourceSubcommands {
     /// Show information about a resource of the Console project
     #[command(version = version_tx_cmd(false))]
     Info {
-        /// Resource ID
-        resource_id: String,
+        /// Resource ID or name
+        resource_id_or_name: String,
         /// Whether to show extended information (e.g. full IDs)
         #[arg(long, short = 'e')]
         extended: bool,
@@ -65,8 +65,8 @@ enum ResourceSubcommands {
     /// Update a resource of the Console project
     #[command(version = version_tx_cmd(false))]
     Update {
-        /// Resource ID
-        resource_id: String,
+        /// Resource ID or name
+        resource_id_or_name: String,
         /// Resource YAML/JSON string or file path ('-' for stdin)
         /// e.g.: '{name: my-node, resourceType: avalancheNode, cloudRegionId: region-id, ...}'
         resource: String,
@@ -74,8 +74,8 @@ enum ResourceSubcommands {
     /// Delete a resource from the Console project
     #[command(version = version_tx_cmd(false))]
     Delete {
-        /// Resource ID
-        resource_id: String,
+        /// Resource ID or name
+        resource_id_or_name: String,
         /// Assume yes to all prompts
         #[arg(long, short = 'y')]
         yes: bool,
@@ -83,8 +83,8 @@ enum ResourceSubcommands {
     /// Restart a resource of the Console project
     #[command(version = version_tx_cmd(false))]
     Restart {
-        /// Resource ID
-        resource_id: String,
+        /// Resource ID or name
+        resource_id_or_name: String,
         /// Assume yes to all prompts
         #[arg(long, short = 'y')]
         yes: bool,
@@ -122,7 +122,7 @@ fn list(
 }
 
 // Create a resource in a project
-fn create(
+pub(crate) fn create(
     project_id_or_name: &str,
     resource: &str,
     config: Option<&str>,
@@ -134,6 +134,8 @@ fn create(
 
     let resource_str = read_file_or_stdin(resource)?;
 
+    let spinner = spinner_with_message("Creating resource...".to_string());
+
     // Deserialize the resource JSON
     // TODO: Change to CreateResourceRequest when another resource type is added
     let new_resource: console::api_models::NewAvalancheNodeResource =
@@ -144,6 +146,8 @@ fn create(
         console::api::create_project_resource(&api_config, project_id_or_name, new_resource).await
     })
     .map_err(|e| CliError::dataerr(format!("Error creating resource in the project: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -166,7 +170,7 @@ fn create(
 // Get a project resource information by its ID
 fn info(
     project_id_or_name: &str,
-    resource_id: &str,
+    resource_id_or_name: &str,
     extended: bool,
     config: Option<&str>,
     json: bool,
@@ -176,7 +180,12 @@ fn info(
     let api_config = create_api_config_with_access_token(&mut console)?;
 
     let response = task::block_on(async {
-        console::api::get_project_resource_by_id(&api_config, project_id_or_name, resource_id).await
+        console::api::get_project_resource_by_id_or_name(
+            &api_config,
+            project_id_or_name,
+            resource_id_or_name,
+        )
+        .await
     })
     .map_err(|e| CliError::dataerr(format!("Error getting resource: {e}")))?;
 
@@ -187,7 +196,7 @@ fn info(
 
     println!(
         "Resource '{}' of project '{}':\n{}",
-        type_colorize(&resource_id),
+        type_colorize(&resource_id_or_name),
         type_colorize(&project_id_or_name),
         template_resources_table(vec![response], extended, 0)
     );
@@ -196,9 +205,9 @@ fn info(
 }
 
 // Update a resource
-fn update(
+pub(crate) fn update(
     project_id_or_name: &str,
-    resource_id: &str,
+    resource_id_or_name: &str,
     resource: &str,
     config: Option<&str>,
     json: bool,
@@ -209,6 +218,8 @@ fn update(
 
     let resource_str = read_file_or_stdin(resource)?;
 
+    let spinner = spinner_with_message("Updating resource...".to_string());
+
     // Deserialize the resource JSON
     // TODO: Change to UpdateResourceByIdRequest when another resource type is added
     let update_resource_request: console::api_models::UpdateAvalancheNodeResource =
@@ -216,15 +227,17 @@ fn update(
             .map_err(|e| CliError::dataerr(format!("Error parsing resource JSON: {e}")))?;
 
     let response = task::block_on(async {
-        console::api::update_project_resource_by_id(
+        console::api::update_project_resource_by_id_or_name(
             &api_config,
             project_id_or_name,
-            resource_id,
+            resource_id_or_name,
             update_resource_request,
         )
         .await
     })
     .map_err(|e| CliError::dataerr(format!("Error updating resource: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -243,7 +256,7 @@ fn update(
 // Delete a resource from a project
 fn delete(
     project_id_or_name: &str,
-    resource_id: &str,
+    resource_id_or_name: &str,
     yes: bool,
     config: Option<&str>,
     json: bool,
@@ -254,18 +267,32 @@ fn delete(
 
     // Prompt for confirmation if not using --yes
     if !yes {
-        info(project_id_or_name, resource_id, false, config, false)?;
+        info(
+            project_id_or_name,
+            resource_id_or_name,
+            false,
+            config,
+            false,
+        )?;
 
         if !confirm_action("resource", None) {
             return Ok(());
         }
     }
 
+    let spinner = spinner_with_message("Deleting resource...".to_string());
+
     let response = task::block_on(async {
-        console::api::delete_project_resource_by_id(&api_config, project_id_or_name, resource_id)
-            .await
+        console::api::delete_project_resource_by_id_or_name(
+            &api_config,
+            project_id_or_name,
+            resource_id_or_name,
+        )
+        .await
     })
     .map_err(|e| CliError::dataerr(format!("Error removing resource: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -280,7 +307,7 @@ fn delete(
 // Restart a resource
 fn restart(
     project_id_or_name: &str,
-    resource_id: &str,
+    resource_id_or_name: &str,
     yes: bool,
     config: Option<&str>,
     json: bool,
@@ -291,18 +318,32 @@ fn restart(
 
     // Prompt for confirmation if not using --yes
     if !yes {
-        info(project_id_or_name, resource_id, false, config, false)?;
+        info(
+            project_id_or_name,
+            resource_id_or_name,
+            false,
+            config,
+            false,
+        )?;
 
         if !confirm_restart("resource") {
             return Ok(());
         }
     }
 
+    let spinner = spinner_with_message("Restarting resource...".to_string());
+
     let response = task::block_on(async {
-        console::api::restart_project_resource_by_id(&api_config, project_id_or_name, resource_id)
-            .await
+        console::api::restart_project_resource_by_id_or_name(
+            &api_config,
+            project_id_or_name,
+            resource_id_or_name,
+        )
+        .await
     })
     .map_err(|e| CliError::dataerr(format!("Error restarting resource: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -337,18 +378,32 @@ pub(crate) fn parse(
             create(&project_id_or_name, &resource, config, json)
         }
         ResourceSubcommands::Info {
-            resource_id,
+            resource_id_or_name,
             extended,
-        } => info(&project_id_or_name, &resource_id, extended, config, json),
+        } => info(
+            &project_id_or_name,
+            &resource_id_or_name,
+            extended,
+            config,
+            json,
+        ),
         ResourceSubcommands::Update {
-            resource_id,
+            resource_id_or_name,
             resource,
-        } => update(&project_id_or_name, &resource_id, &resource, config, json),
-        ResourceSubcommands::Delete { resource_id, yes } => {
-            delete(&project_id_or_name, &resource_id, yes, config, json)
-        }
-        ResourceSubcommands::Restart { resource_id, yes } => {
-            restart(&project_id_or_name, &resource_id, yes, config, json)
-        }
+        } => update(
+            &project_id_or_name,
+            &resource_id_or_name,
+            &resource,
+            config,
+            json,
+        ),
+        ResourceSubcommands::Delete {
+            resource_id_or_name,
+            yes,
+        } => delete(&project_id_or_name, &resource_id_or_name, yes, config, json),
+        ResourceSubcommands::Restart {
+            resource_id_or_name,
+            yes,
+        } => restart(&project_id_or_name, &resource_id_or_name, yes, config, json),
     }
 }

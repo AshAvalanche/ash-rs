@@ -17,3 +17,12 @@ projects:
       - cloudProvider: aws
         region: us-east-1
         cloudCredentialsSecretId: aws-credentials
+    resources:
+      - name: local-node-01
+        resourceType: avalancheNode
+        cloudRegionId: aws/us-east-1
+        nodeIdSecretId: local-node-id-01
+        size: small
+        nodeConfig:
+          avalancheNodeConfig:
+            avalanchego_version: 1.10.12
