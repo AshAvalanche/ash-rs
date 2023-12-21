@@ -15,7 +15,7 @@ categories.workspace = true
 keywords.workspace = true
 
 [dependencies]
-ash_sdk = { path = "../ash_sdk", version = "0.4.0-alpha.4" }
+ash_sdk = { path = "../ash_sdk", version = "0.4.0-alpha.5" }
 clap = { version = "4.0.32", features = ["derive", "env", "cargo", "string"] }
 colored = "2.0.0"
 exitcode = "1.1.2"
@@ -37,6 +37,7 @@ inquire = "0.6.2"
 shellexpand = "3.1.0"
 serde_yaml = "0.9.27"
 atty = "0.2.14"
+indicatif = "0.17.7"
 
 [[bin]]
 name = "ash"

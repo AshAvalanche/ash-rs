@@ -5,7 +5,7 @@
 
 use crate::{
     console::{create_api_config_with_access_token, load_console},
-    utils::{error::CliError, file::*, prompt::confirm_deletion, templating::*, version_tx_cmd},
+    utils::{error::CliError, file::*, prompt::confirm_action, templating::*, version_tx_cmd},
 };
 use ash_sdk::console;
 use async_std::task;
@@ -40,8 +40,8 @@ enum SecretSubcommands {
     /// Show Console secret information
     #[command(version = version_tx_cmd(false))]
     Info {
-        /// Secret ID
-        secret_id: String,
+        /// Secret ID or name
+        secret_id_or_name: String,
         /// Whether to show extended information (e.g. full IDs)
         #[arg(long, short = 'e')]
         extended: bool,
@@ -49,16 +49,16 @@ enum SecretSubcommands {
     /// Update a Console secret
     #[command(version = version_tx_cmd(false))]
     Update {
-        /// Secret ID
-        secret_id: String,
+        /// Secret ID or name
+        secret_id_or_name: String,
         /// Secret YAML/JSON string or file path ('-' for stdin)
         secret: String,
     },
     /// Delete a Console secret
     #[command(version = version_tx_cmd(false))]
     Delete {
-        /// Secret ID
-        secret_id: String,
+        /// Secret ID or name
+        secret_id_or_name: String,
         /// Assume yes to all prompts
         #[arg(long, short = 'y')]
         yes: bool,
@@ -163,12 +163,14 @@ fn list(extended: bool, config: Option<&str>, json: bool) -> Result<(), CliError
 
 // Create a new secret
 #[allow(clippy::single_match)]
-fn create(secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
+pub(crate) fn create(secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
     let secret_str = read_file_or_stdin(secret)?;
+
+    let spinner = spinner_with_message("Creating secret...".to_string());
 
     // Deserialize the secret JSON
     let mut create_secret_request: console::api_models::CreateSecretRequest =
@@ -193,6 +195,8 @@ fn create(secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError
     })
     .map_err(|e| CliError::dataerr(format!("Error creating secret: {e}")))?;
 
+    spinner.finish_and_clear();
+
     if json {
         println!("{}", serde_json::json!(&response));
         return Ok(());
@@ -208,14 +212,20 @@ fn create(secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError
 }
 
 // Get a secret information by its ID
-fn info(extended: bool, config: Option<&str>, secret_id: &str, json: bool) -> Result<(), CliError> {
+fn info(
+    extended: bool,
+    config: Option<&str>,
+    secret_id_or_name: &str,
+    json: bool,
+) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
-    let response =
-        task::block_on(async { console::api::get_secret_by_id(&api_config, secret_id).await })
-            .map_err(|e| CliError::dataerr(format!("Error getting secret: {e}")))?;
+    let response = task::block_on(async {
+        console::api::get_secret_by_id_or_name(&api_config, secret_id_or_name).await
+    })
+    .map_err(|e| CliError::dataerr(format!("Error getting secret: {e}")))?;
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -231,22 +241,36 @@ fn info(extended: bool, config: Option<&str>, secret_id: &str, json: bool) -> Re
 }
 
 // Update a secret
-fn update(secret_id: &str, secret: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
+pub(crate) fn update(
+    secret_id_or_name: &str,
+    secret: &str,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
     let secret_str = read_file_or_stdin(secret)?;
 
+    let spinner = spinner_with_message("Updating secret...".to_string());
+
     // Deserialize the secret JSON
-    let update_secret_request: console::api_models::UpdateSecretByIdRequest =
+    let update_secret_request: console::api_models::UpdateSecretByIdOrNameRequest =
         serde_yaml::from_str(&secret_str)
             .map_err(|e| CliError::dataerr(format!("Error parsing secret JSON: {e}")))?;
 
     let response = task::block_on(async {
-        console::api::update_secret_by_id(&api_config, secret_id, update_secret_request).await
+        console::api::update_secret_by_id_or_name(
+            &api_config,
+            secret_id_or_name,
+            update_secret_request,
+        )
+        .await
     })
     .map_err(|e| CliError::dataerr(format!("Error updating secret: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -263,23 +287,29 @@ fn update(secret_id: &str, secret: &str, config: Option<&str>, json: bool) -> Re
 }
 
 // Delete a secret
-fn delete(secret_id: &str, yes: bool, config: Option<&str>, json: bool) -> Result<(), CliError> {
+fn delete(
+    secret_id_or_name: &str,
+    yes: bool,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
     // Prompt for confirmation if not using --yes
     if !yes {
-        info(false, config, secret_id, false)?;
+        info(false, config, secret_id_or_name, false)?;
 
-        if !confirm_deletion("secret", None) {
+        if !confirm_action("secret", None) {
             return Ok(());
         }
     }
 
-    let response =
-        task::block_on(async { console::api::delete_secret_by_id(&api_config, secret_id).await })
-            .map_err(|e| CliError::dataerr(format!("Error deleting secret: {e}")))?;
+    let response = task::block_on(async {
+        console::api::delete_secret_by_id_or_name(&api_config, secret_id_or_name).await
+    })
+    .map_err(|e| CliError::dataerr(format!("Error deleting secret: {e}")))?;
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -300,13 +330,17 @@ pub(crate) fn parse(
     match secret.command {
         SecretSubcommands::List { extended } => list(extended, config, json),
         SecretSubcommands::Info {
-            secret_id,
+            secret_id_or_name,
             extended,
-        } => info(extended, config, &secret_id, json),
+        } => info(extended, config, &secret_id_or_name, json),
         SecretSubcommands::Create { secret } => create(&secret, config, json),
-        SecretSubcommands::Update { secret_id, secret } => {
-            update(&secret_id, &secret, config, json)
-        }
-        SecretSubcommands::Delete { secret_id, yes } => delete(&secret_id, yes, config, json),
+        SecretSubcommands::Update {
+            secret_id_or_name,
+            secret,
+        } => update(&secret_id_or_name, &secret, config, json),
+        SecretSubcommands::Delete {
+            secret_id_or_name,
+            yes,
+        } => delete(&secret_id_or_name, yes, config, json),
     }
 }

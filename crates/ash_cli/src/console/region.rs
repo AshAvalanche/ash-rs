@@ -4,9 +4,9 @@
 // Module that contains the region subcommand parser
 
 use crate::{
-    console::project::get_current_project_id,
+    console::project::get_current_project_id_or_name,
     console::{create_api_config_with_access_token, load_console},
-    utils::{error::CliError, file::*, prompt::confirm_deletion, templating::*, version_tx_cmd},
+    utils::{error::CliError, file::*, prompt::confirm_action, templating::*, version_tx_cmd},
 };
 use ash_sdk::console;
 use async_std::task;
@@ -19,7 +19,7 @@ use colored::Colorize;
 pub(crate) struct RegionCommand {
     #[command(subcommand)]
     command: RegionSubcommands,
-    /// Console project ID.
+    /// Console project ID or name
     /// Defaults to the current project
     #[arg(
         long,
@@ -28,7 +28,7 @@ pub(crate) struct RegionCommand {
         global = true,
         env = "ASH_CONSOLE_PROJECT"
     )]
-    project: String,
+    project_id_or_name: String,
 }
 
 #[derive(Subcommand)]
@@ -99,7 +99,7 @@ fn available(config: Option<&str>, json: bool) -> Result<(), CliError> {
 
 // List cloud regions of a project
 fn list(
-    project_id: &str,
+    project_id_or_name: &str,
     extended: bool,
     config: Option<&str>,
     json: bool,
@@ -109,7 +109,7 @@ fn list(
     let api_config = create_api_config_with_access_token(&mut console)?;
 
     let response = task::block_on(async {
-        console::api::get_all_project_cloud_regions(&api_config, project_id).await
+        console::api::get_all_project_cloud_regions(&api_config, project_id_or_name).await
     })
     .map_err(|e| CliError::dataerr(format!("Error getting project cloud regions: {e}")))?;
 
@@ -120,7 +120,7 @@ fn list(
 
     println!(
         "Cloud regions of project '{}':\n{}",
-        type_colorize(&project_id),
+        type_colorize(&project_id_or_name),
         template_regions_table(response, extended, 0)
     );
 
@@ -128,21 +128,30 @@ fn list(
 }
 
 // Add a cloud region to a project
-fn add(project_id: &str, region: &str, config: Option<&str>, json: bool) -> Result<(), CliError> {
+pub(crate) fn add(
+    project_id_or_name: &str,
+    region: &str,
+    config: Option<&str>,
+    json: bool,
+) -> Result<(), CliError> {
     let mut console = load_console(config)?;
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
     let region_str = read_file_or_stdin(region)?;
 
+    let spinner = spinner_with_message("Creating cloud region...".to_string());
+
     // Deserialize the region JSON
     let new_region: console::api_models::NewCloudRegion = serde_yaml::from_str(&region_str)
         .map_err(|e| CliError::dataerr(format!("Error parsing cloud region JSON: {e}")))?;
 
     let response = task::block_on(async {
-        console::api::add_project_cloud_region(&api_config, project_id, new_region).await
+        console::api::add_project_cloud_region(&api_config, project_id_or_name, new_region).await
     })
     .map_err(|e| CliError::dataerr(format!("Error adding cloud region to the project: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -153,7 +162,7 @@ fn add(project_id: &str, region: &str, config: Option<&str>, json: bool) -> Resu
         "{}\n{}",
         format!(
             "Cloud region successfully added to project '{}'!",
-            project_id
+            project_id_or_name
         )
         .green(),
         template_regions_table(vec![response], false, 0)
@@ -164,7 +173,7 @@ fn add(project_id: &str, region: &str, config: Option<&str>, json: bool) -> Resu
 
 // Get a project cloud region information by its ID
 fn info(
-    project_id: &str,
+    project_id_or_name: &str,
     region_name: &str,
     extended: bool,
     config: Option<&str>,
@@ -177,7 +186,7 @@ fn info(
     let response = task::block_on(async {
         console::api::get_project_cloud_region_by_name(
             &api_config,
-            project_id,
+            project_id_or_name,
             &region_name.replace('/', "_"),
         )
         .await
@@ -192,7 +201,7 @@ fn info(
     println!(
         "Region '{}' of project '{}':\n{}",
         type_colorize(&region_name),
-        type_colorize(&project_id),
+        type_colorize(&project_id_or_name),
         template_regions_table(vec![response], extended, 0)
     );
 
@@ -201,7 +210,7 @@ fn info(
 
 // Remove a cloud region from a project
 fn remove(
-    project_id: &str,
+    project_id_or_name: &str,
     region_name: &str,
     yes: bool,
     config: Option<&str>,
@@ -213,22 +222,26 @@ fn remove(
 
     // Prompt for confirmation if not using --yes
     if !yes {
-        info(project_id, region_name, false, config, false)?;
+        info(project_id_or_name, region_name, false, config, false)?;
 
-        if !confirm_deletion("region", Some("remove")) {
+        if !confirm_action("region", Some("remove")) {
             return Ok(());
         }
     }
 
+    let spinner = spinner_with_message("Removing cloud region...".to_string());
+
     let response = task::block_on(async {
         console::api::remove_project_cloud_region_by_name(
             &api_config,
-            project_id,
+            project_id_or_name,
             &region_name.replace('/', "_"),
         )
         .await
     })
     .map_err(|e| CliError::dataerr(format!("Error removing cloud region: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -246,28 +259,28 @@ pub(crate) fn parse(
     config: Option<&str>,
     json: bool,
 ) -> Result<(), CliError> {
-    let mut project_id = region.project;
+    let mut project_id_or_name = region.project_id_or_name;
 
     // Get the current project ID for the subcommands that require it
     match region.command {
         RegionSubcommands::Available {} => (),
         _ => {
-            if project_id == "current" {
-                project_id = get_current_project_id()?;
+            if project_id_or_name == "current" {
+                project_id_or_name = get_current_project_id_or_name()?;
             }
         }
     }
 
     match region.command {
         RegionSubcommands::Available => available(config, json),
-        RegionSubcommands::List { extended } => list(&project_id, extended, config, json),
-        RegionSubcommands::Add { region } => add(&project_id, &region, config, json),
+        RegionSubcommands::List { extended } => list(&project_id_or_name, extended, config, json),
+        RegionSubcommands::Add { region } => add(&project_id_or_name, &region, config, json),
         RegionSubcommands::Info {
             region_name,
             extended,
-        } => info(&project_id, &region_name, extended, config, json),
+        } => info(&project_id_or_name, &region_name, extended, config, json),
         RegionSubcommands::Remove { region_name, yes } => {
-            remove(&project_id, &region_name, yes, config, json)
+            remove(&project_id_or_name, &region_name, yes, config, json)
         }
     }
 }

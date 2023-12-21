@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023, E36 Knots
 
+use crate::console::blueprint::{Blueprint, BlueprintProject};
 use ash_sdk::{
     avalanche::{
         blockchains::AvalancheBlockchain,
@@ -18,9 +19,11 @@ use ash_sdk::{
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::{ColoredString, Colorize};
+use indicatif::ProgressBar;
 use indoc::formatdoc;
 use prettytable::{format, Table};
 use std::collections::HashMap;
+use std::time::Duration;
 
 // Module that contains templating functions for info strings
 
@@ -57,6 +60,13 @@ pub(crate) fn human_readable_timestamp(timestamp: u64) -> String {
 
 pub(crate) fn template_horizontal_rule(character: char, length: usize) -> String {
     format!("{character}").repeat(length)
+}
+
+pub(crate) fn spinner_with_message(message: String) -> ProgressBar {
+    let spinner = ProgressBar::new_spinner();
+    spinner.set_message(message);
+    spinner.enable_steady_tick(Duration::from_millis(100));
+    spinner
 }
 
 pub(crate) fn template_blockchain_info(
@@ -780,9 +790,8 @@ pub(crate) fn template_secrets_table(
     let mut secrets_table = Table::new();
 
     secrets_table.set_titles(row![
+        "Secret name".bold(),
         "Secret ID".bold(),
-        "Owner ID".bold(),
-        "Name".bold(),
         "Type".bold(),
         "Created at".bold(),
         "Used by".bold(),
@@ -790,14 +799,11 @@ pub(crate) fn template_secrets_table(
 
     for secret in secrets {
         secrets_table.add_row(row![
-            type_colorize(&secret.id.unwrap_or_default()),
-            match extended {
-                true => type_colorize(&secret.owner_id.unwrap_or_default()),
-                false => type_colorize(&truncate_uuid(
-                    &secret.owner_id.unwrap_or_default().to_string()
-                )),
-            },
             type_colorize(&secret.name.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&secret.id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(&secret.id.unwrap_or_default().to_string())),
+            },
             type_colorize(&format!("{:?}", secret.secret_type.unwrap_or_default())),
             match extended {
                 true => type_colorize(&secret.created.unwrap_or_default()),
@@ -824,9 +830,8 @@ pub(crate) fn template_projects_table(
     let mut projects_table = Table::new();
 
     projects_table.set_titles(row![
+        "Project name".bold(),
         "Project ID".bold(),
-        "Owner ID".bold(),
-        "Name".bold(),
         "Network".bold(),
         "Cloud regions".bold(),
         "Created at".bold(),
@@ -847,14 +852,11 @@ pub(crate) fn template_projects_table(
         }
 
         projects_table.add_row(row![
-            type_colorize(&project.id.unwrap_or_default()),
-            match extended {
-                true => type_colorize(&project.owner_id.unwrap_or_default()),
-                false => type_colorize(&truncate_uuid(
-                    &project.owner_id.unwrap_or_default().to_string()
-                )),
-            },
             type_colorize(&project.name.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&project.id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(&project.id.unwrap_or_default().to_string())),
+            },
             type_colorize(&format!("{:?}", project.network.unwrap_or_default())),
             regions_table,
             match extended {
@@ -875,9 +877,8 @@ pub(crate) fn template_regions_table(
     let mut regions_table = Table::new();
 
     regions_table.set_titles(row![
-        "Region ID".bold(),
-        "Cloud provider".bold(),
         "Cloud region".bold(),
+        "Region ID".bold(),
         "Cloud creds secret ID".bold(),
         "Created at".bold(),
         "Status".bold()
@@ -885,14 +886,18 @@ pub(crate) fn template_regions_table(
 
     for region in regions {
         regions_table.add_row(row![
-            type_colorize(&region.id.unwrap_or_default()),
-            type_colorize(
-                &serde_json::to_value(region.cloud_provider.unwrap_or_default())
+            type_colorize(&format!(
+                "{}/{}",
+                serde_json::to_value(region.cloud_provider.unwrap_or_default())
                     .unwrap()
                     .as_str()
-                    .unwrap()
-            ),
-            type_colorize(&region.region.unwrap_or_default()),
+                    .unwrap(),
+                region.region.unwrap_or_default()
+            )),
+            match extended {
+                true => type_colorize(&region.id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(&region.id.unwrap_or_default().to_string())),
+            },
             match extended {
                 true => type_colorize(&region.cloud_credentials_secret_id.unwrap_or_default()),
                 false => type_colorize(&truncate_uuid(
@@ -1073,8 +1078,8 @@ pub(crate) fn template_resources_table(
     let mut resources_table = Table::new();
 
     resources_table.set_titles(row![
+        "Resource name".bold(),
         "Resource ID".bold(),
-        "Name".bold(),
         "Type".bold(),
         "Cloud region ID".bold(),
         "Size".bold(),
@@ -1085,13 +1090,27 @@ pub(crate) fn template_resources_table(
 
     for resource in resources {
         resources_table.add_row(row![
-            type_colorize(&resource.id.unwrap_or_default()),
             type_colorize(&resource.name.clone().unwrap_or_default()),
+            match extended {
+                true => type_colorize(&resource.id.clone().unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(
+                    &resource.id.clone().unwrap_or_default().to_string()
+                )),
+            },
             type_colorize(&format!(
                 "{:?}",
                 resource.resource_type.clone().unwrap_or_default()
             )),
-            type_colorize(&resource.cloud_region_id.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&resource.cloud_region_id.clone().unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(
+                    &resource
+                        .cloud_region_id
+                        .clone()
+                        .unwrap_or_default()
+                        .to_string()
+                )),
+            },
             type_colorize(&format!("{:?}", resource.size.unwrap_or_default())),
             match extended {
                 true => type_colorize(&resource.created.clone().unwrap_or_default()),
@@ -1116,4 +1135,87 @@ pub(crate) fn template_resources_table(
     }
 
     indent::indent_all_by(indent, resources_table.to_string())
+}
+
+fn template_blueprint_secrets_list(
+    secrets: &Vec<console::api_models::CreateSecretRequest>,
+) -> ColoredString {
+    type_colorize(
+        &secrets
+            .iter()
+            .map(|s| s.name.clone())
+            .collect::<Vec<String>>()
+            .join(", "),
+    )
+}
+
+fn template_blueprint_projects_list(projects: &Vec<BlueprintProject>) -> String {
+    let mut projects_str = String::new();
+    for project in projects.iter() {
+        projects_str.push_str(&format!(
+            "\n- '{}':{}{}{}{}",
+            type_colorize(&project.project.name).bold(),
+            match project.regions.len() {
+                0 => ColoredString::from(""),
+                _ => "\n    Regions: ".to_string().bold(),
+            },
+            type_colorize(
+                &project
+                    .regions
+                    .iter()
+                    .map(|r| format!(
+                        "{}/{}",
+                        serde_json::to_value(r.cloud_provider.unwrap_or_default())
+                            .unwrap()
+                            .as_str()
+                            .unwrap(),
+                        r.region.clone().unwrap_or_default()
+                    ))
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
+            match project.resources.len() {
+                0 => ColoredString::from(""),
+                _ => "\n    Resources: ".to_string().bold(),
+            },
+            type_colorize(
+                &project
+                    .resources
+                    .iter()
+                    .map(|r| r.name.clone())
+                    .collect::<Vec<String>>()
+                    .join(", "),
+            )
+        ));
+    }
+
+    indent::indent_all_by(2, projects_str)
+}
+
+pub(crate) fn template_blueprint_summary(to_create: &Blueprint, to_update: &Blueprint) -> String {
+    let mut summary_str = String::new();
+
+    summary_str.push_str(&formatdoc!(
+        "
+        {}
+        {}
+          {} to create: {}
+          {} to update: {}
+        {}
+          {} to create:{}
+          {} to update:{}",
+        "Blueprint summary".bold(),
+        "Secrets".bold(),
+        type_colorize(&to_create.secrets.len()),
+        template_blueprint_secrets_list(&to_create.secrets),
+        type_colorize(&to_update.secrets.len()),
+        template_blueprint_secrets_list(&to_update.secrets),
+        "Projects".bold(),
+        type_colorize(&to_create.projects.len()),
+        template_blueprint_projects_list(&to_create.projects),
+        type_colorize(&to_update.projects.len()),
+        template_blueprint_projects_list(&to_update.projects),
+    ));
+
+    summary_str
 }
