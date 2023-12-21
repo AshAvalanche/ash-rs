@@ -1,3 +1,3 @@
 #!/bin/bash
 
-envsubst <./blueprint.yaml | cargo run -- console blueprint apply -
+cargo run -- console blueprint apply ./blueprint.yaml

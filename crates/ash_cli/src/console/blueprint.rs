@@ -212,7 +212,10 @@ fn update_from_blueprint(
 // Apply the blueprint
 fn apply(blueprint: String, yes: bool, config: Option<&str>) -> Result<(), CliError> {
     let blueprint_str = read_file_or_stdin(&blueprint)?;
-    let apply_blueprint: Blueprint = serde_yaml::from_str(&blueprint_str)
+    let blueprint_envsubst = shellexpand::env(&blueprint_str)
+        .map_err(|e| CliError::dataerr(format!("Could not parse blueprint file: {e}")))?
+        .to_string();
+    let apply_blueprint: Blueprint = serde_yaml::from_str(&blueprint_envsubst)
         .map_err(|e| CliError::dataerr(format!("Could not parse blueprint file: {e}")))?;
 
     let mut console = load_console(config)?;
