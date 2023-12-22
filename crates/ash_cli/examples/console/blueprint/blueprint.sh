@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cargo run -- console blueprint apply ./blueprint.yaml
+cargo run -- console blueprint apply ./blueprint.yml

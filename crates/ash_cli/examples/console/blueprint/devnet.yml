@@ -1,10 +1,5 @@
 ---
 secrets:
-  - name: azure-credentials
-    secretType: azureCredentials
-    subscriptionId: "${AZURE_SUBSCRIPTION_ID}"
-    applicationId: "${AZURE_APP_ID}"
-    applicationPassword: "${AZURE_APP_PASSWORD}"
   - name: local-node-id-01
     secretType: nodeId
     nodeId: NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg
@@ -38,32 +33,38 @@ projects:
         avalancheNodeConfig:
           avalanchego_version: 1.10.17
     regions:
-      - cloudProvider: azure
-        region: francecentral
-        cloudCredentialsSecretId: azure-credentials
+      - cloudProvider: "${CLOUD_PROVIDER}"
+        region: "${CLOUD_REGION}"
+        cloudCredentialsSecretId: "${CLOUD_CREDENTIALS_SECRET}"
     resources:
       - name: local-node-01
         resourceType: avalancheNode
-        cloudRegionId: azure/francecentral
+        cloudRegionId: "${CLOUD_PROVIDER}/${CLOUD_REGION}"
         nodeIdSecretId: local-node-id-01
+        nodeConfig:
+          isBootstrapNode: true
         size: small
       - name: local-node-02
         resourceType: avalancheNode
-        cloudRegionId: azure/francecentral
+        cloudRegionId: "${CLOUD_PROVIDER}/${CLOUD_REGION}"
         nodeIdSecretId: local-node-id-02
         size: small
+        nodeBootstrapResourceId: local-node-01
       - name: local-node-03
         resourceType: avalancheNode
-        cloudRegionId: azure/francecentral
+        cloudRegionId: "${CLOUD_PROVIDER}/${CLOUD_REGION}"
         nodeIdSecretId: local-node-id-03
         size: small
+        nodeBootstrapResourceId: local-node-01
       - name: local-node-04
         resourceType: avalancheNode
-        cloudRegionId: azure/francecentral
+        cloudRegionId: "${CLOUD_PROVIDER}/${CLOUD_REGION}"
         nodeIdSecretId: local-node-id-04
         size: small
+        nodeBootstrapResourceId: local-node-01
       - name: local-node-05
         resourceType: avalancheNode
-        cloudRegionId: azure/francecentral
+        cloudRegionId: "${CLOUD_PROVIDER}/${CLOUD_REGION}"
         nodeIdSecretId: local-node-id-05
         size: small
+        nodeBootstrapResourceId: local-node-01
