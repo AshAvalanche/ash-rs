@@ -306,10 +306,14 @@ fn delete(
         }
     }
 
+    let spinner = spinner_with_message("Deleting secret...".to_string());
+
     let response = task::block_on(async {
         console::api::delete_secret_by_id_or_name(&api_config, secret_id_or_name).await
     })
     .map_err(|e| CliError::dataerr(format!("Error deleting secret: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));

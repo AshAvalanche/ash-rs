@@ -117,6 +117,8 @@ pub(crate) fn create(project: &str, config: Option<&str>, json: bool) -> Result<
 
     let project_str = read_file_or_stdin(project)?;
 
+    let spinner = spinner_with_message("Creating project...".to_string());
+
     // Deserialize the project JSON
     let new_project: console::api_models::NewProject = serde_yaml::from_str(&project_str)
         .map_err(|e| CliError::dataerr(format!("Error parsing project JSON: {e}")))?;
@@ -124,6 +126,8 @@ pub(crate) fn create(project: &str, config: Option<&str>, json: bool) -> Result<
     let response =
         task::block_on(async { console::api::create_project(&api_config, new_project).await })
             .map_err(|e| CliError::dataerr(format!("Error creating project: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -195,6 +199,8 @@ pub(crate) fn update(
 
     let project_str = read_file_or_stdin(project)?;
 
+    let spinner = spinner_with_message("Updating project...".to_string());
+
     // Deserialize the project JSON
     let update_project_request: console::api_models::UpdateProject =
         serde_yaml::from_str(&project_str)
@@ -209,6 +215,8 @@ pub(crate) fn update(
         .await
     })
     .map_err(|e| CliError::dataerr(format!("Error updating project: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));
@@ -244,10 +252,14 @@ fn delete(
         }
     }
 
+    let spinner = spinner_with_message("Deleting project...".to_string());
+
     let response = task::block_on(async {
         console::api::delete_project_by_id_or_name(&api_config, project_id_or_name).await
     })
     .map_err(|e| CliError::dataerr(format!("Error deleting project: {e}")))?;
+
+    spinner.finish_and_clear();
 
     if json {
         println!("{}", serde_json::json!(&response));
