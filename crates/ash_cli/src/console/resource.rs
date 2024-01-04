@@ -364,13 +364,9 @@ pub(crate) fn parse(
     let mut project_id_or_name = resource.project_id_or_name;
 
     // Get the current project ID for the subcommands that require it
-    match resource.command {
-        _ => {
-            if project_id_or_name == "current" {
-                project_id_or_name = get_current_project_id_or_name()?;
-            }
-        }
-    }
+    if project_id_or_name == "current" {
+        project_id_or_name = get_current_project_id_or_name()?;
+    };
 
     match resource.command {
         ResourceSubcommands::List { extended } => list(&project_id_or_name, extended, config, json),

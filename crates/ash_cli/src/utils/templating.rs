@@ -1092,10 +1092,9 @@ pub(crate) fn template_resources_table(
         resources_table.add_row(row![
             type_colorize(&resource.name.clone().unwrap_or_default()),
             match extended {
-                true => type_colorize(&resource.id.clone().unwrap_or_default()),
-                false => type_colorize(&truncate_uuid(
-                    &resource.id.clone().unwrap_or_default().to_string()
-                )),
+                true => type_colorize(&resource.id.unwrap_or_default()),
+                false =>
+                    type_colorize(&truncate_uuid(&resource.id.unwrap_or_default().to_string())),
             },
             type_colorize(&format!(
                 "{:?}",
@@ -1138,7 +1137,7 @@ pub(crate) fn template_resources_table(
 }
 
 fn template_blueprint_secrets_list(
-    secrets: &Vec<console::api_models::CreateSecretRequest>,
+    secrets: &[console::api_models::CreateSecretRequest],
 ) -> ColoredString {
     type_colorize(
         &secrets
@@ -1149,7 +1148,7 @@ fn template_blueprint_secrets_list(
     )
 }
 
-fn template_blueprint_projects_list(projects: &Vec<BlueprintProject>) -> String {
+fn template_blueprint_projects_list(projects: &[BlueprintProject]) -> String {
     let mut projects_str = String::new();
     for project in projects.iter() {
         projects_str.push_str(&format!(

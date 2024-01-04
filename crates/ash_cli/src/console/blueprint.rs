@@ -82,7 +82,7 @@ fn add_project_regions(
             console::api::get_project_cloud_region_by_name(
                 api_config,
                 project_name,
-                &region_name.replace("/", "_"),
+                &region_name.replace('/', "_"),
             )
             .await
         });
@@ -259,10 +259,8 @@ fn apply(blueprint: String, yes: bool, config: Option<&str>) -> Result<(), CliEr
     // Print a summary of the actions to be taken
     println!("{}", template_blueprint_summary(&to_create, &to_update));
     // Ask for confirmation
-    if !yes {
-        if !confirm_action("blueprint", Some("apply")) {
-            return Ok(());
-        }
+    if !yes && !confirm_action("blueprint", Some("apply")) {
+        return Ok(());
     }
 
     if to_create != Blueprint::default() {
