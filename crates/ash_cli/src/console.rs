@@ -3,6 +3,7 @@
 
 mod auth;
 pub(crate) mod blueprint;
+mod helper;
 mod operation;
 mod project;
 mod region;
@@ -26,6 +27,7 @@ pub(crate) struct ConsoleCommand {
 enum ConsoleSubcommands {
     Auth(auth::AuthCommand),
     Blueprint(blueprint::BlueprintCommand),
+    Helper(helper::HelperCommand),
     Operation(operation::OperationCommand),
     Project(project::ProjectCommand),
     Region(region::RegionCommand),
@@ -61,6 +63,7 @@ pub(crate) fn parse(
     match console.command {
         ConsoleSubcommands::Auth(auth) => auth::parse(auth, config, json),
         ConsoleSubcommands::Blueprint(blueprint) => blueprint::parse(blueprint, config),
+        ConsoleSubcommands::Helper(helper) => helper::parse(helper, config),
         ConsoleSubcommands::Operation(operation) => operation::parse(operation, config, json),
         ConsoleSubcommands::Project(project) => project::parse(project, config, json),
         ConsoleSubcommands::Region(region) => region::parse(region, config, json),

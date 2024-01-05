@@ -4,8 +4,9 @@
 // Module that contains the resource subcommand parser
 
 use crate::{
-    console::project::get_current_project_id_or_name,
-    console::{create_api_config_with_access_token, load_console},
+    console::{
+        create_api_config_with_access_token, load_console, project::get_current_project_id_or_name,
+    },
     utils::{
         error::CliError,
         file::*,
@@ -363,7 +364,7 @@ pub(crate) fn parse(
 ) -> Result<(), CliError> {
     let mut project_id_or_name = resource.project_id_or_name;
 
-    // Get the current project ID for the subcommands that require it
+    // Get the current project ID
     if project_id_or_name == "current" {
         project_id_or_name = get_current_project_id_or_name()?;
     };
