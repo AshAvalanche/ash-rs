@@ -103,20 +103,25 @@ fn list(
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
-    let response = task::block_on(async {
+    let resources_response = task::block_on(async {
         console::api::get_all_project_resources(&api_config, project_id_or_name).await
     })
     .map_err(|e| CliError::dataerr(format!("Error getting project resources: {e}")))?;
 
+    let project_response = task::block_on(async {
+        console::api::get_project_by_id_or_name(&api_config, project_id_or_name).await
+    })
+    .map_err(|e| CliError::dataerr(format!("Error getting project: {e}")))?;
+
     if json {
-        println!("{}", serde_json::json!(&response));
+        println!("{}", serde_json::json!(&resources_response));
         return Ok(());
     }
 
     println!(
         "Resources of project '{}':\n{}",
         type_colorize(&project_id_or_name),
-        template_resources_table(response, extended, 0)
+        template_resources_table(resources_response, project_response, extended, 0)
     );
 
     Ok(())
@@ -143,15 +148,20 @@ pub(crate) fn create(
         serde_yaml::from_str(&resource_str)
             .map_err(|e| CliError::dataerr(format!("Error parsing resource JSON: {e}")))?;
 
-    let response = task::block_on(async {
+    let resource_response = task::block_on(async {
         console::api::create_project_resource(&api_config, project_id_or_name, new_resource).await
     })
     .map_err(|e| CliError::dataerr(format!("Error creating resource in the project: {e}")))?;
 
+    let project_response = task::block_on(async {
+        console::api::get_project_by_id_or_name(&api_config, project_id_or_name).await
+    })
+    .map_err(|e| CliError::dataerr(format!("Error getting project: {e}")))?;
+
     spinner.finish_and_clear();
 
     if json {
-        println!("{}", serde_json::json!(&response));
+        println!("{}", serde_json::json!(&resource_response));
         return Ok(());
     }
 
@@ -162,7 +172,7 @@ pub(crate) fn create(
             project_id_or_name
         )
         .green(),
-        template_resources_table(vec![response], false, 0)
+        template_resources_table(vec![resource_response], project_response, false, 0)
     );
 
     Ok(())
@@ -180,7 +190,7 @@ fn info(
 
     let api_config = create_api_config_with_access_token(&mut console)?;
 
-    let response = task::block_on(async {
+    let resource_response = task::block_on(async {
         console::api::get_project_resource_by_id_or_name(
             &api_config,
             project_id_or_name,
@@ -190,8 +200,13 @@ fn info(
     })
     .map_err(|e| CliError::dataerr(format!("Error getting resource: {e}")))?;
 
+    let project_response = task::block_on(async {
+        console::api::get_project_by_id_or_name(&api_config, project_id_or_name).await
+    })
+    .map_err(|e| CliError::dataerr(format!("Error getting project: {e}")))?;
+
     if json {
-        println!("{}", serde_json::json!(&response));
+        println!("{}", serde_json::json!(&resource_response));
         return Ok(());
     }
 
@@ -199,7 +214,7 @@ fn info(
         "Resource '{}' of project '{}':\n{}",
         type_colorize(&resource_id_or_name),
         type_colorize(&project_id_or_name),
-        template_resources_table(vec![response], extended, 0)
+        template_resources_table(vec![resource_response], project_response, extended, 0)
     );
 
     Ok(())
@@ -227,7 +242,7 @@ pub(crate) fn update(
         serde_yaml::from_str(&resource_str)
             .map_err(|e| CliError::dataerr(format!("Error parsing resource JSON: {e}")))?;
 
-    let response = task::block_on(async {
+    let resource_response = task::block_on(async {
         console::api::update_project_resource_by_id_or_name(
             &api_config,
             project_id_or_name,
@@ -238,17 +253,22 @@ pub(crate) fn update(
     })
     .map_err(|e| CliError::dataerr(format!("Error updating resource: {e}")))?;
 
+    let project_response = task::block_on(async {
+        console::api::get_project_by_id_or_name(&api_config, project_id_or_name).await
+    })
+    .map_err(|e| CliError::dataerr(format!("Error getting project: {e}")))?;
+
     spinner.finish_and_clear();
 
     if json {
-        println!("{}", serde_json::json!(&response));
+        println!("{}", serde_json::json!(&resource_response));
         return Ok(());
     }
 
     println!(
         "{}\n{}",
         "Resource updated successfully!".green(),
-        template_resources_table(vec![response], false, 0)
+        template_resources_table(vec![resource_response], project_response, false, 0)
     );
 
     Ok(())
