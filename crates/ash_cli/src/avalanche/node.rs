@@ -4,7 +4,9 @@
 // Module that contains the node subcommand parser
 
 use crate::utils::{error::CliError, templating::*, version_tx_cmd};
-use ash_sdk::avalanche::nodes::{generate_node_id, node_id_from_cert_pem, AvalancheNode};
+use ash_sdk::avalanche::nodes::{
+    generate_node_bls_key, generate_node_id, node_id_from_cert_pem, AvalancheNode, BlsPrivateKey,
+};
 use clap::{Parser, Subcommand};
 use std::{fs, path};
 
@@ -50,7 +52,7 @@ enum NodeSubcommands {
     #[command(version = version_tx_cmd(false))]
     IdFromCert {
         /// PEM-encoded X509 certificate string
-        #[arg(long, short = 'p', group = "cert")]
+        #[arg(long, short = 'c', group = "cert")]
         pem_str: Option<String>,
         /// Path to the PEM-encoded X509 certificate file
         #[arg(long, short = 'f', group = "cert")]
@@ -60,6 +62,23 @@ enum NodeSubcommands {
     #[command(version = version_tx_cmd(false))]
     GenerateId {
         /// Path to the output directory where to create the cert and key files
+        #[arg(long, short = 'o', global = true)]
+        output_dir: Option<String>,
+    },
+    /// Get the BLS proof of possession (and public key) from the private key
+    #[command(version = version_tx_cmd(false))]
+    PopFromBlsKey {
+        /// Hex-encoded BLS private key string (with the leading '0x')
+        #[arg(long, short = 'k', group = "key")]
+        key_str: Option<String>,
+        /// Path to the BLS private key file
+        #[arg(long, short = 'f', group = "key")]
+        key_file: Option<String>,
+    },
+    /// Generate a new BLS private key along with its proof of possession (and public key)
+    #[command(version = version_tx_cmd(false))]
+    GenerateBlsKey {
+        /// Path to the output directory where to create the private key file
         #[arg(long, short = 'o', global = true)]
         output_dir: Option<String>,
     },
@@ -218,6 +237,100 @@ fn generate_id(output_dir: Option<String>, json: bool) -> Result<(), CliError> {
     Ok(())
 }
 
+fn pop_from_bls_key(
+    key_str: Option<String>,
+    key_file: Option<String>,
+    json: bool,
+) -> Result<(), CliError> {
+    let bls_key = match (key_str, key_file) {
+        (Some(key), None) => hex::decode(&key[2..])
+            .map_err(|e| CliError::dataerr(format!("Error decoding BLS key: {e}")))?,
+        (None, Some(key_file)) => fs::read(key_file)
+            .map_err(|e| CliError::dataerr(format!("Error reading BLS key file: {e}")))?,
+        _ => {
+            return Err(CliError::dataerr(
+                "Error when parsing arguments: either 'key' or 'key-file' must be provided"
+                    .to_string(),
+            ))
+        }
+    };
+
+    let bls_pop = BlsPrivateKey::from_bytes(&bls_key)
+        .map_err(|e| CliError::dataerr(format!("Error generating BLS proof of possession: {e}")))?
+        .to_proof_of_possession();
+
+    if json {
+        println!(
+            "{}",
+            serde_json::json!(
+                { "proofOfPossession": bls_pop })
+        );
+        return Ok(());
+    }
+
+    println!(
+        "BLS public key: {}\nBLS proof of possession: {}",
+        type_colorize(&format!("0x{}", hex::encode(&bls_pop.public_key))),
+        type_colorize(&format!("0x{}", hex::encode(&bls_pop.proof_of_possession)))
+    );
+
+    Ok(())
+}
+
+fn generate_bls_key(output_dir: Option<String>, json: bool) -> Result<(), CliError> {
+    let (bls_key, bls_pop) = generate_node_bls_key()
+        .map_err(|e| CliError::dataerr(format!("Error generating BLS key: {e}")))?;
+
+    if let Some(dir) = &output_dir {
+        let output_path = path::Path::new(dir);
+
+        // Create output directory if it doesn't exist
+        if !output_path.exists() {
+            fs::create_dir_all(output_path)
+                .map_err(|e| CliError::dataerr(format!("Error creating output directory: {e}")))?;
+        }
+
+        // Write key file
+        let key_file = output_path.join("bls.key");
+        fs::write(key_file, bls_key.to_bytes())
+            .map_err(|e| CliError::dataerr(format!("Error writing key file: {e}")))?;
+    }
+
+    if json {
+        println!(
+            "{}",
+            serde_json::json!({
+                "privateKey": match &output_dir {
+                    Some(output_dir) => format!("{}/bls.key", output_dir),
+                    None => format!("0x{}", hex::encode(bls_key.to_bytes()))
+                },
+                "proofOfPossession": bls_pop
+            })
+        );
+        return Ok(());
+    }
+
+    println!(
+        "BLS public key: {}\nBLS proof of possession: {}",
+        type_colorize(&format!("0x{}", hex::encode(&bls_pop.public_key))),
+        type_colorize(&format!("0x{}", hex::encode(&bls_pop.proof_of_possession)))
+    );
+
+    if output_dir.is_some() {
+        println!(
+            "BLS private key file written to '{}/bls.key'",
+            output_dir.as_ref().unwrap()
+        );
+    } else {
+        println!(
+            "BLS private key: {}",
+            type_colorize(&format!("0x{}", hex::encode(bls_key.to_bytes())))
+        );
+    }
+
+    Ok(())
+}
+
 // Parse node subcommand
 pub(crate) fn parse(node: NodeCommand, json: bool) -> Result<(), CliError> {
     match node.command {
@@ -234,5 +347,9 @@ pub(crate) fn parse(node: NodeCommand, json: bool) -> Result<(), CliError> {
         } => is_bootstrapped(&http_host, http_port, https, &chain, json),
         NodeSubcommands::IdFromCert { pem_str, pem_file } => id_from_cert(pem_str, pem_file, json),
         NodeSubcommands::GenerateId { output_dir } => generate_id(output_dir, json),
+        NodeSubcommands::PopFromBlsKey { key_str, key_file } => {
+            pop_from_bls_key(key_str, key_file, json)
+        }
+        NodeSubcommands::GenerateBlsKey { output_dir } => generate_bls_key(output_dir, json),
     }
 }
