@@ -152,6 +152,8 @@ pub enum AvalancheVMError {
 pub enum AvalancheNodeError {
     #[error("invalid node certificate: {0}")]
     InvalidCertificate(String),
+    #[error("BLS error: {0}")]
+    BlsError(String),
 }
 
 #[derive(Error, Debug, PartialEq)]

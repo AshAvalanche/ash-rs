@@ -4,9 +4,11 @@
 // Module that contains code to interact with Avalanche nodes
 
 use crate::{avalanche::jsonrpc::info::*, errors::*};
+pub use avalanche_types::key::bls::private_key::Key as BlsPrivateKey;
 use avalanche_types::{
     ids::node::Id as NodeId,
     jsonrpc::info::{GetNodeVersionResult, UptimeResult, VmVersions},
+    key::bls::ProofOfPossession,
 };
 use rcgen::{Certificate, CertificateParams, DistinguishedName, DnType, PKCS_RSA_SHA256};
 use rustls_pemfile::certs;
@@ -18,6 +20,7 @@ use std::net::{IpAddr, Ipv4Addr};
 #[serde(rename_all = "camelCase")]
 pub struct AvalancheNode {
     pub id: NodeId,
+    pub signer: Option<ProofOfPossession>,
     pub network: String,
     pub http_host: String,
     pub http_port: u16,
@@ -32,6 +35,8 @@ impl Default for AvalancheNode {
     fn default() -> Self {
         Self {
             id: NodeId::default(),
+            signer: None,
+            network: String::from("local"),
             http_host: String::from("127.0.0.1"),
             http_port: 9650,
             https_enabled: false,
@@ -39,7 +44,6 @@ impl Default for AvalancheNode {
             staking_port: 9651,
             versions: AvalancheNodeVersions::default(),
             uptime: AvalancheNodeUptime::default(),
-            network: String::from("local"),
         }
     }
 }
@@ -61,7 +65,7 @@ impl AvalancheNode {
         let http_endpoint = self.get_http_endpoint();
         let api_path = format!("{}/{}", http_endpoint, AVAX_INFO_API_ENDPOINT);
 
-        self.id = get_node_id(&api_path).map_err(|e| RpcError::GetFailure {
+        (self.id, self.signer) = get_node_id(&api_path).map_err(|e| RpcError::GetFailure {
             data_type: "ID".to_string(),
             target_type: "node".to_string(),
             target_value: http_endpoint.clone(),
@@ -211,7 +215,7 @@ pub fn node_id_from_cert_pem(cert_str: &str) -> Result<NodeId, AshError> {
     Ok(node_id)
 }
 
-/// Generate a node ID with its TLS certificate and private key
+/// Generate a new node ID with its TLS certificate and private key
 pub fn generate_node_id(san: impl Into<Vec<String>>) -> Result<(NodeId, String, String), AshError> {
     let mut cert_params = CertificateParams::new(san);
 
@@ -235,6 +239,17 @@ pub fn generate_node_id(san: impl Into<Vec<String>>) -> Result<(NodeId, String, 
     let node_id = node_id_from_cert_pem(&cert_pem)?;
 
     Ok((node_id, cert_pem, key_pem))
+}
+
+/// Generate a new node BLS private key with its proof of possession (public key + pop)
+pub fn generate_node_bls_key() -> Result<(BlsPrivateKey, ProofOfPossession), AshError> {
+    let key = BlsPrivateKey::generate().map_err(|e| {
+        AvalancheNodeError::BlsError(format!("failed to generate private key: {}", e))
+    })?;
+
+    let pop = key.to_proof_of_possession();
+
+    Ok((key, pop))
 }
 
 #[cfg(test)]
