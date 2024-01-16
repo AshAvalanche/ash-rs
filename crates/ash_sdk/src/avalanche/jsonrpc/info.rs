@@ -12,6 +12,7 @@ use crate::{
 use avalanche_types::{
     ids::node::Id as NodeId,
     jsonrpc::{info::*, ResponseError},
+    key::bls::ProofOfPossession,
 };
 use std::net::SocketAddr;
 
@@ -27,15 +28,14 @@ impl_json_rpc_response!(IsBootstrappedResponse, IsBootstrappedResult);
 impl_json_rpc_response!(PeersResponse, PeersResult);
 
 /// Get the ID of a node by querying the Info API
-pub fn get_node_id(rpc_url: &str) -> Result<NodeId, RpcError> {
+pub fn get_node_id(rpc_url: &str) -> Result<(NodeId, Option<ProofOfPossession>), RpcError> {
     let node_id = get_json_rpc_req_result::<GetNodeIdResponse, GetNodeIdResult>(
         rpc_url,
         "info.getNodeID",
         None,
-    )?
-    .node_id;
+    )?;
 
-    Ok(node_id)
+    Ok((node_id.node_id, node_id.node_pop))
 }
 
 /// Get the IP of a node by querying the Info API
@@ -134,7 +134,7 @@ mod tests {
             "http://{}:{}/{}",
             ASH_TEST_HTTP_HOST, ASH_TEST_HTTP_PORT, AVAX_INFO_API_ENDPOINT
         );
-        let node_id = get_node_id(&rpc_url).unwrap();
+        let (node_id, _) = get_node_id(&rpc_url).unwrap();
         assert_eq!(node_id, NodeId::from_str(ASH_TEST_NODE_ID).unwrap());
     }
 

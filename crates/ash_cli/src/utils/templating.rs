@@ -449,6 +449,9 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: usize) 
         "
         Node '{}:{}':
           ID:            {}
+          Signer (BLS):
+            Public key:  {}
+            PoP:         {}
           Network:       {}
           Public IP:     {}
           Staking port:  {}
@@ -468,6 +471,14 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: usize) 
         type_colorize(&node.http_host),
         type_colorize(&node.http_port),
         type_colorize(&node.id),
+        type_colorize(&match node.signer {
+            Some(ref signer) => format!("0x{}", hex::encode(&signer.public_key.clone())),
+            None => String::from("None"),
+        }),
+        type_colorize(&match node.signer {
+            Some(ref signer) => format!("0x{}", hex::encode(&signer.proof_of_possession.clone())),
+            None => String::from("None"),
+        }),
         type_colorize(&node.network),
         type_colorize(&node.public_ip),
         type_colorize(&node.staking_port),
