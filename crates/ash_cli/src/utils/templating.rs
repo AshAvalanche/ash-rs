@@ -834,6 +834,7 @@ pub(crate) fn template_projects_table(
         "Project ID".bold(),
         "Network".bold(),
         "Cloud regions".bold(),
+        "Resources".bold(),
         "Created at".bold(),
     ]);
 
@@ -851,6 +852,30 @@ pub(crate) fn template_projects_table(
             regions_table.add_row(row![type_colorize(&region_name),]);
         }
 
+        // Count the number of resources in the project grouped by type
+        let mut resources_count: HashMap<String, usize> = HashMap::new();
+        for resource in project
+            .resources_ids
+            .unwrap_or_default()
+            .as_object()
+            .unwrap()
+        {
+            let resource_type = resource.1.as_str().unwrap();
+            let count = resources_count
+                .entry(resource_type.to_string())
+                .or_insert(0);
+            *count += 1;
+        }
+        let mut resources_table = Table::new();
+        resources_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+        for (resource_type, count) in resources_count {
+            resources_table.add_row(row![format!(
+                "{}: {}",
+                resource_type,
+                type_colorize(&count)
+            ),]);
+        }
+
         projects_table.add_row(row![
             type_colorize(&project.name.unwrap_or_default()),
             match extended {
@@ -859,6 +884,7 @@ pub(crate) fn template_projects_table(
             },
             type_colorize(&format!("{:?}", project.network.unwrap_or_default())),
             regions_table,
+            resources_table,
             match extended {
                 true => type_colorize(&project.created.unwrap_or_default()),
                 false => type_colorize(&truncate_datetime(&project.created.unwrap_or_default())),
@@ -1070,6 +1096,7 @@ pub(crate) fn template_avalanche_node_props_table(
 
 pub(crate) fn template_resources_table(
     resources: Vec<console::api_models::GetAllProjectResources200ResponseInner>,
+    project: console::api_models::Project,
     extended: bool,
     indent: usize,
 ) -> String {
@@ -1081,7 +1108,7 @@ pub(crate) fn template_resources_table(
         "Resource name".bold(),
         "Resource ID".bold(),
         "Type".bold(),
-        "Cloud region ID".bold(),
+        "Cloud region".bold(),
         "Size".bold(),
         "Created at".bold(),
         "Status".bold(),
@@ -1100,16 +1127,21 @@ pub(crate) fn template_resources_table(
                 "{:?}",
                 resource.resource_type.clone().unwrap_or_default()
             )),
-            match extended {
-                true => type_colorize(&resource.cloud_region_id.clone().unwrap_or_default()),
-                false => type_colorize(&truncate_uuid(
-                    &resource
-                        .cloud_region_id
-                        .clone()
-                        .unwrap_or_default()
-                        .to_string()
-                )),
-            },
+            type_colorize(
+                // Get the cloud region name from the project
+                // It has to be found by the cloud region ID (value of the cloud_regions_ids object)
+                &project
+                    .cloud_regions_ids
+                    .clone()
+                    .unwrap_or_default()
+                    .as_object()
+                    .unwrap()
+                    .into_iter()
+                    .find(|(_, region_id)| region_id.as_str().unwrap()
+                        == resource.cloud_region_id.as_ref().unwrap())
+                    .unwrap()
+                    .0
+            ),
             type_colorize(&format!("{:?}", resource.size.unwrap_or_default())),
             match extended {
                 true => type_colorize(&resource.created.clone().unwrap_or_default()),
