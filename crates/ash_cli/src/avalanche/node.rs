@@ -249,7 +249,7 @@ fn pop_from_bls_key(
             .map_err(|e| CliError::dataerr(format!("Error reading BLS key file: {e}")))?,
         _ => {
             return Err(CliError::dataerr(
-                "Error when parsing arguments: either 'key' or 'key-file' must be provided"
+                "Error when parsing arguments: either 'key-str' or 'key-file' must be provided"
                     .to_string(),
             ))
         }
