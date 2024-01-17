@@ -10,8 +10,17 @@ use std::str::FromStr;
 
 // Parse an ID from a string
 pub(crate) fn parse_id(id: &str) -> Result<Id, CliError> {
-    let id = Id::from_str(id).map_err(|e| CliError::dataerr(format!("Error parsing ID: {e}")))?;
-    Ok(id)
+    // Try to parse the ID as CB58 first
+    let id_from_cb58 = Id::from_str(id);
+    if id_from_cb58.is_ok() {
+        return Ok(id_from_cb58.unwrap());
+    }
+
+    // Then try to parse it as hex
+    let id_bytes = hex::decode(id.trim_start_matches("0x"))
+        .map_err(|e| CliError::dataerr(format!("Error parsing ID: {e}")))?;
+
+    Ok(Id::from_slice(&id_bytes))
 }
 
 // Parse a node ID from a string

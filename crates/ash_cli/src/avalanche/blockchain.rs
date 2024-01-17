@@ -72,6 +72,12 @@ enum BlockchainSubcommands {
         #[arg(long, short = 'w')]
         wait: bool,
     },
+    /// Get the hex encoded ID of a blockchain from its CB58 ID, or vice-versa
+    #[command(version = version_tx_cmd(false))]
+    TranslateId {
+        /// Blockchain CB58 or hex encoded ID
+        id: String,
+    },
 }
 
 fn create(
@@ -158,6 +164,29 @@ fn create(
     Ok(())
 }
 
+fn translate_id(id: &str, json: bool) -> Result<(), CliError> {
+    let id_parsed = parse_id(id)?;
+
+    if json {
+        println!(
+            "{}",
+            serde_json::json!({
+                "cb58": id_parsed.to_string(),
+                "hex": format!("0x{}", hex::encode(id_parsed))
+            })
+        );
+        return Ok(());
+    }
+
+    println!(
+        "CB58 ID: {}\nHex ID:  {}",
+        type_colorize(&id_parsed.to_string()),
+        type_colorize(&format!("0x{}", hex::encode(id_parsed)))
+    );
+
+    Ok(())
+}
+
 // Parse blockchain subcommand
 pub(crate) fn parse(
     subnet: BlockchainCommand,
@@ -189,5 +218,6 @@ pub(crate) fn parse(
             config,
             json,
         ),
+        BlockchainSubcommands::TranslateId { id } => translate_id(&id, json),
     }
 }
