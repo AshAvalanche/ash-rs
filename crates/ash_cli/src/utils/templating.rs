@@ -472,11 +472,11 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: usize) 
         type_colorize(&node.http_port),
         type_colorize(&node.id),
         type_colorize(&match node.signer {
-            Some(ref signer) => format!("0x{}", hex::encode(&signer.public_key.clone())),
+            Some(ref signer) => format!("0x{}", hex::encode(signer.public_key.clone())),
             None => String::from("None"),
         }),
         type_colorize(&match node.signer {
-            Some(ref signer) => format!("0x{}", hex::encode(&signer.proof_of_possession.clone())),
+            Some(ref signer) => format!("0x{}", hex::encode(signer.proof_of_possession.clone())),
             None => String::from("None"),
         }),
         type_colorize(&node.network),
