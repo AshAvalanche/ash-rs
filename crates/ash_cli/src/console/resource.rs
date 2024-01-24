@@ -143,8 +143,7 @@ pub(crate) fn create(
     let spinner = spinner_with_message("Creating resource...".to_string());
 
     // Deserialize the resource JSON
-    // TODO: Change to CreateResourceRequest when another resource type is added
-    let new_resource: console::api_models::NewAvalancheNodeResource =
+    let new_resource: console::api_models::CreateProjectResourceRequest =
         serde_yaml::from_str(&resource_str)
             .map_err(|e| CliError::dataerr(format!("Error parsing resource JSON: {e}")))?;
 
@@ -237,8 +236,7 @@ pub(crate) fn update(
     let spinner = spinner_with_message("Updating resource...".to_string());
 
     // Deserialize the resource JSON
-    // TODO: Change to UpdateResourceByIdRequest when another resource type is added
-    let update_resource_request: console::api_models::UpdateAvalancheNodeResource =
+    let update_resource_request: console::api_models::UpdateProjectResourceByIdOrNameRequest =
         serde_yaml::from_str(&resource_str)
             .map_err(|e| CliError::dataerr(format!("Error parsing resource JSON: {e}")))?;
 

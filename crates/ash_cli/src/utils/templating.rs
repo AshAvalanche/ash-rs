@@ -472,11 +472,11 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: usize) 
         type_colorize(&node.http_port),
         type_colorize(&node.id),
         type_colorize(&match node.signer {
-            Some(ref signer) => format!("0x{}", hex::encode(&signer.public_key.clone())),
+            Some(ref signer) => format!("0x{}", hex::encode(signer.public_key.clone())),
             None => String::from("None"),
         }),
         type_colorize(&match node.signer {
-            Some(ref signer) => format!("0x{}", hex::encode(&signer.proof_of_possession.clone())),
+            Some(ref signer) => format!("0x{}", hex::encode(signer.proof_of_possession.clone())),
             None => String::from("None"),
         }),
         type_colorize(&node.network),
@@ -1105,6 +1105,34 @@ pub(crate) fn template_avalanche_node_props_table(
     props_table
 }
 
+pub(crate) fn template_avalanche_subnet_props_table(
+    avalanche_subnet: &console::api_models::GetAllProjectResources200ResponseInner,
+) -> Table {
+    let mut props_table = Table::new();
+    props_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+
+    props_table.add_row(row![
+        "ID".bold(),
+        type_colorize(&avalanche_subnet.subnet_status.clone().unwrap().id.clone().unwrap_or_default()),
+    ]);
+    props_table.add_row(row![
+        "Validators",
+        type_colorize(
+            &avalanche_subnet
+                .subnet_status
+                .clone()
+                .unwrap()
+                .validators
+                .unwrap()
+                .len()
+        ),
+    ]);
+    
+    // TODO: Add the rest of the Subnet properties
+
+    props_table
+}
+
 pub(crate) fn template_resources_table(
     resources: Vec<console::api_models::GetAllProjectResources200ResponseInner>,
     project: console::api_models::Project,
@@ -1171,6 +1199,9 @@ pub(crate) fn template_resources_table(
             match *resource.resource_type.clone().unwrap_or_default() {
                 console::api_models::ResourceType::AvalancheNode => {
                     template_avalanche_node_props_table(&resource.clone())
+                }
+                console::api_models::ResourceType::AvalancheSubnet => {
+                    template_avalanche_subnet_props_table(&resource.clone())
                 }
             },
         ]);
