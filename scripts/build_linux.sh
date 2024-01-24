@@ -18,7 +18,7 @@ echo "Building Ash CLI for Linux aarch64..."
 cargo build --target aarch64-unknown-linux-gnu "$@"
 
 # Get current version
-PACKAGE_VERSION=$(grep '^version =' Cargo.toml | grep -oP '\d+\.\d+\.\d+-?(alpha|beta)?(.\d+)?')
+PACKAGE_VERSION=$(grep '^version =' Cargo.toml | grep -oP '\d+\.\d+\.\d+-?(alpha|beta|rc)?(.\d+)?')
 
 # If any argument passed is '--release', binaries are in 'target/release'
 # Otherwise, binaries are in 'target/debug'
