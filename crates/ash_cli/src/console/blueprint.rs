@@ -38,7 +38,7 @@ pub(crate) struct BlueprintProject {
     #[serde(default)]
     pub regions: Vec<console::api_models::NewCloudRegion>,
     #[serde(default)]
-    pub resources: Vec<console::api_models::NewAvalancheNodeResource>,
+    pub resources: Vec<console::api_models::CreateProjectResourceRequest>,
 }
 
 /// Interact with Ash Console entities
@@ -113,7 +113,7 @@ fn add_project_regions(
 // Add or update resources to a project
 fn add_update_project_resources(
     project_name: &str,
-    resources: Vec<console::api_models::NewAvalancheNodeResource>,
+    resources: Vec<console::api_models::CreateProjectResourceRequest>,
     config: Option<&str>,
     api_config: &console::api_config::Configuration,
 ) -> Result<(), CliError> {
@@ -225,6 +225,8 @@ fn apply(blueprint: String, yes: bool, config: Option<&str>) -> Result<(), CliEr
     let mut to_create = Blueprint::default();
     let mut to_update = Blueprint::default();
 
+    let spinner = spinner_with_message("Computing blueprint diff...".to_string());
+
     for secret in apply_blueprint.secrets {
         // Check if secret exists
         let response = task::block_on(async {
@@ -255,6 +257,8 @@ fn apply(blueprint: String, yes: bool, config: Option<&str>) -> Result<(), CliEr
             }
         }
     }
+
+    spinner.finish_and_clear();
 
     // Print a summary of the actions to be taken
     println!("{}", template_blueprint_summary(&to_create, &to_update));

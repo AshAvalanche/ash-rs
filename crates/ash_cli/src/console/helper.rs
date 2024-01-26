@@ -9,9 +9,25 @@ use crate::{
     },
     utils::{error::CliError, templating::*, version_tx_cmd},
 };
-use ash_sdk::console::{self, api_models::project};
+use ash_sdk::{
+    avalanche::vms::AvalancheVmType,
+    console::{self, api_models::project},
+    ids::Id,
+};
 use async_std::task;
 use clap::{Parser, Subcommand};
+use serde::{Deserialize, Serialize};
+
+/// Avalanche blockchain
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct AvalancheBlockchain {
+    #[serde(default)]
+    pub id: Id,
+    pub name: String,
+    #[serde(default)]
+    pub vm_id: Id,
+    pub vm_type: AvalancheVmType,
+}
 
 /// Ash Console helper
 #[derive(Parser)]
@@ -38,6 +54,14 @@ enum HelperSubcommands {
     Stake {
         /// Node resource ID or name
         node_resource_id_or_name: String,
+    },
+    /// Show helpful information about the RPC endpoint(s) of a Subnet blockchain(s)
+    #[command(version = version_tx_cmd(false))]
+    Rpc {
+        /// Endpoint node resource ID or name
+        node_resource_id_or_name: String,
+        /// Subnet resource ID or name
+        subnet_resource_id_or_name: String,
     },
 }
 
@@ -108,6 +132,80 @@ fn staking_helper(
     Ok(())
 }
 
+// Show helpful information about the RPC endpoint(s) of a Subnet blockchain(s)
+fn rpc_helper(
+    project_id_or_name: &str,
+    node_resource_id_or_name: &str,
+    subnet_resource_id_or_name: &str,
+    config: Option<&str>,
+) -> Result<(), CliError> {
+    let mut console = load_console(config)?;
+
+    let api_config = create_api_config_with_access_token(&mut console)?;
+
+    let mut spinner = spinner_with_message("Fetching node information...".to_string());
+
+    let node_response = task::block_on(async {
+        console::api::get_project_resource_by_id_or_name(
+            &api_config,
+            project_id_or_name,
+            node_resource_id_or_name,
+        )
+        .await
+        .map_err(|e| CliError::dataerr(format!("Error getting node resource: {e}")))
+    })?;
+
+    if *node_response.resource_type.unwrap() != console::api_models::ResourceType::AvalancheNode {
+        return Err(CliError::dataerr(
+            "Resource is not an `avalancheNode`!".to_string(),
+        ));
+    };
+
+    spinner.finish_and_clear();
+    spinner = spinner_with_message("Fetching Subnet information...".to_string());
+
+    let subnet_response = task::block_on(async {
+        console::api::get_project_resource_by_id_or_name(
+            &api_config,
+            project_id_or_name,
+            subnet_resource_id_or_name,
+        )
+        .await
+        .map_err(|e| CliError::dataerr(format!("Error getting Subnet resource: {e}")))
+    })?;
+
+    let subnet_chains = match *subnet_response.resource_type.unwrap() {
+        console::api_models::ResourceType::AvalancheSubnet => subnet_response
+            .subnet_status
+            .unwrap()
+            .blockchains
+            .unwrap_or_default(),
+        _ => {
+            return Err(CliError::dataerr(
+                "Resource is not an `avalancheSubnet`!".to_string(),
+            ))
+        }
+    };
+
+    spinner.finish_and_clear();
+
+    for blockchain_value in subnet_chains.iter() {
+        let blockchain: AvalancheBlockchain = serde_json::from_value(blockchain_value.clone())
+            .map_err(|e| CliError::dataerr(format!("Error parsing blockchain info: {e}")))?;
+        println!(
+            "{} RCP endpoint:\n  {}",
+            type_colorize(&blockchain.name),
+            type_colorize(&format!(
+                "http://{}:9650/ext/bc/{}/rpc",
+                node_response.node_ip.clone().unwrap_or_default(),
+                blockchain.id
+            ))
+        );
+    }
+
+    Ok(())
+}
+
 // Parse helper subcommand
 pub(crate) fn parse(operation: HelperCommand, config: Option<&str>) -> Result<(), CliError> {
     let mut project_id_or_name = operation.project_id_or_name;
@@ -121,5 +219,14 @@ pub(crate) fn parse(operation: HelperCommand, config: Option<&str>) -> Result<()
         HelperSubcommands::Stake {
             node_resource_id_or_name,
         } => staking_helper(&project_id_or_name, &node_resource_id_or_name, config),
+        HelperSubcommands::Rpc {
+            node_resource_id_or_name,
+            subnet_resource_id_or_name,
+        } => rpc_helper(
+            &project_id_or_name,
+            &node_resource_id_or_name,
+            &subnet_resource_id_or_name,
+            config,
+        ),
     }
 }
