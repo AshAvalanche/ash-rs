@@ -3,6 +3,7 @@
 
 pub mod avalanche;
 pub mod conf;
+pub mod console;
 pub mod errors;
 pub mod utils;
 

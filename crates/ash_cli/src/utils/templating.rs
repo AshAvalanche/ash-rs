@@ -1,21 +1,29 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023, E36 Knots
 
-use ash_sdk::avalanche::{
-    blockchains::AvalancheBlockchain,
-    nodes::AvalancheNode,
-    subnets::{AvalancheSubnet, AvalancheSubnetType, AvalancheSubnetValidator},
-    vms::subnet_evm::warp::{AddressedPayload, SubnetEVMWarpMessage},
-    wallets::AvalancheWalletInfo,
-    warp::{
-        VerifiedWarpMessage, WarpMessage, WarpMessageNodeSignature, WarpMessagePayload,
-        WarpMessageStatus,
+use crate::console::blueprint::{Blueprint, BlueprintProject};
+use ash_sdk::{
+    avalanche::{
+        blockchains::AvalancheBlockchain,
+        nodes::AvalancheNode,
+        subnets::{AvalancheSubnet, AvalancheSubnetType, AvalancheSubnetValidator},
+        vms::subnet_evm::warp::{AddressedPayload, SubnetEVMWarpMessage},
+        wallets::AvalancheWalletInfo,
+        warp::{
+            VerifiedWarpMessage, WarpMessage, WarpMessageNodeSignature, WarpMessagePayload,
+            WarpMessageStatus,
+        },
+        AvalancheXChainBalance,
     },
-    AvalancheXChainBalance,
+    console,
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::{ColoredString, Colorize};
+use indicatif::ProgressBar;
 use indoc::formatdoc;
+use prettytable::{format, Table};
+use std::collections::HashMap;
+use std::time::Duration;
 
 // Module that contains templating functions for info strings
 
@@ -36,7 +44,7 @@ where
         "&i64" | "&i32" | "&i16" | "&i8" | "&isize" => var.to_string().cyan(),
         "&f64" | "&f32" | "IpAddr" => var.to_string().magenta(),
         "&bool" => var.to_string().blue(),
-        "Id" => var.to_string().green(),
+        "Id" | "Uuid" => var.to_string().green(),
         _ => var.to_string().bright_white(),
     }
 }
@@ -52,6 +60,13 @@ pub(crate) fn human_readable_timestamp(timestamp: u64) -> String {
 
 pub(crate) fn template_horizontal_rule(character: char, length: usize) -> String {
     format!("{character}").repeat(length)
+}
+
+pub(crate) fn spinner_with_message(message: String) -> ProgressBar {
+    let spinner = ProgressBar::new_spinner();
+    spinner.set_message(message);
+    spinner.enable_steady_tick(Duration::from_millis(100));
+    spinner
 }
 
 pub(crate) fn template_blockchain_info(
@@ -434,6 +449,9 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: usize) 
         "
         Node '{}:{}':
           ID:            {}
+          Signer (BLS):
+            Public key:  {}
+            PoP:         {}
           Network:       {}
           Public IP:     {}
           Staking port:  {}
@@ -453,6 +471,14 @@ pub(crate) fn template_avalanche_node_info(node: &AvalancheNode, indent: usize) 
         type_colorize(&node.http_host),
         type_colorize(&node.http_port),
         type_colorize(&node.id),
+        type_colorize(&match node.signer {
+            Some(ref signer) => format!("0x{}", hex::encode(signer.public_key.clone())),
+            None => String::from("None"),
+        }),
+        type_colorize(&match node.signer {
+            Some(ref signer) => format!("0x{}", hex::encode(signer.proof_of_possession.clone())),
+            None => String::from("None"),
+        }),
         type_colorize(&node.network),
         type_colorize(&node.public_ip),
         type_colorize(&node.staking_port),
@@ -747,4 +773,522 @@ pub(crate) fn template_warp_node_signatures(
     }
 
     indent::indent_all_by(indent, signatures_str)
+}
+
+pub(crate) fn truncate_uuid(uuid: &str) -> String {
+    format!("{}...{}", &uuid[..4], &uuid[uuid.len() - 4..])
+}
+
+pub(crate) fn truncate_string(string: &str, length: usize) -> String {
+    if length > string.len() {
+        return string.to_string();
+    }
+
+    format!("{}...", &string[..length])
+}
+
+/// Truncate a datetime string to the format "YYYY-MM-DD HH:MM"
+/// Example: "2021-08-31T14:00:00.000000" -> "2021-08-31T14:00"
+pub(crate) fn truncate_datetime(datetime: &str) -> String {
+    datetime[..16].to_string()
+}
+
+pub(crate) fn template_secrets_table(
+    secrets: Vec<console::api_models::Secret>,
+    extended: bool,
+    indent: usize,
+) -> String {
+    let mut secrets_table = Table::new();
+
+    secrets_table.set_titles(row![
+        "Secret name".bold(),
+        "Secret ID".bold(),
+        "Type".bold(),
+        "Created at".bold(),
+        "Used by".bold(),
+    ]);
+
+    for secret in secrets {
+        secrets_table.add_row(row![
+            type_colorize(&secret.name.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&secret.id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(&secret.id.unwrap_or_default().to_string())),
+            },
+            type_colorize(&format!("{:?}", secret.secret_type.unwrap_or_default())),
+            match extended {
+                true => type_colorize(&secret.created.unwrap_or_default()),
+                false => type_colorize(&truncate_datetime(&secret.created.unwrap_or_default())),
+            },
+            type_colorize(
+                &serde_json::from_value::<HashMap<String, String>>(
+                    secret.used_by.unwrap_or_default()
+                )
+                .unwrap_or_default()
+                .len()
+            ),
+        ]);
+    }
+
+    indent::indent_all_by(indent, secrets_table.to_string())
+}
+
+pub(crate) fn template_projects_table(
+    projects: Vec<console::api_models::Project>,
+    extended: bool,
+    indent: usize,
+) -> String {
+    let mut projects_table = Table::new();
+
+    projects_table.set_titles(row![
+        "Project name".bold(),
+        "Project ID".bold(),
+        "Network".bold(),
+        "Cloud regions".bold(),
+        "Resources".bold(),
+        "Created at".bold(),
+    ]);
+
+    for project in projects {
+        let mut regions_table = Table::new();
+        regions_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+
+        for (region_name, _) in project
+            .cloud_regions_ids
+            .clone()
+            .unwrap_or_default()
+            .as_object()
+            .unwrap()
+        {
+            regions_table.add_row(row![type_colorize(&region_name),]);
+        }
+
+        // Count the number of resources in the project grouped by type
+        let mut resources_count: HashMap<String, usize> = HashMap::new();
+        for resource in project
+            .resources_ids
+            .unwrap_or_default()
+            .as_object()
+            .unwrap()
+        {
+            let resource_type = resource.1.as_str().unwrap();
+            let count = resources_count
+                .entry(resource_type.to_string())
+                .or_insert(0);
+            *count += 1;
+        }
+        let mut resources_table = Table::new();
+        resources_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+        for (resource_type, count) in resources_count {
+            resources_table.add_row(row![format!(
+                "{}: {}",
+                resource_type,
+                type_colorize(&count)
+            ),]);
+        }
+
+        projects_table.add_row(row![
+            type_colorize(&project.name.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&project.id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(&project.id.unwrap_or_default().to_string())),
+            },
+            type_colorize(&format!("{:?}", project.network.unwrap_or_default())),
+            regions_table,
+            resources_table,
+            match extended {
+                true => type_colorize(&project.created.unwrap_or_default()),
+                false => type_colorize(&truncate_datetime(&project.created.unwrap_or_default())),
+            },
+        ]);
+    }
+
+    indent::indent_all_by(indent, projects_table.to_string())
+}
+
+pub(crate) fn template_regions_table(
+    regions: Vec<console::api_models::CloudRegion>,
+    extended: bool,
+    indent: usize,
+) -> String {
+    let mut regions_table = Table::new();
+
+    regions_table.set_titles(row![
+        "Cloud region".bold(),
+        "Region ID".bold(),
+        "Cloud creds secret ID".bold(),
+        "Created at".bold(),
+        "Status".bold()
+    ]);
+
+    for region in regions {
+        regions_table.add_row(row![
+            type_colorize(&format!(
+                "{}/{}",
+                serde_json::to_value(region.cloud_provider.unwrap_or_default())
+                    .unwrap()
+                    .as_str()
+                    .unwrap(),
+                region.region.unwrap_or_default()
+            )),
+            match extended {
+                true => type_colorize(&region.id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(&region.id.unwrap_or_default().to_string())),
+            },
+            match extended {
+                true => type_colorize(&region.cloud_credentials_secret_id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(
+                    &region
+                        .cloud_credentials_secret_id
+                        .unwrap_or_default()
+                        .to_string()
+                )),
+            },
+            match extended {
+                true => type_colorize(&region.created.unwrap_or_default()),
+                false => type_colorize(&truncate_datetime(&region.created.unwrap_or_default())),
+            },
+            match region.status.unwrap_or_default() {
+                console::api_models::cloud_region::Status::Available => "Available".green(),
+                console::api_models::cloud_region::Status::Destroying => "Destroying".yellow(),
+                console::api_models::cloud_region::Status::Suspended => "Suspended".red(),
+            },
+        ]);
+    }
+
+    indent::indent_all_by(indent, regions_table.to_string())
+}
+
+pub(crate) fn template_available_regions_table(
+    provider_regions: serde_json::Value,
+    indent: usize,
+) -> String {
+    let mut provider_regions_table = Table::new();
+
+    provider_regions_table.set_titles(row!["Cloud provider".bold(), "Available regions".bold(),]);
+
+    for provider in provider_regions.as_object().unwrap() {
+        let mut regions_table = Table::new();
+        regions_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+
+        for region in provider.1.as_array().unwrap() {
+            regions_table.add_row(row![&region.as_str().unwrap_or_default(),]);
+        }
+
+        provider_regions_table.add_row(row![&provider.0, regions_table,]);
+    }
+
+    indent::indent_all_by(indent, provider_regions_table.to_string())
+}
+
+pub(crate) fn template_operations_table(
+    operations: Vec<console::api_models::Operation>,
+    extended: bool,
+    indent: usize,
+) -> String {
+    let mut operations_table = Table::new();
+
+    operations_table.set_titles(row![
+        "Operation ID".bold(),
+        "Logged at".bold(),
+        "User ID".bold(),
+        "Operation type".bold(),
+        "Target ID".bold(),
+        "Target value".bold(),
+        "Result".bold(),
+    ]);
+
+    for operation in operations {
+        operations_table.add_row(row![
+            match extended {
+                true => type_colorize(&operation.id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(
+                    &operation.id.unwrap_or_default().to_string()
+                )),
+            },
+            match extended {
+                true => type_colorize(&operation.logged.unwrap_or_default()),
+                false => type_colorize(&truncate_datetime(&operation.logged.unwrap_or_default())),
+            },
+            match extended {
+                true => type_colorize(&operation.owner_id.unwrap_or_default()),
+                false => type_colorize(&truncate_uuid(
+                    &operation.owner_id.unwrap_or_default().to_string()
+                )),
+            },
+            type_colorize(&operation.operation_type.unwrap_or_default()),
+            type_colorize(&operation.target_id.unwrap_or_default()),
+            match extended {
+                true => type_colorize(&operation.target_value.unwrap_or_default()),
+                false => type_colorize(&truncate_string(
+                    &operation.target_value.unwrap_or_default(),
+                    20
+                )),
+            },
+            match operation.result.unwrap_or_default() {
+                console::api_models::operation::Result::Success => "Success".green(),
+                console::api_models::operation::Result::Failure => "Failure".red(),
+            },
+        ]);
+    }
+
+    indent::indent_all_by(indent, operations_table.to_string())
+}
+
+pub(crate) fn template_avalanche_node_props_table(
+    avalanche_node: &console::api_models::GetAllProjectResources200ResponseInner,
+) -> Table {
+    let mut props_table = Table::new();
+    props_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+
+    props_table.add_row(row![
+        "IP address".bold(),
+        type_colorize(&avalanche_node.node_ip.clone().unwrap_or_default()),
+    ]);
+    props_table.add_row(row![
+        "Running".bold(),
+        type_colorize(
+            &avalanche_node
+                .node_status
+                .clone()
+                .unwrap()
+                .running
+                .unwrap_or_default()
+        ),
+    ]);
+    props_table.add_row(row![
+        "Bootstrapped".bold(),
+        format!(
+            "{:?}",
+            &avalanche_node
+                .node_status
+                .clone()
+                .unwrap()
+                .bootstrapped
+                .unwrap_or_default()
+                .as_object()
+                .unwrap()
+                .values()
+                .map(|b| serde_json::from_value::<bool>(b.clone()).unwrap_or_default())
+                .collect::<Vec<bool>>()
+        ),
+    ]);
+    props_table.add_row(row![
+        "Healthy".bold(),
+        format!(
+            "{:?}",
+            &avalanche_node
+                .node_status
+                .clone()
+                .unwrap()
+                .healthy
+                .unwrap_or_default()
+                .as_object()
+                .unwrap()
+                .values()
+                .map(|b| serde_json::from_value::<bool>(b.clone()).unwrap_or_default())
+                .collect::<Vec<bool>>()
+        ),
+    ]);
+    props_table.add_row(row![
+        "Restart req.".bold(),
+        type_colorize(
+            &avalanche_node
+                .node_status
+                .clone()
+                .unwrap()
+                .restart_required
+                .unwrap_or_default()
+        ),
+    ]);
+
+    props_table
+}
+
+pub(crate) fn template_avalanche_subnet_props_table(
+    avalanche_subnet: &console::api_models::GetAllProjectResources200ResponseInner,
+) -> Table {
+    let mut props_table = Table::new();
+    props_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+
+    props_table.add_row(row![
+        "ID".bold(),
+        type_colorize(&avalanche_subnet.subnet_status.clone().unwrap().id.clone().unwrap_or_default()),
+    ]);
+    props_table.add_row(row![
+        "Validators",
+        type_colorize(
+            &avalanche_subnet
+                .subnet_status
+                .clone()
+                .unwrap()
+                .validators
+                .unwrap()
+                .len()
+        ),
+    ]);
+    
+    // TODO: Add the rest of the Subnet properties
+
+    props_table
+}
+
+pub(crate) fn template_resources_table(
+    resources: Vec<console::api_models::GetAllProjectResources200ResponseInner>,
+    project: console::api_models::Project,
+    extended: bool,
+    indent: usize,
+) -> String {
+    use console::api_models::get_all_project_resources_200_response_inner::Status;
+
+    let mut resources_table = Table::new();
+
+    resources_table.set_titles(row![
+        "Resource name".bold(),
+        "Resource ID".bold(),
+        "Type".bold(),
+        "Cloud region".bold(),
+        "Size".bold(),
+        "Created at".bold(),
+        "Status".bold(),
+        "Resource specific".bold(),
+    ]);
+
+    for resource in resources {
+        resources_table.add_row(row![
+            type_colorize(&resource.name.clone().unwrap_or_default()),
+            match extended {
+                true => type_colorize(&resource.id.unwrap_or_default()),
+                false =>
+                    type_colorize(&truncate_uuid(&resource.id.unwrap_or_default().to_string())),
+            },
+            type_colorize(&format!(
+                "{:?}",
+                resource.resource_type.clone().unwrap_or_default()
+            )),
+            type_colorize(
+                // Get the cloud region name from the project
+                // It has to be found by the cloud region ID (value of the cloud_regions_ids object)
+                &project
+                    .cloud_regions_ids
+                    .clone()
+                    .unwrap_or_default()
+                    .as_object()
+                    .unwrap()
+                    .into_iter()
+                    .find(|(_, region_id)| region_id.as_str().unwrap()
+                        == resource.cloud_region_id.as_ref().unwrap())
+                    .unwrap()
+                    .0
+            ),
+            type_colorize(&format!("{:?}", resource.size.unwrap_or_default())),
+            match extended {
+                true => type_colorize(&resource.created.clone().unwrap_or_default()),
+                false => type_colorize(&truncate_datetime(
+                    &resource.created.clone().unwrap_or_default()
+                )),
+            },
+            match resource.status.unwrap_or_default() {
+                Status::Pending => "Pending".yellow(),
+                Status::Configuring => "Configuring".blue(),
+                Status::Running => "Running".green(),
+                Status::Error => "Error".red(),
+                Status::Destroying => "Destroying".yellow(),
+                Status::Stopped => "Stopped".bright_black(),
+            },
+            match *resource.resource_type.clone().unwrap_or_default() {
+                console::api_models::ResourceType::AvalancheNode => {
+                    template_avalanche_node_props_table(&resource.clone())
+                }
+                console::api_models::ResourceType::AvalancheSubnet => {
+                    template_avalanche_subnet_props_table(&resource.clone())
+                }
+            },
+        ]);
+    }
+
+    indent::indent_all_by(indent, resources_table.to_string())
+}
+
+fn template_blueprint_secrets_list(
+    secrets: &[console::api_models::CreateSecretRequest],
+) -> ColoredString {
+    type_colorize(
+        &secrets
+            .iter()
+            .map(|s| s.name.clone())
+            .collect::<Vec<String>>()
+            .join(", "),
+    )
+}
+
+fn template_blueprint_projects_list(projects: &[BlueprintProject]) -> String {
+    let mut projects_str = String::new();
+    for project in projects.iter() {
+        projects_str.push_str(&format!(
+            "\n- '{}':{}{}{}{}",
+            type_colorize(&project.project.name).bold(),
+            match project.regions.len() {
+                0 => ColoredString::from(""),
+                _ => "\n    Regions: ".to_string().bold(),
+            },
+            type_colorize(
+                &project
+                    .regions
+                    .iter()
+                    .map(|r| format!(
+                        "{}/{}",
+                        serde_json::to_value(r.cloud_provider.unwrap_or_default())
+                            .unwrap()
+                            .as_str()
+                            .unwrap(),
+                        r.region.clone().unwrap_or_default()
+                    ))
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
+            match project.resources.len() {
+                0 => ColoredString::from(""),
+                _ => "\n    Resources: ".to_string().bold(),
+            },
+            type_colorize(
+                &project
+                    .resources
+                    .iter()
+                    .map(|r| r.name.clone())
+                    .collect::<Vec<String>>()
+                    .join(", "),
+            )
+        ));
+    }
+
+    indent::indent_all_by(2, projects_str)
+}
+
+pub(crate) fn template_blueprint_summary(to_create: &Blueprint, to_update: &Blueprint) -> String {
+    let mut summary_str = String::new();
+
+    summary_str.push_str(&formatdoc!(
+        "
+        {}
+        {}
+          {} to create: {}
+          {} to update: {}
+        {}
+          {} to create:{}
+          {} to update:{}",
+        "Blueprint summary".bold(),
+        "Secrets".bold(),
+        type_colorize(&to_create.secrets.len()),
+        template_blueprint_secrets_list(&to_create.secrets),
+        type_colorize(&to_update.secrets.len()),
+        template_blueprint_secrets_list(&to_update.secrets),
+        "Projects".bold(),
+        type_colorize(&to_create.projects.len()),
+        template_blueprint_projects_list(&to_create.projects),
+        type_colorize(&to_update.projects.len()),
+        template_blueprint_projects_list(&to_update.projects),
+    ));
+
+    summary_str
 }

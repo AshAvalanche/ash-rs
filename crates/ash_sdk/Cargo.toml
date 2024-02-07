@@ -40,6 +40,10 @@ chrono = { version = "0.4.24", features = ["clock"] }
 rustls = "0.21.7"
 rustls-pemfile = "1.0.3"
 sha2 = "0.10.7"
+oauth2 = "4.4.2"
+url = "2.4.1"
+ash_api = { version = "0.1.4" }
+rcgen = "0.11.3"
 
 [dev-dependencies]
 serial_test = "2.0.0"

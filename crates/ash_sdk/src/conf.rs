@@ -3,7 +3,7 @@
 
 // Module that contains code to interact with the lib configuration
 
-use crate::{avalanche::AvalancheNetwork, errors::*};
+use crate::{avalanche::AvalancheNetwork, console::AshConsole, errors::*};
 use config::{Config, Environment, File, FileFormat};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
@@ -16,6 +16,8 @@ const DEFAULT_CONF: &str = include_str!("../conf/default.yml");
 pub struct AshConfig {
     /// List of known Avalanche networks
     pub avalanche_networks: Vec<AvalancheNetwork>,
+    /// Ash Console configuration
+    pub ash_console: Option<AshConsole>,
 }
 
 impl AshConfig {

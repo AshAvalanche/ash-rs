@@ -15,7 +15,7 @@ categories.workspace = true
 keywords.workspace = true
 
 [dependencies]
-ash_sdk = { path = "../ash_sdk", version = "0.3.0" }
+ash_sdk = { path = "../ash_sdk", version = "0.4.0-rc.2" }
 clap = { version = "4.0.32", features = ["derive", "env", "cargo", "string"] }
 colored = "2.0.0"
 exitcode = "1.1.2"
@@ -27,6 +27,17 @@ enum-display-derive = "0.1.1"
 rust_decimal = "1.29.1"
 hex = "0.4.3"
 chrono = "0.4.24"
+keyring = "2.0.5"
+whoami = "1.4.1"
+jsonwebtoken = "8.3.0"
+serde = "1.0.188"
+prettytable = "0.10.0"
+base64 = "0.21.4"
+inquire = "0.6.2"
+shellexpand = "3.1.0"
+serde_yaml = "0.9.27"
+atty = "0.2.14"
+indicatif = "0.17.7"
 
 [[bin]]
 name = "ash"
