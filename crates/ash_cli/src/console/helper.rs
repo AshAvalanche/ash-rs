@@ -193,7 +193,7 @@ fn rpc_helper(
         let blockchain: AvalancheBlockchain = serde_json::from_value(blockchain_value.clone())
             .map_err(|e| CliError::dataerr(format!("Error parsing blockchain info: {e}")))?;
         println!(
-            "{} RCP endpoint:\n  {}",
+            "{} RPC endpoint:\n  {}",
             type_colorize(&blockchain.name),
             type_colorize(&format!(
                 "http://{}:9650/ext/bc/{}/rpc",
