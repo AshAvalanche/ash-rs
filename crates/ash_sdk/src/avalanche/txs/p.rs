@@ -109,7 +109,7 @@ pub async fn add_permissioned_subnet_validator(
     }
 }
 
-/// Add a validator to a permissioned Subnet
+/// Add a validator to the Avalanche Primary Network
 pub async fn add_avalanche_validator(
     wallet: &AvalancheWallet,
     node_id: NodeId,
