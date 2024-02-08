@@ -3,9 +3,13 @@
 
 // Module that contains code to issue transactions on the X-Chain
 
-use crate::{avalanche::wallets::AvalancheWallet, errors::*};
+use crate::{
+    avalanche::{wallets::AvalancheWallet, AVAX_PRIMARY_NETWORK_ID},
+    errors::*,
+};
 use avalanche_types::{
     ids::{node::Id as NodeId, Id},
+    key::bls::ProofOfPossession,
     wallet::p,
 };
 use chrono::{DateTime, Duration, Utc};
@@ -56,7 +60,7 @@ pub async fn create_blockchain(
     Ok(tx_id)
 }
 
-/// Add a validator to the Primary Network
+/// Add a validator to a permissioned Subnet
 pub async fn add_permissioned_subnet_validator(
     wallet: &AvalancheWallet,
     subnet_id: Id,
@@ -109,22 +113,30 @@ pub async fn add_permissioned_subnet_validator(
     }
 }
 
-/// Add a validator to the Avalanche Primary Network
-pub async fn add_avalanche_validator(
+/// Add a validator to a permissionless Subnet (e.g. Primary Network)
+pub async fn add_permissionless_subnet_validator(
     wallet: &AvalancheWallet,
     node_id: NodeId,
+    subnet_id: Id,
     stake_amount: u64,
     start_time: DateTime<Utc>,
     end_time: DateTime<Utc>,
     reward_fee_percent: u32,
+    signer: Option<ProofOfPossession>,
     check_acceptance: bool,
 ) -> Result<Id, AshError> {
-    let (tx_id, success) = p::add_validator::Tx::new(&wallet.pchain_wallet.p())
+    let (tx_id, success) = p::add_permissionless_validator::Tx::new(&wallet.pchain_wallet.p())
         .node_id(node_id)
+        // avalanche-types requires the subnet_id to be empty for the Primary Network
+        .subnet_id(match subnet_id.to_string().as_str() {
+            AVAX_PRIMARY_NETWORK_ID => Id::empty(),
+            _ => subnet_id,
+        })
         .stake_amount(stake_amount)
         .start_time(start_time)
         .end_time(end_time)
         .reward_fee_percent(reward_fee_percent)
+        .proof_of_possession(signer.unwrap_or_default())
         .check_acceptance(check_acceptance)
         .poll_initial_wait(Duration::seconds(1).to_std().unwrap())
         .issue()
@@ -164,6 +176,7 @@ pub async fn add_avalanche_validator(
 mod tests {
     use super::*;
     use crate::avalanche::{
+        nodes::generate_node_bls_key,
         vms::{encode_genesis_data, AvalancheVmType},
         AvalancheNetwork,
     };
@@ -280,13 +293,16 @@ mod tests {
         assert_eq!(subnet_validator.unwrap().weight, Some(100));
 
         // Try to add a validator that already exists on the Primary Network
-        let avalanche_validator = add_avalanche_validator(
+        let (_, pop) = generate_node_bls_key().unwrap();
+        let avalanche_validator = add_permissionless_subnet_validator(
             &local_wallet,
             NodeId::from_str(NETWORK_RUNNER_NODE_ID).unwrap(),
+            Id::from_str(AVAX_PRIMARY_NETWORK_ID).unwrap(),
             1 * 1_000_000_000,
             start_time,
             end_time,
             2,
+            Some(pop),
             true,
         )
         .await;

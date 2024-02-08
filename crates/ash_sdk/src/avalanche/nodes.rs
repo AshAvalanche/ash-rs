@@ -4,11 +4,10 @@
 // Module that contains code to interact with Avalanche nodes
 
 use crate::{avalanche::jsonrpc::info::*, errors::*};
-pub use avalanche_types::key::bls::private_key::Key as BlsPrivateKey;
+pub use avalanche_types::key::bls::{private_key::Key as BlsPrivateKey, ProofOfPossession};
 use avalanche_types::{
     ids::node::Id as NodeId,
     jsonrpc::info::{GetNodeVersionResult, UptimeResult, VmVersions},
-    key::bls::ProofOfPossession,
 };
 use rcgen::{Certificate, CertificateParams, DistinguishedName, DnType, PKCS_RSA_SHA256};
 use rustls_pemfile::certs;
