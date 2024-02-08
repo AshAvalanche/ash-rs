@@ -125,9 +125,9 @@ pub struct AvalancheWalletInfo {
     pub pchain_address: String,
     /// EVM address
     pub evm_address: String,
-    /// EVM formated Private key
+    /// Hex-encoded private key
     pub hex_private_key : String,
-    /// AVAX formated Private key
+    /// CB58-encoded private key
     pub cb58_private_key: String,
 }
 

@@ -546,7 +546,7 @@ pub(crate) fn template_wallet_info(wallet_info: &AvalancheWalletInfo, indent: us
     info_str.push_str(&formatdoc!(
         "
         Wallet information:
-          HEX private key:  {}
+          Hex private key:  {}
           CB58 private key: {}
           X-Chain address:  {}
           P-Chain address:  {}
