@@ -125,6 +125,10 @@ pub struct AvalancheWalletInfo {
     pub pchain_address: String,
     /// EVM address
     pub evm_address: String,
+    /// EVM formated Private key
+    pub hex_private_key : String,
+    /// AVAX formated Private key
+    pub cb58_private_key: String,
 }
 
 impl From<AvalancheWallet> for AvalancheWalletInfo {
@@ -133,6 +137,8 @@ impl From<AvalancheWallet> for AvalancheWalletInfo {
             xchain_address: wallet.xchain_wallet.x_address,
             pchain_address: wallet.pchain_wallet.p_address,
             evm_address: wallet.xchain_wallet.eth_address,
+            hex_private_key: wallet.private_key.to_hex(),
+            cb58_private_key: wallet.private_key.to_cb58(),
         }
     }
 }
