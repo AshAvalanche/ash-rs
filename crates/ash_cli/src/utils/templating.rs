@@ -546,9 +546,13 @@ pub(crate) fn template_wallet_info(wallet_info: &AvalancheWalletInfo, indent: us
     info_str.push_str(&formatdoc!(
         "
         Wallet information:
-          X-Chain address: {}
-          P-Chain address: {}
-          EVM address:     {}",
+          Hex private key:  {}
+          CB58 private key: {}
+          X-Chain address:  {}
+          P-Chain address:  {}
+          EVM address:      {}",
+        type_colorize(&wallet_info.hex_private_key),
+        type_colorize(&wallet_info.cb58_private_key),
         type_colorize(&wallet_info.xchain_address),
         type_colorize(&wallet_info.pchain_address),
         type_colorize(&wallet_info.evm_address),
