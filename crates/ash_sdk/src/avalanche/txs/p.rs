@@ -164,7 +164,7 @@ pub async fn add_avalanche_validator(
 mod tests {
     use super::*;
     use crate::avalanche::{
-        vms::{encode_genesis_data, AvalancheVmType},
+        vms::{encode_genesis_data, AvalancheVmType, subnet_evm::AVAX_SUBNET_EVM_ID},
         AvalancheNetwork,
     };
     use chrono::Duration;
@@ -173,7 +173,7 @@ mod tests {
     const AVAX_EWOQ_PRIVATE_KEY: &str =
         "PrivateKey-ewoqjP7PxY4yr3iLTpLisriqt94hdyDFNgchSxGGztUrTXtNN";
     const NETWORK_RUNNER_PCHAIN_ADDR: &str = "P-custom18jma8ppw3nhx5r4ap8clazz0dps7rv5u9xde7p";
-    const SUBNET_EVM_VM_ID: &str = "spePNvBxaWSYL2tB5e2xMmMNBQkXMN8z2XEbz1ML2Aahatwoc";
+    const SUBNET_EVM_VM_ID: &str = AVAX_SUBNET_EVM_ID;
     const NETWORK_RUNNER_NODE_ID: &str = "NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg";
 
     // Load the test network using avalanche-network-runner
