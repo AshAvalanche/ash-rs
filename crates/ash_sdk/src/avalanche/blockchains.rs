@@ -171,7 +171,7 @@ impl From<Blockchain> for AvalancheBlockchain {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::avalanche::{vms::encode_genesis_data, AvalancheNetwork, AvalancheSubnet, vms::subnet_evm::AVAX_SUBNET_EVM_ID};
+    use crate::avalanche::{vms::{encode_genesis_data, subnet_evm::AVAX_SUBNET_EVM_ID}, AvalancheNetwork, AvalancheSubnet};
     use std::{env, fs, str::FromStr};
 
     const AVAX_EWOQ_PRIVATE_KEY: &str =
