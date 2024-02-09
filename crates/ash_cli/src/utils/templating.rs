@@ -1117,7 +1117,15 @@ pub(crate) fn template_avalanche_subnet_props_table(
 
     props_table.add_row(row![
         "ID".bold(),
-        type_colorize(&avalanche_subnet.subnet_status.clone().unwrap().id.clone().unwrap_or_default()),
+        type_colorize(
+            &avalanche_subnet
+                .subnet_status
+                .clone()
+                .unwrap()
+                .id
+                .clone()
+                .unwrap_or_default()
+        ),
     ]);
     props_table.add_row(row![
         "Validators",
@@ -1131,7 +1139,7 @@ pub(crate) fn template_avalanche_subnet_props_table(
                 .len()
         ),
     ]);
-    
+
     // TODO: Add the rest of the Subnet properties
 
     props_table

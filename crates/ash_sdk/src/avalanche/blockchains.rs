@@ -171,12 +171,11 @@ impl From<Blockchain> for AvalancheBlockchain {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::avalanche::{vms::encode_genesis_data, AvalancheNetwork, AvalancheSubnet};
+    use crate::avalanche::{vms::{encode_genesis_data, subnet_evm::AVAX_SUBNET_EVM_ID}, AvalancheNetwork, AvalancheSubnet};
     use std::{env, fs, str::FromStr};
 
     const AVAX_EWOQ_PRIVATE_KEY: &str =
         "PrivateKey-ewoqjP7PxY4yr3iLTpLisriqt94hdyDFNgchSxGGztUrTXtNN";
-    const SUBNET_EVM_VM_ID: &str = "spePNvBxaWSYL2tB5e2xMmMNBQkXMN8z2XEbz1ML2Aahatwoc";
 
     // Load the test network from the ASH_TEST_CONFIG file
     fn load_test_network() -> AvalancheNetwork {
@@ -232,7 +231,7 @@ mod tests {
             created_subnet.id,
             "testAvalancheBlockchainCreate",
             AvalancheVmType::SubnetEVM,
-            Id::from_str(SUBNET_EVM_VM_ID).unwrap(),
+            Id::from_str(AVAX_SUBNET_EVM_ID).unwrap(),
             genesis_data,
             true,
         )
