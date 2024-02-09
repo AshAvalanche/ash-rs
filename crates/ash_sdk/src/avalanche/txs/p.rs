@@ -173,7 +173,6 @@ mod tests {
     const AVAX_EWOQ_PRIVATE_KEY: &str =
         "PrivateKey-ewoqjP7PxY4yr3iLTpLisriqt94hdyDFNgchSxGGztUrTXtNN";
     const NETWORK_RUNNER_PCHAIN_ADDR: &str = "P-custom18jma8ppw3nhx5r4ap8clazz0dps7rv5u9xde7p";
-    const SUBNET_EVM_VM_ID: &str = AVAX_SUBNET_EVM_ID;
     const NETWORK_RUNNER_NODE_ID: &str = "NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg";
 
     // Load the test network using avalanche-network-runner
@@ -220,7 +219,7 @@ mod tests {
             &local_wallet,
             subnet_id,
             genesis_data,
-            Id::from_str(SUBNET_EVM_VM_ID).unwrap(),
+            Id::from_str(AVAX_SUBNET_EVM_ID).unwrap(),
             "testCreateBlockchain",
             true,
         )
@@ -236,7 +235,7 @@ mod tests {
         let blockchain = subnet.get_blockchain(tx_id).unwrap();
 
         assert_eq!(blockchain.name, "testCreateBlockchain");
-        assert_eq!(blockchain.vm_id, Id::from_str(SUBNET_EVM_VM_ID).unwrap());
+        assert_eq!(blockchain.vm_id, Id::from_str(AVAX_SUBNET_EVM_ID).unwrap());
     }
 
     #[async_std::test]
