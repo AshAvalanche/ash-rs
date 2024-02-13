@@ -60,7 +60,7 @@ enum BlockchainSubcommands {
         /// Private key to sign the transaction with (must be a control key)
         #[arg(long, short = 'p', env = "AVALANCHE_PRIVATE_KEY")]
         private_key: String,
-        /// Private key format
+        /// Private key encoding (cb58 or hex)
         #[arg(
             long,
             short = 'e',

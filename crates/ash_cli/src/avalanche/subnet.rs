@@ -48,7 +48,7 @@ enum SubnetSubcommands {
         /// Private key to sign the transaction with
         #[arg(long, short = 'p', env = "AVALANCHE_PRIVATE_KEY")]
         private_key: String,
-        /// Private key format
+        /// Private key encoding (cb58 or hex)
         #[arg(
             long,
             short = 'e',

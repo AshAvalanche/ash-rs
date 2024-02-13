@@ -160,6 +160,9 @@ pub(crate) fn template_validator_info(
     let elastic_subnet_info = &formatdoc!(
         "
         Connected:        {}
+        Signer (BLS):
+          Public key:     {}
+          PoP:            {}
         Uptime:           {}
         Stake amount:     {}
         Potential reward: {}
@@ -175,6 +178,14 @@ pub(crate) fn template_validator_info(
           Threshold: {}
           Addresses: {}",
         type_colorize(&validator.connected),
+        type_colorize(&match validator.signer {
+            Some(ref signer) => format!("0x{}", hex::encode(signer.public_key.clone())),
+            None => String::from("None"),
+        }),
+        type_colorize(&match validator.signer {
+            Some(ref signer) => format!("0x{}", hex::encode(signer.proof_of_possession.clone())),
+            None => String::from("None"),
+        }),
         type_colorize(&validator.uptime.unwrap_or_default()),
         type_colorize(&validator.stake_amount.unwrap_or_default()),
         type_colorize(&validator.potential_reward.unwrap_or_default()),

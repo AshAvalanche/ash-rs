@@ -36,7 +36,7 @@ enum WalletSubcommands {
         /// Private key of the wallet
         #[arg(env = "AVALANCHE_PRIVATE_KEY")]
         private_key: String,
-        /// Private key format
+        /// Private key encoding (cb58 or hex)
         #[arg(
             long,
             short = 'e',

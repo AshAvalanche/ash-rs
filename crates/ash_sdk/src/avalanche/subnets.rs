@@ -18,6 +18,7 @@ use crate::{
 use avalanche_types::{
     ids::{node::Id as NodeId, Id},
     jsonrpc::platformvm::{ApiPrimaryDelegator, ApiPrimaryValidator},
+    key::bls::ProofOfPossession,
     utils::urls::extract_scheme_host_port_path_chain_alias,
 };
 use chrono::{DateTime, Utc};
@@ -121,35 +122,28 @@ impl AvalancheSubnet {
         })
     }
 
-    /// Add a validator to the Primary Network
-    /// Fail if the Subnet is not the Primary Network
-    pub async fn add_avalanche_validator(
+    /// Add a validator a permissionless Subnet
+    pub async fn add_validator_permissionless(
         &self,
         wallet: &AvalancheWallet,
         node_id: NodeId,
+        subnet_id: Id,
         stake_amount: u64,
         start_time: DateTime<Utc>,
         end_time: DateTime<Utc>,
         reward_fee_percent: u32,
+        signer: Option<ProofOfPossession>,
         check_acceptance: bool,
     ) -> Result<AvalancheSubnetValidator, AshError> {
-        // Check if the Subnet is the Primary Network
-        if self.subnet_type != AvalancheSubnetType::PrimaryNetwork {
-            return Err(AvalancheSubnetError::OperationNotAllowed {
-                operation: "add_avalanche_validator".to_string(),
-                subnet_id: self.id.to_string(),
-                subnet_type: self.subnet_type.to_string(),
-            }
-            .into());
-        }
-
-        let tx_id = p::add_avalanche_validator(
+        let tx_id = p::add_permissionless_subnet_validator(
             wallet,
             node_id,
+            subnet_id,
             stake_amount,
             start_time,
             end_time,
             reward_fee_percent,
+            signer,
             check_acceptance,
         )
         .await?;
@@ -370,6 +364,8 @@ pub struct AvalancheSubnetValidator {
     pub potential_reward: Option<u64>,
     pub connected: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub signer: Option<ProofOfPossession>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub uptime: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation_reward_owner: Option<AvalancheOutputOwners>,
@@ -397,6 +393,7 @@ impl AvalancheSubnetValidator {
             weight: validator.weight,
             potential_reward: validator.potential_reward,
             connected: validator.connected,
+            signer: validator.signer.clone(),
             uptime: validator.uptime,
             validation_reward_owner: validator
                 .validation_reward_owner
