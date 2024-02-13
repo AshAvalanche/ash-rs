@@ -364,6 +364,8 @@ pub struct AvalancheSubnetValidator {
     pub potential_reward: Option<u64>,
     pub connected: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub signer: Option<ProofOfPossession>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub uptime: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation_reward_owner: Option<AvalancheOutputOwners>,
@@ -391,6 +393,7 @@ impl AvalancheSubnetValidator {
             weight: validator.weight,
             potential_reward: validator.potential_reward,
             connected: validator.connected,
+            signer: validator.signer.clone(),
             uptime: validator.uptime,
             validation_reward_owner: validator
                 .validation_reward_owner
