@@ -19,3 +19,6 @@ categories = [
 	"data-structures",
 ]
 keywords = ["blockchain", "avalanche", "subnets", "ash"]
+
+[patch.crates-io]
+ash_api = { path = "../hai/ash-api-rs" }

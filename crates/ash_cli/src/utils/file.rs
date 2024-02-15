@@ -27,6 +27,14 @@ pub(crate) fn read_file_base64(file_path: PathBuf) -> Result<String, CliError> {
     Ok(engine::general_purpose::STANDARD.encode(file_content))
 }
 
+// Read bytes from a file and return them as a Base64-encoded string
+pub(crate) fn read_file_bytes_base64(file_path: PathBuf) -> Result<String, CliError> {
+    let file_content = fs::read(file_path)
+        .map_err(|e| CliError::dataerr(format!("Error reading file: {e}")))?;
+
+    Ok(engine::general_purpose::STANDARD.encode(file_content))
+}
+
 // Read content from stdin and return it as a string
 pub(crate) fn read_stdin() -> Result<String, CliError> {
     let mut content = String::new();
