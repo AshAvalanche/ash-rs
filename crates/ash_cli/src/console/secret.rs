@@ -95,9 +95,18 @@ fn load_node_id_tls_cert_key(
             ))
         }
     };
+    let bls_key = match node_id_secret.node_bls_key {
+        Some(ref key) => key,
+        None => {
+            return Err(CliError::dataerr(
+                "Error parsing node ID secret JSON: nodeBlsKey field is missing".to_string(),
+            ))
+        }
+    };
 
     let cert_path = PathBuf::from(&shellexpand::tilde(node_cert).to_string());
     let key_path = PathBuf::from(&shellexpand::tilde(node_key).to_string());
+    let bls_key_path = PathBuf::from(&shellexpand::tilde(bls_key).to_string());
 
     node_id_secret.node_cert = if cert_path.exists() {
         Some(read_file_base64(cert_path)?)
@@ -109,6 +118,12 @@ fn load_node_id_tls_cert_key(
         Some(read_file_base64(key_path)?)
     } else {
         Some(node_key.clone())
+    };
+
+    node_id_secret.node_bls_key = if bls_key_path.exists() {
+        Some(read_file_bytes_base64(bls_key_path)?)
+    } else {
+        Some(bls_key.clone())
     };
 
     Ok(())
