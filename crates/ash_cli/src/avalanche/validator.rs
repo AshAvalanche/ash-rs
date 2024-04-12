@@ -89,11 +89,7 @@ enum ValidatorSubcommands {
     },
     /// List the Subnet's validators
     #[command(version = version_tx_cmd(false))]
-    List {
-        /// List pending validators
-        #[arg(long, short = 'p')]
-        pending: bool,
-    },
+    List,
     /// Show validator information
     #[command(version = version_tx_cmd(false))]
     Info {
@@ -106,7 +102,6 @@ enum ValidatorSubcommands {
 fn list(
     network_name: &str,
     subnet_id: &str,
-    pending: bool,
     config: Option<&str>,
     json: bool,
 ) -> Result<(), CliError> {
@@ -314,10 +309,9 @@ pub(crate) fn parse(
         ValidatorSubcommands::Info { id } => {
             info(&validator.network, &validator.subnet_id, &id, config, json)
         }
-        ValidatorSubcommands::List { pending } => list(
+        ValidatorSubcommands::List => list(
             &validator.network,
             &validator.subnet_id,
-            pending,
             config,
             json,
         ),
