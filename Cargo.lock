@@ -161,7 +161,9 @@ dependencies = [
 
 [[package]]
 name = "ash_api"
-version = "0.1.4"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "128e8c7a21a6d998c954ff1ff987121ade10b92ef514b9bf2d1635d2ba51a2f0"
 dependencies = [
  "reqwest",
  "serde",
@@ -173,7 +175,7 @@ dependencies = [
 
 [[package]]
 name = "ash_cli"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "ash_sdk",
  "async-std",
@@ -202,7 +204,7 @@ dependencies = [
 
 [[package]]
 name = "ash_sdk"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "ash_api",
  "async-std",
