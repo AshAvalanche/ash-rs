@@ -94,7 +94,6 @@ fn info(
     let mut network = load_network(network_name, config)?;
     update_network_subnets(&mut network)?;
     update_subnet_validators(&mut network, id)?;
-    update_subnet_pending_validators(&mut network, id)?;
 
     let subnet = network
         .get_subnet(parse_id(id)?)

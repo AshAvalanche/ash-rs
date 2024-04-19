@@ -89,11 +89,7 @@ enum ValidatorSubcommands {
     },
     /// List the Subnet's validators
     #[command(version = version_tx_cmd(false))]
-    List {
-        /// List pending validators
-        #[arg(long, short = 'p')]
-        pending: bool,
-    },
+    List,
     /// Show validator information
     #[command(version = version_tx_cmd(false))]
     Info {
@@ -106,48 +102,28 @@ enum ValidatorSubcommands {
 fn list(
     network_name: &str,
     subnet_id: &str,
-    pending: bool,
     config: Option<&str>,
     json: bool,
 ) -> Result<(), CliError> {
     let mut network = load_network(network_name, config)?;
     update_network_subnets(&mut network)?;
-    let subnet;
-    let validators;
 
-    let first_line = match pending {
-        true => {
-            update_subnet_pending_validators(&mut network, subnet_id)?;
-            subnet = network
-                .get_subnet(parse_id(subnet_id)?)
-                .map_err(|e| CliError::dataerr(format!("Error listing validators: {e}")))?;
-            validators = subnet.pending_validators.clone();
-            format!(
-                "Found {} pending validators on Subnet '{}':",
-                type_colorize(&subnet.pending_validators.len()),
-                type_colorize(&subnet_id)
-            )
-        }
-        false => {
-            update_subnet_validators(&mut network, subnet_id)?;
-            subnet = network
-                .get_subnet(parse_id(subnet_id)?)
-                .map_err(|e| CliError::dataerr(format!("Error listing validators: {e}")))?;
-            validators = subnet.validators.clone();
-            format!(
-                "Found {} validators on Subnet '{}':",
-                type_colorize(&subnet.validators.len()),
-                type_colorize(&subnet_id)
-            )
-        }
-    };
+    update_subnet_validators(&mut network, subnet_id)?;
+    let subnet = network
+        .get_subnet(parse_id(subnet_id)?)
+        .map_err(|e| CliError::dataerr(format!("Error listing validators: {e}")))?;
+    let validators = subnet.validators.clone();
+    format!(
+        "Found {} validators on Subnet '{}':",
+        type_colorize(&subnet.validators.len()),
+        type_colorize(&subnet_id)
+    );
 
     if json {
         println!("{}", serde_json::to_string(&validators).unwrap());
         return Ok(());
     }
 
-    println!("{}", first_line);
     for validator in validators.iter() {
         println!(
             "{}",
@@ -256,10 +232,7 @@ fn add(
                     start_time_parsed,
                     end_time_parsed,
                     delegation_fee,
-                    match signer {
-                        Some(_) => Some(signer_parsed),
-                        None => None,
-                    },
+                    signer.map(|_| signer_parsed),
                     wait,
                 )
                 .await
@@ -331,12 +304,6 @@ pub(crate) fn parse(
         ValidatorSubcommands::Info { id } => {
             info(&validator.network, &validator.subnet_id, &id, config, json)
         }
-        ValidatorSubcommands::List { pending } => list(
-            &validator.network,
-            &validator.subnet_id,
-            pending,
-            config,
-            json,
-        ),
+        ValidatorSubcommands::List => list(&validator.network, &validator.subnet_id, config, json),
     }
 }

@@ -6,7 +6,7 @@
 use crate::avalanche::{
     blockchains::AvalancheBlockchain,
     jsonrpc::{get_json_rpc_req_result, JsonRpcResponse},
-    subnets::{AvalancheSubnet, AvalancheSubnetDelegator, AvalancheSubnetValidator},
+    subnets::{AvalancheSubnet, AvalancheSubnetValidator},
 };
 use crate::{errors::*, impl_json_rpc_response};
 use avalanche_types::{
@@ -51,7 +51,6 @@ impl_json_rpc_response!(
 );
 impl_json_rpc_response!(GetBlockchainsResponse, GetBlockchainsResult);
 impl_json_rpc_response!(GetCurrentValidatorsResponse, GetCurrentValidatorsResult);
-impl_json_rpc_response!(GetPendingValidatorsResponse, GetPendingValidatorsResult);
 
 /// Get the Subnets of the network by querying the P-Chain API
 pub fn get_network_subnets(
@@ -124,47 +123,6 @@ pub fn get_current_validators(
     Ok(current_validators)
 }
 
-/// Get the pending validators of a Subnet by querying the P-Chain API
-pub fn get_pending_validators(
-    rpc_url: &str,
-    subnet_id: Id,
-) -> Result<Vec<AvalancheSubnetValidator>, RpcError> {
-    let pending_validators_result: GetPendingValidatorsResult =
-        get_json_rpc_req_result::<GetPendingValidatorsResponse, GetPendingValidatorsResult>(
-            rpc_url,
-            "platform.getPendingValidators",
-            Some(ureq::json!({ "subnetID": subnet_id.to_string() })),
-        )?;
-
-    let mut pending_validators: Vec<AvalancheSubnetValidator> = pending_validators_result
-        .validators
-        .iter()
-        .map(|validator| AvalancheSubnetValidator::from_api_primary_validator(validator, subnet_id))
-        .collect();
-    let pending_validators_iter = pending_validators.clone();
-
-    // For each pending validator, add related delegators
-    for pending_validator in pending_validators_iter.iter() {
-        let delegators: Vec<AvalancheSubnetDelegator> = pending_validators_result
-            .delegators
-            .iter()
-            .filter(|delegator| delegator.node_id == pending_validator.node_id)
-            .cloned()
-            .map(Into::into)
-            .collect();
-
-        if !delegators.is_empty() {
-            pending_validators
-                .iter_mut()
-                .find(|validator| validator.node_id == pending_validator.node_id)
-                .unwrap()
-                .delegators = Some(delegators);
-        }
-    }
-
-    Ok(pending_validators)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -176,7 +134,7 @@ mod tests {
     const AVAX_FUJI_CCHAIN_ID: &str = "yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp";
     const AVAX_FUJI_XCHAIN_ID: &str = "2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm";
     // ID of a node operated by Ava Labs
-    const AVAX_FUJI_NODE_ID: &str = "NodeID-4B4rc5vdD1758JSBYL1xyvE5NHGzz6xzH";
+    const AVAX_FUJI_NODE_ID: &str = "NodeID-4KXitMCoE9p2BHA6VzXtaTxLoEjNDo2Pt";
 
     // Load the test network from the ASH_TEST_CONFIG file
     fn load_test_network() -> AvalancheNetwork {

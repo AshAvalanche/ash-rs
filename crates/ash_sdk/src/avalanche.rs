@@ -295,34 +295,6 @@ impl AvalancheNetwork {
         Ok(())
     }
 
-    /// Update the pending validators of a Subnet by querying an API endpoint
-    pub fn update_subnet_pending_validators(&mut self, subnet_id: Id) -> Result<(), AshError> {
-        let rpc_url = &self.get_pchain()?.rpc_url;
-
-        let validators = platformvm::get_pending_validators(rpc_url, subnet_id)?;
-
-        // Replace the pending validators of the Subnet
-        let mut subnet = self.get_subnet(subnet_id)?.clone();
-
-        subnet.pending_validators = validators;
-
-        // Get the index of the Subnet
-        let subnet_index = self
-            .subnets
-            .iter()
-            .position(|subnet| subnet.id == subnet_id)
-            .ok_or(AvalancheNetworkError::NotFound {
-                network: self.name.clone(),
-                target_type: "Subnet".to_string(),
-                target_value: subnet_id.to_string(),
-            })?;
-
-        // Replace the Subnet
-        self.subnets[subnet_index] = subnet;
-
-        Ok(())
-    }
-
     /// Check if the operation is allowed on the network
     /// If not, return an error
     fn check_operation_allowed(
