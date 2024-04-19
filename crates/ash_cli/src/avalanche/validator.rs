@@ -107,14 +107,12 @@ fn list(
 ) -> Result<(), CliError> {
     let mut network = load_network(network_name, config)?;
     update_network_subnets(&mut network)?;
-    let subnet;
-    let validators;
 
     update_subnet_validators(&mut network, subnet_id)?;
-    subnet = network
+    let subnet = network
         .get_subnet(parse_id(subnet_id)?)
         .map_err(|e| CliError::dataerr(format!("Error listing validators: {e}")))?;
-    validators = subnet.validators.clone();
+    let validators = subnet.validators.clone();
     format!(
         "Found {} validators on Subnet '{}':",
         type_colorize(&subnet.validators.len()),
@@ -234,10 +232,7 @@ fn add(
                     start_time_parsed,
                     end_time_parsed,
                     delegation_fee,
-                    match signer {
-                        Some(_) => Some(signer_parsed),
-                        None => None,
-                    },
+                    signer.map(|_| signer_parsed),
                     wait,
                 )
                 .await
@@ -309,11 +304,6 @@ pub(crate) fn parse(
         ValidatorSubcommands::Info { id } => {
             info(&validator.network, &validator.subnet_id, &id, config, json)
         }
-        ValidatorSubcommands::List => list(
-            &validator.network,
-            &validator.subnet_id,
-            config,
-            json,
-        ),
+        ValidatorSubcommands::List => list(&validator.network, &validator.subnet_id, config, json),
     }
 }
