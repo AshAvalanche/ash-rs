@@ -1156,6 +1156,33 @@ pub(crate) fn template_avalanche_subnet_props_table(
     props_table
 }
 
+pub(crate) fn template_blockscout_props_table(
+    blockscout: &console::api_models::GetAllProjectResources200ResponseInner,
+) -> Table {
+    let mut props_table = Table::new();
+    props_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+
+    props_table.add_row(row![
+        "IP address".bold(),
+        type_colorize(&blockscout.blockscout_ip.clone().unwrap_or_default()),
+    ]);
+    props_table.add_row(row![
+        "Running".bold(),
+        type_colorize(
+            &blockscout
+                .node_status
+                .clone()
+                .unwrap()
+                .running
+                .unwrap_or_default()
+        ),
+    ]);
+
+    // TODO: Add the rest of the Subnet properties
+
+    props_table
+}
+
 pub(crate) fn template_resources_table(
     resources: Vec<console::api_models::GetAllProjectResources200ResponseInner>,
     project: console::api_models::Project,
@@ -1225,6 +1252,9 @@ pub(crate) fn template_resources_table(
                 }
                 console::api_models::ResourceType::AvalancheSubnet => {
                     template_avalanche_subnet_props_table(&resource.clone())
+                },
+                console::api_models::ResourceType::Blockscout => {
+                    template_blockscout_props_table(&resource.clone())
                 }
             },
         ]);

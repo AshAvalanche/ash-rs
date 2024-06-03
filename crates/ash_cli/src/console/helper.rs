@@ -63,6 +63,12 @@ enum HelperSubcommands {
         /// Subnet resource ID or name
         subnet_resource_id_or_name: String,
     },
+    /// Show helpful information about the URL of a Blockscout
+    #[command(version = version_tx_cmd(false))]
+    Blockscout {
+        /// Blockscout resource ID or name
+        blockscout_id_or_name: String,
+    },
 }
 
 // Show helpful information to stake on an Avalanche node
@@ -206,6 +212,47 @@ fn rpc_helper(
     Ok(())
 }
 
+/// Show helpful information about the URL of a Blockscout
+fn blockscout_helper(
+    project_id_or_name: &str,
+    blockscout_id_or_name: &str,
+    config: Option<&str>,
+) -> Result<(), CliError> {
+    let mut console = load_console(config)?;
+
+    let api_config = create_api_config_with_access_token(&mut console)?;
+
+    let spinner = spinner_with_message("Fetching blockscout information...".to_string());
+
+    let blockscout_response = task::block_on(async {
+        console::api::get_project_resource_by_id_or_name(
+            &api_config,
+            project_id_or_name,
+            blockscout_id_or_name,
+        )
+        .await
+        .map_err(|e| CliError::dataerr(format!("Error getting blockscout resource: {e}")))
+    })?;
+
+    if *blockscout_response.resource_type.unwrap() != console::api_models::ResourceType::Blockscout {
+        return Err(CliError::dataerr(
+            "Resource is not a `blockscout`!".to_string(),
+        ));
+    };
+
+    spinner.finish_and_clear();
+
+    println!(
+        "Blockscout URL:\n  {}",
+        type_colorize(&format!(
+            "http://{}:3000/",
+            blockscout_response.blockscout_ip.clone().unwrap_or_default()
+        ))
+    );
+
+    Ok(())
+}
+
 // Parse helper subcommand
 pub(crate) fn parse(operation: HelperCommand, config: Option<&str>) -> Result<(), CliError> {
     let mut project_id_or_name = operation.project_id_or_name;
@@ -228,5 +275,8 @@ pub(crate) fn parse(operation: HelperCommand, config: Option<&str>) -> Result<()
             &subnet_resource_id_or_name,
             config,
         ),
+        HelperSubcommands::Blockscout {
+            blockscout_id_or_name,
+        } => blockscout_helper(&project_id_or_name, &blockscout_id_or_name, config),
     }
 }
