@@ -1177,9 +1177,6 @@ pub(crate) fn template_blockscout_props_table(
                 .unwrap_or_default()
         ),
     ]);
-
-    // TODO: Add the rest of the Subnet properties
-
     props_table
 }
 
