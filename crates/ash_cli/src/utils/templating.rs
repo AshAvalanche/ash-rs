@@ -1170,7 +1170,7 @@ pub(crate) fn template_blockscout_props_table(
         "Running".bold(),
         type_colorize(
             &blockscout
-                .node_status
+                .blockscout_status
                 .clone()
                 .unwrap()
                 .running
