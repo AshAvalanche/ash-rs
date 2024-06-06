@@ -245,7 +245,7 @@ fn blockscout_helper(
     println!(
         "Blockscout URL:\n  {}",
         type_colorize(&format!(
-            "http://{}:3000/",
+            "http://{}:80",
             blockscout_response.blockscout_ip.clone().unwrap_or_default()
         ))
     );
