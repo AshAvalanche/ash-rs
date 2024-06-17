@@ -161,9 +161,9 @@ dependencies = [
 
 [[package]]
 name = "ash_api"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "128e8c7a21a6d998c954ff1ff987121ade10b92ef514b9bf2d1635d2ba51a2f0"
+checksum = "2d3101f4b0b3df96d918026e9fa223ba5fe310ee1c805dd8f2eea5579f4bfa5d"
 dependencies = [
  "reqwest",
  "serde",
