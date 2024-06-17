@@ -65,7 +65,7 @@ enum HelperSubcommands {
     },
     /// Show helpful information about the URL of a Blockscout
     #[command(version = version_tx_cmd(false))]
-    Blockscout {
+    BlockscoutUrl {
         /// Blockscout resource ID or name
         blockscout_id_or_name: String,
     },
@@ -275,7 +275,7 @@ pub(crate) fn parse(operation: HelperCommand, config: Option<&str>) -> Result<()
             &subnet_resource_id_or_name,
             config,
         ),
-        HelperSubcommands::Blockscout {
+        HelperSubcommands::BlockscoutUrl {
             blockscout_id_or_name,
         } => blockscout_helper(&project_id_or_name, &blockscout_id_or_name, config),
     }
