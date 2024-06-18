@@ -52,7 +52,7 @@ enum NodeSubcommands {
     #[command(version = version_tx_cmd(false))]
     IdFromCert {
         /// PEM-encoded X509 certificate string
-        #[arg(long, short = 'c', group = "cert")]
+        #[arg(long, short = 's', group = "cert")]
         pem_str: Option<String>,
         /// Path to the PEM-encoded X509 certificate file
         #[arg(long, short = 'f', group = "cert")]
