@@ -79,7 +79,7 @@ fn add_project_regions(
             region.region.clone().unwrap_or_default()
         );
         let response = task::block_on(async {
-            console::api::get_project_cloud_region_by_name(
+            console::api::get_project_cloud_region_by_id_or_name(
                 api_config,
                 project_name,
                 &region_name.replace('/', "_"),

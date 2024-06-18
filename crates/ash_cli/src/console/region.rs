@@ -184,7 +184,7 @@ fn info(
     let api_config = create_api_config_with_access_token(&mut console)?;
 
     let response = task::block_on(async {
-        console::api::get_project_cloud_region_by_name(
+        console::api::get_project_cloud_region_by_id_or_name(
             &api_config,
             project_id_or_name,
             &region_name.replace('/', "_"),
@@ -232,7 +232,7 @@ fn remove(
     let spinner = spinner_with_message("Removing cloud region...".to_string());
 
     let response = task::block_on(async {
-        console::api::remove_project_cloud_region_by_name(
+        console::api::remove_project_cloud_region_by_id_or_name(
             &api_config,
             project_id_or_name,
             &region_name.replace('/', "_"),
