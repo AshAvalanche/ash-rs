@@ -16,9 +16,9 @@ keywords.workspace = true
 
 [dependencies]
 avalanche-types = { version = "0.1.2", features = [
-	"jsonrpc_client",
-	"wallet",
-	"subnet_evm",
+    "jsonrpc_client",
+    "wallet",
+    "subnet_evm",
 ] }
 config = { version = "0.13.3", features = ["yaml"] }
 ethers = { version = "2.0.7", features = ["rustls"] }
@@ -42,7 +42,7 @@ rustls-pemfile = "1.0.3"
 sha2 = "0.10.7"
 oauth2 = "4.4.2"
 url = "2.4.1"
-ash_api = { version = "0.1.7" }
+ash_api = { version = "=0.1.7" }
 rcgen = "0.11.3"
 
 [dev-dependencies]
