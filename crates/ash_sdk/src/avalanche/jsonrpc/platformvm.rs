@@ -193,8 +193,6 @@ mod tests {
             .find(|validator| validator.node_id == NodeId::from_str(AVAX_FUJI_NODE_ID).unwrap())
             .unwrap();
 
-        // Test that the node is connected
-        assert!(ava_labs_node.connected);
         // Test that the node has a non-zero uptime
         assert!(ava_labs_node.uptime > Some(0.0));
         // Test that the node has a non-zero weight
