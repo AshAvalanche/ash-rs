@@ -15,11 +15,11 @@ categories.workspace = true
 keywords.workspace = true
 
 [dependencies]
-avalanche-types = { version = "0.1.2", features = [
+avalanche-types = { version = "0.1.5", features = [
     "jsonrpc_client",
     "wallet",
     "subnet_evm",
-] }
+], git = "https://github.com/AshAvalanche/avalanche-rs.git" }
 config = { version = "0.13.3", features = ["yaml"] }
 ethers = { version = "2.0.7", features = ["rustls"] }
 hex = { version = "0.4.3", features = ["serde"] }
