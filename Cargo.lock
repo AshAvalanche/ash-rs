@@ -571,7 +571,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 [[package]]
 name = "avalanche-types"
 version = "0.1.5"
-source = "git+https://github.com/AshAvalanche/avalanche-rs.git#9ffad50501d3df13be6be963f338248ed07edb65"
+source = "git+https://github.com/AshAvalanche/avalanche-rs.git?branch=fix-connected-0.1.5#43b7f71dc73f67c486f43151669e6079d1c42db9"
 dependencies = [
  "async-trait",
  "bech32",
@@ -910,7 +910,7 @@ dependencies = [
 [[package]]
 name = "cert-manager"
 version = "0.0.11"
-source = "git+https://github.com/AshAvalanche/avalanche-rs.git#9ffad50501d3df13be6be963f338248ed07edb65"
+source = "git+https://github.com/AshAvalanche/avalanche-rs.git?branch=fix-connected-0.1.5#43b7f71dc73f67c486f43151669e6079d1c42db9"
 dependencies = [
  "log",
  "rand",

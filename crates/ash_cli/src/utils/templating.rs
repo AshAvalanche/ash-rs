@@ -175,7 +175,7 @@ pub(crate) fn template_validator_info(
           Locktime: {}
           Threshold: {}
           Addresses: {}",
-        type_colorize(&validator.connected),
+        type_colorize(&validator.connected.unwrap_or_default()),
         type_colorize(&match validator.signer {
             Some(ref signer) => format!("0x{}", hex::encode(signer.public_key.clone())),
             None => String::from("None"),

@@ -362,7 +362,7 @@ pub struct AvalancheSubnetValidator {
     pub weight: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub potential_reward: Option<u64>,
-    pub connected: bool,
+    pub connected: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signer: Option<ProofOfPossession>,
     #[serde(skip_serializing_if = "Option::is_none")]
