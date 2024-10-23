@@ -17,7 +17,7 @@ use ash_sdk::{
     },
     console,
 };
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Utc};
 use colored::{ColoredString, Colorize};
 use indicatif::ProgressBar;
 use indoc::formatdoc;
@@ -50,12 +50,10 @@ where
 }
 
 pub(crate) fn human_readable_timestamp(timestamp: u64) -> String {
-    DateTime::<Utc>::from_naive_utc_and_offset(
-        NaiveDateTime::from_timestamp_opt(timestamp as i64, 0).unwrap(),
-        Utc,
-    )
-    .format("%Y-%m-%d %H:%M:%S")
-    .to_string()
+    DateTime::<Utc>::from_timestamp(timestamp as i64, 0)
+        .unwrap()
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string()
 }
 
 pub(crate) fn template_horizontal_rule(character: char, length: usize) -> String {
@@ -177,7 +175,7 @@ pub(crate) fn template_validator_info(
           Locktime: {}
           Threshold: {}
           Addresses: {}",
-        type_colorize(&validator.connected),
+        type_colorize(&validator.connected.unwrap_or_default()),
         type_colorize(&match validator.signer {
             Some(ref signer) => format!("0x{}", hex::encode(signer.public_key.clone())),
             None => String::from("None"),
@@ -1249,7 +1247,7 @@ pub(crate) fn template_resources_table(
                 }
                 console::api_models::ResourceType::AvalancheSubnet => {
                     template_avalanche_subnet_props_table(&resource.clone())
-                },
+                }
                 console::api_models::ResourceType::Blockscout => {
                     template_blockscout_props_table(&resource.clone())
                 }

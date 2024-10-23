@@ -194,7 +194,7 @@ mod tests {
             .unwrap();
 
         // Test that the node is connected
-        assert!(ava_labs_node.connected);
+        assert_eq!(ava_labs_node.connected, Some(true));
         // Test that the node has a non-zero uptime
         assert!(ava_labs_node.uptime > Some(0.0));
         // Test that the node has a non-zero weight
