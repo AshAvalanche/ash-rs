@@ -571,7 +571,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 [[package]]
 name = "avalanche-types"
 version = "0.1.5"
-source = "git+https://github.com/AshAvalanche/avalanche-rs.git?branch=fix-connected-0.1.5#43b7f71dc73f67c486f43151669e6079d1c42db9"
+source = "git+https://github.com/AshAvalanche/avalanche-rs.git?branch=fix-connected-0.1.5#a5426938e0dae2e54b532047124af09770d8cc7a"
 dependencies = [
  "async-trait",
  "bech32",
@@ -910,7 +910,7 @@ dependencies = [
 [[package]]
 name = "cert-manager"
 version = "0.0.11"
-source = "git+https://github.com/AshAvalanche/avalanche-rs.git?branch=fix-connected-0.1.5#43b7f71dc73f67c486f43151669e6079d1c42db9"
+source = "git+https://github.com/AshAvalanche/avalanche-rs.git?branch=fix-connected-0.1.5#a5426938e0dae2e54b532047124af09770d8cc7a"
 dependencies = [
  "log",
  "rand",
@@ -2491,7 +2491,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
- "socket2 0.5.7",
+ "socket2 0.4.10",
  "tokio",
  "tower-service",
  "tracing",
@@ -3201,7 +3201,7 @@ version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af1844ef2428cc3e1cb900be36181049ef3d3193c63e43026cfe202983b27a56"
 dependencies = [
- "proc-macro-crate 3.2.0",
+ "proc-macro-crate 1.3.1",
  "proc-macro2",
  "quote",
  "syn 2.0.82",
