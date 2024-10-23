@@ -113,7 +113,7 @@ fn list(
         .get_subnet(parse_id(subnet_id)?)
         .map_err(|e| CliError::dataerr(format!("Error listing validators: {e}")))?;
     let validators = subnet.validators.clone();
-    format!(
+    let first_line = format!(
         "Found {} validators on Subnet '{}':",
         type_colorize(&subnet.validators.len()),
         type_colorize(&subnet_id)
@@ -124,6 +124,7 @@ fn list(
         return Ok(());
     }
 
+    println!("{}", first_line);
     for validator in validators.iter() {
         println!(
             "{}",
